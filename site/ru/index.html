@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      document.documentElement.classList.add('js-reveal');
+      // Страховка: если бандл так и не загрузился (блокировщик, сеть, 404),
+      // снимаем js-reveal — пререндеренный контент показывается без анимации.
+      setTimeout(function () {
+        if (!document.documentElement.hasAttribute('data-hydrated')) {
+          document.documentElement.classList.remove('js-reveal');
+        }
+      }, 2500);
+    </script>
+    <link rel="preload" href="/src/fonts/manrope-cyrillic.woff2" as="font" type="font/woff2" crossorigin />
+    <title>FARE — Монтаж длинных роликов и моушн-графика</title>
+    <meta name="description" content="Монтаж длинных YouTube-роликов и моушн-графика. Весь post-production: сборка, графика, звук, цвет. Ролик на 10 минут — неделя от старта." />
+    <meta name="theme-color" content="#0B0D12" />
+    <link rel="canonical" href="https://fareeditor.com/ru/" />
+    <link rel="alternate" hreflang="en" href="https://fareeditor.com/" />
+    <link rel="alternate" hreflang="ru" href="https://fareeditor.com/ru/" />
+    <link rel="alternate" hreflang="x-default" href="https://fareeditor.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FARE — Монтаж длинных роликов и моушн-графика" />
+    <meta property="og:description" content="Весь post-production в одних руках. Работал с каналами суммарной аудиторией более 1 300 000 подписчиков." />
+    <!-- TODO: og:image — asset does not exist yet
+    <meta property="og:image" content="https://fareeditor.com/media/og.png" />
+    -->
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/entry-ru.jsx"></script>
+  </body>
+</html>

@@ -1,0 +1,101 @@
+# Два независимых деплоя: site/ → GitLab Pages, worker/ → Cloudflare.
+# Они не связаны и не должны связываться: пайплайн сайта не трогает воркер
+# и наоборот.
+
+default:
+  image: node:24
+
+stages:
+  - build
+  - deploy
+
+# ---- site → GitLab Pages ------------------------------------------------
+# Продакшен собирается только из default-ветки и только с явным
+# DEPLOY_ENV=production. Флаг задаётся здесь, в джобе, а не в настройках
+# CI/CD: любая сборка без него (стейджинг, опечатка, забытая переменная)
+# автоматически получает noindex + Disallow — см. robotsGuard в
+# site/vite.config.js. Ошибка конфигурации закрывает сайт от индекса,
+# а не открывает.
+
+pages:
+  stage: deploy
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes:
+        - site/**/*
+  variables:
+    DEPLOY_ENV: "production"
+    VITE_TURNSTILE_SITE_KEY: $VITE_TURNSTILE_SITE_KEY
+  cache:
+    key:
+      files:
+        - site/package-lock.json
+    paths:
+      - site/node_modules/
+  script:
+    - cd site
+    # node_modules восстановлен из кэша по хэшу лока — установка не нужна
+    - '[ -d node_modules ] || npm ci'
+    - npm run build
+    - mv dist ../public
+  artifacts:
+    paths:
+      - public
+    # Pages раздаёт последний артефакт: истечение срока при долгой паузе
+    # между деплоями сняло бы сайт с публикации
+    expire_in: never
+  environment: production/site
+
+# Стейджинг: любая другая ветка. DEPLOY_ENV не задан, поэтому сборка
+# закрыта от индексации. В Pages не публикуется — результат лежит
+# артефактом джоба.
+site:staging:
+  stage: build
+  rules:
+    - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
+      changes:
+        - site/**/*
+  variables:
+    # Без ключа стейджинг собирает заглушку вместо виджета — форму не проверить
+    VITE_TURNSTILE_SITE_KEY: $VITE_TURNSTILE_SITE_KEY
+  cache:
+    key:
+      files:
+        - site/package-lock.json
+    paths:
+      - site/node_modules/
+  script:
+    - cd site
+    - '[ -d node_modules ] || npm ci'
+    - npm run build
+    - mv dist ../public
+  artifacts:
+    paths:
+      - public
+    expire_in: 1 week
+
+# ---- worker → Cloudflare -------------------------------------------------
+# Только вручную, только из default-ветки: случайный деплой кладёт
+# контактную форму, а деплоим слишком редко, чтобы автоматизация
+# окупала этот риск.
+
+worker:deploy:
+  stage: deploy
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes:
+        - worker/**/*
+      when: manual
+  # ручной джоб не должен держать пайплайн в состоянии blocked
+  allow_failure: true
+  cache:
+    key:
+      files:
+        - worker/package-lock.json
+    paths:
+      - worker/node_modules/
+  script:
+    - cd worker
+    - '[ -d node_modules ] || npm ci'
+    - npx wrangler deploy
+  environment: production/worker

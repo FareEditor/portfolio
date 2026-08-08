@@ -1,0 +1,19 @@
+{
+  "slug": "sushnev-money",
+  "published": true,
+  "type": "case",
+  "featured": false,
+  "order": 1,
+  "client": "Валентин Сушнев",
+  "client_en": "Valentin Sushnev",
+  "format": "YouTube",
+  "format_en": "YouTube",
+  "duration": "9:30",
+  "duration_en": "9:30",
+  "title_ru": "Цифры, которые видно с первого взгляда",
+  "title_en": "Making the numbers land",
+  "body_ru": "Ролик про заработок, где половина смысла — в суммах и графиках. Собрал систему инфографики под канал, чтобы каждая цифра появлялась на экране в нужный момент, свёл её с динамикой монтажа и саунд-дизайном.",
+  "body_en": "A video about money where half the meaning lives in the figures. Built a custom infographic system for the channel so every number hits the screen exactly when it's spoken, then tied it into the pacing and sound design.",
+  "youtube_id": "PLACEHOLDER01",
+  "thumbnail": "/media/works/sushnev.webp"
+}

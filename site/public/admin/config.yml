@@ -1,0 +1,140 @@
+# Decap CMS — GitLab backend, PKCE (без своего OAuth-сервера).
+# Авторизация — только GitLab: доступ к админке есть у того, у кого есть
+# права на репозиторий. Ничего поверх не добавляем.
+backend:
+  name: gitlab
+  # TODO: заменить на путь репозитория на GitLab (namespace/project)
+  repo: REPLACE_WITH_GITLAB_REPO_PATH
+  branch: main
+  auth_type: pkce
+  # TODO: Application ID из GitLab → User Settings → Applications
+  # (scope: api, redirect URI: https://fareeditor.com/admin/)
+  app_id: REPLACE_WITH_GITLAB_APPLICATION_ID
+
+site_url: https://fareeditor.com
+
+# Пути от корня репозитория — CMS коммитит в монорепо
+media_folder: site/public/media/works
+public_folder: /media/works
+
+# Превью-пейн отключён намеренно: он потребовал бы вторую копию компонентов
+# сайта и неизбежно разошёлся бы с реальным рендером.
+editor:
+  preview: false
+
+collections:
+  - name: works
+    label: Работы
+    label_singular: Работа
+    folder: site/src/data/works
+    format: json
+    extension: json
+    create: true
+    identifier_field: slug
+    slug: "{{fields.slug}}"
+    summary: "{{order}} · {{client}} · {{title_ru}}"
+    sortable_fields: ["order"]
+    fields:
+      - label: Slug
+        name: slug
+        widget: string
+        hint: "Имя файла и постоянный ключ записи. Только строчные латинские буквы, цифры и дефис. После публикации не менять."
+        pattern: ["^[a-z0-9-]+$", "Только строчные латинские буквы, цифры и дефис"]
+      - label: Опубликовано
+        name: published
+        widget: boolean
+        default: true
+        hint: "Снимите, чтобы скрыть работу с сайта без удаления файла."
+      - label: Тип
+        name: type
+        widget: select
+        options: ["case", "motion"]
+        default: "case"
+        hint: "case — карточка в сетке кейсов (16:9), motion — вертикальный фрагмент (9:12) в ленте «Моушн-фрагменты»."
+      - label: На всю ширину
+        name: featured
+        widget: boolean
+        default: false
+        hint: "Кейс занимает всю ширину сетки. Работает только для типа case и когда кейсов три и больше."
+      - label: Порядок
+        name: order
+        widget: number
+        value_type: int
+        hint: "Позиция в списке, сортировка по возрастанию."
+      - label: Клиент (RU)
+        name: client
+        widget: string
+        hint: "Имя клиента или канала для русской версии."
+      - label: Клиент (EN)
+        name: client_en
+        widget: string
+        hint: "Для английской версии. Не перевод — своя формулировка (напр. «Real estate developer» вместо названия)."
+      - label: Формат (RU)
+        name: format
+        widget: string
+        hint: "Площадка/формат в мета-строке карточки, напр. «Корпоративный YouTube»."
+      - label: Формат (EN)
+        name: format_en
+        widget: string
+        hint: "То же для английской версии."
+      - label: Хронометраж (RU)
+        name: duration
+        widget: string
+        hint: "Напр. «9:30» или «фрагмент»."
+      - label: Хронометраж (EN)
+        name: duration_en
+        widget: string
+        hint: "Напр. «9:30» или «excerpt»."
+      - label: Заголовок (RU)
+        name: title_ru
+        widget: string
+        hint: "Заголовок карточки для русской версии."
+      - label: Заголовок (EN)
+        name: title_en
+        widget: string
+        hint: "Заголовок для английской версии — самостоятельный текст, не перевод."
+      - label: Текст (RU)
+        name: body_ru
+        widget: text
+        hint: "Описание кейса, 2–3 предложения: задача и что сделано."
+      - label: Текст (EN)
+        name: body_en
+        widget: text
+        hint: "То же для английской версии."
+      - label: YouTube ID
+        name: youtube_id
+        widget: string
+        hint: "11 символов из адреса ролика: youtube.com/watch?v=XXXXXXXXXXX."
+        pattern: ["^[A-Za-z0-9_-]{11}$", "Ровно 11 символов: латинские буквы, цифры, дефис, подчёркивание"]
+      - label: Превью
+        name: thumbnail
+        widget: image
+        hint: "Статичное превью, webp. Для case — 16:9, для motion — 9:12. Плеер монтируется только по клику."
+
+  - name: settings
+    label: Настройки
+    files:
+      - name: site
+        label: Настройки сайта
+        file: site/src/data/settings.json
+        fields:
+          - label: Статус в шапке (RU)
+            name: status
+            widget: string
+            hint: "Текст в пилюле статуса на первом экране, напр. «Открыт для проектов»."
+          - label: Статус в шапке (EN)
+            name: status_en
+            widget: string
+            hint: "То же для английской версии, напр. «Available for projects»."
+          - label: Showreel ID
+            name: showreel_id
+            widget: string
+            hint: "YouTube ID шоурила (11 символов). Пока плеер не подключён — временная заглушка."
+          - label: Контакт напрямую (RU)
+            name: contact_url
+            widget: string
+            hint: "Ссылка «написать напрямую» для русской версии — Telegram."
+          - label: Контакт напрямую (EN)
+            name: contact_url_en
+            widget: string
+            hint: "Для английской версии — X. Каналы у локалей разные намеренно, не синхронизировать."

@@ -1,0 +1,33 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "fareeditor-contact",
+	"main": "src/index.js",
+	"compatibility_date": "2026-08-01",
+	// Воркер живёт только на /api/* — всё остальное идёт напрямую в GitLab Pages,
+	// это не прокси.
+	"routes": [
+		{
+			"pattern": "fareeditor.com/api/*",
+			"zone_name": "fareeditor.com"
+		}
+	],
+	"workers_dev": false,
+	// Архив заявок + счётчики rate-limit.
+	// TODO: создать неймспейс (`npx wrangler kv namespace create LEADS`) и вписать id.
+	"kv_namespaces": [
+		{
+			"binding": "LEADS",
+			"id": "e20f5d5d8bcc473c980e37d32d54f493",
+			"remote": true
+		}
+	],
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1
+	}
+	// Секреты (не хранить в этом файле):
+	//   npx wrangler secret put TELEGRAM_BOT_TOKEN
+	//   npx wrangler secret put TELEGRAM_CHAT_ID
+	//   npx wrangler secret put TURNSTILE_SECRET
+	// Локально — файл .dev.vars (см. .dev.vars.example).
+}

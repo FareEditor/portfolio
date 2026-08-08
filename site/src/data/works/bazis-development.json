@@ -1,0 +1,19 @@
+{
+  "slug": "bazis-development",
+  "published": true,
+  "type": "case",
+  "featured": false,
+  "order": 2,
+  "client": "Базис Недвижимость",
+  "client_en": "Real estate developer",
+  "format": "Корпоративный YouTube",
+  "format_en": "Corporate YouTube",
+  "duration": "10:00",
+  "duration_en": "10:00",
+  "title_ru": "Как удержать зрителя на теме, которая ему скучна",
+  "title_en": "Holding attention on a subject nobody finds exciting",
+  "body_ru": "Цифровизация девелопмента — материал, с которого выходят на второй минуте. Перестроил темпоритм, добавил интерфейсную анимацию и акцентную графику на ключевых тезисах спикера. Зритель не выпадает на середине.",
+  "body_en": "Digital transformation in property development — the kind of topic people drop two minutes in. Rebuilt the pacing, added interface animation and accent graphics on the speaker's key points. Viewers stay to the end.",
+  "youtube_id": "PLACEHOLDER02",
+  "thumbnail": "/media/works/bazis.webp"
+}

@@ -1,0 +1,20 @@
+{
+  "name": "fareeditor-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build --ssr src/entry-server.jsx && node prerender.js && cp node_modules/decap-cms/dist/*decap-cms.js dist/admin/",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "decap-cms": "3.15.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.5.0",
+    "vite": "^7.0.0"
+  }
+}
