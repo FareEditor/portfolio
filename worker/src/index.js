@@ -69,10 +69,9 @@ async function notifyTelegram(env, lead, key) {
     "Контакт: " + lead.contact,
     "Тип: " + lead.project_type_label,
     "Бюджет: " + lead.budget_label,
+    "Страна: " + (lead.country || "??"),
     "",
-    lead.message,
-    "",
-    (lead.country || "??") + " · " + key
+    lead.message
   ].join("\n");
   const res = await fetch("https://api.telegram.org/bot" + env.TELEGRAM_BOT_TOKEN + "/sendMessage", {
     method: "POST",
