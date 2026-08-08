@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ru from './content/ru.js';
 import en from './content/en.js';
 import { WORKS } from './data/works.js';
@@ -12,6 +12,7 @@ import Why from './components/Why.jsx';
 import Faq from './components/Faq.jsx';
 import Contact from './components/Contact.jsx';
 import Footer from './components/Footer.jsx';
+import PlayerModal from './components/PlayerModal.jsx';
 import './styles/tokens.css';
 import './styles/app.css';
 
@@ -104,9 +105,11 @@ export default function App({ lang }) {
     };
   }, []);
 
-  // Плеер-фасад: до клика — статичное превью, по клику карточка с этим youtube_id
-  // монтирует iframe youtube-nocookie (см. WorkCard/MotionCard)
+  // Плеер-фасад: до клика — статичное превью. Кейс с этим youtube_id играет
+  // инлайн в своей 16:9 карточке (WorkCard); шоурил и моушн-фрагменты (9:12,
+  // 16:9 туда не влезает) открываются в модалке PlayerModal.
   const openPlayer = (id) => setPlayingId(id);
+  const closePlayer = useCallback(() => setPlayingId(null), []);
 
   const mapWork = (w, extra) => {
     const client = lang === "en" ? w.client_en : w.client;
@@ -167,6 +170,12 @@ export default function App({ lang }) {
       cardCols: single || (!single && w.featured) ? "repeat(auto-fit,minmax(min(100%,340px),1fr))" : "1fr"
     })
   );
+
+  // В модалку уходит всё, что не играет инлайн в карточке кейса
+  const modalId = playingId && !cases.some((w) => w.youtube_id === playingId) ? playingId : null;
+  const playerLabels = lang === "en"
+    ? { label: "Video player", close: "Close" }
+    : { label: "Видеоплеер", close: "Закрыть" };
 
   const sending = form === "sending";
 
@@ -278,6 +287,8 @@ export default function App({ lang }) {
       </main>
 
       <Footer wordmark="FARE" c={c.footer} />
+
+      <PlayerModal youtubeId={modalId} onClose={closePlayer} label={playerLabels.label} closeLabel={playerLabels.close} />
     </>
   );
 }
