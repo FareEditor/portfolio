@@ -28,9 +28,9 @@ export default {
     eyebrow: "HOW IT WORKS",
     title: "Three steps to a finished video",
     steps: [
-      { tc: "00:00", title: "Brief", body: "We go over the project, references and deadline. Timelines are agreed upfront; if yours is tight, say so early." },
-      { tc: "00:00", title: "Edit", body: "Rough cut for approval, then revisions. You see progress, not a week of silence." },
-      { tc: "00:00", title: "Delivery", body: "Final master in the formats you need. A 10-minute video takes one week from start." }
+      { tc: "00:00:00", title: "Brief", body: "We go over the project, references and deadline. Timelines are agreed upfront; if yours is tight, say so early." },
+      { tc: "00:24:00", title: "Edit", body: "Rough cut for approval, then revisions. You see progress, not a week of silence." },
+      { tc: "07:00:00", title: "Delivery", body: "Final master in the formats you need. A 10-minute video takes one week from start." }
     ]
   },
   why: {
