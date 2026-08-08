@@ -117,7 +117,9 @@ a:hover{color:var(--accent-warm)}
 .why-item{display:flex;flex-direction:column;gap:var(--sp-3);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md);padding:var(--sp-6)}
 .why-title{font-family:var(--font-display);font-weight:700;font-size:var(--fs-h3);letter-spacing:-.015em}
 .why-body{font-size:var(--fs-sm);color:var(--text-dim)}
-
+@media (min-width: 900px){
+  .why-grid{grid-template-columns:repeat(2,1fr)}
+}
 /* ---- faq ---- */
 .faq-list{display:flex;flex-direction:column;max-width:840px}
 .faq-item{border-bottom:1px solid var(--line)}
