@@ -1,4 +1,12 @@
+import { useState } from 'react';
+
 export default function WorkCard({ w, watch }) {
+  // Битая картинка → полосатая заглушка. Начальное состояние «картинка есть»,
+  // чтобы SSR-разметка и первый клиентский рендер совпадали; onError бывает
+  // только в браузере.
+  const [imgFailed, setImgFailed] = useState(false);
+  const showImg = Boolean(w.thumbnail) && !imgFailed;
+
   return (
     <article className="work-card" style={{ gridColumn: w.span, gridTemplateColumns: w.cardCols }}>
       {/* Плеер-фасад: iframe (youtube-nocookie, без трекинг-куки до согласия)
@@ -15,7 +23,20 @@ export default function WorkCard({ w, watch }) {
         </div>
       ) : (
         <button className="work-thumb" type="button" data-youtube-id={w.youtube_id} data-thumbnail={w.thumbnail} onClick={w.play} aria-label={w.playLabel}>
-          <span className="thumb-label">{w.thumbLabel}</span>
+          {showImg && (
+            <img
+              className="work-thumb-img"
+              src={w.thumbnail}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              decoding="async"
+              width="1280"
+              height="720"
+              onError={() => setImgFailed(true)}
+            />
+          )}
+          {!showImg && <span className="thumb-label">{w.thumbLabel}</span>}
           <span className="play-badge" aria-hidden="true">▶</span>
         </button>
       )}
