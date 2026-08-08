@@ -4,12 +4,12 @@
 backend:
   name: gitlab
   # TODO: заменить на путь репозитория на GitLab (namespace/project)
-  repo: REPLACE_WITH_GITLAB_REPO_PATH
+  repo: fareeditor/portfolio
   branch: main
   auth_type: pkce
   # TODO: Application ID из GitLab → User Settings → Applications
   # (scope: api, redirect URI: https://fareeditor.com/admin/)
-  app_id: REPLACE_WITH_GITLAB_APPLICATION_ID
+  app_id: c1622c7072c9fba7e098a9b954a8666b525943683af3df6cb830d44d1ea2d2e5
 
 site_url: https://fareeditor.com
 
