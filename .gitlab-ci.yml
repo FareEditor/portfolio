@@ -24,7 +24,7 @@ pages:
       changes:
         - site/**/*
   variables:
-    # DEPLOY_ENV: "production"
+    #DEPLOY_ENV: "production"
     VITE_TURNSTILE_SITE_KEY: $VITE_TURNSTILE_SITE_KEY
   cache:
     key:
