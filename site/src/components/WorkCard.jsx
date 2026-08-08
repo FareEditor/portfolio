@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PlayIcon from './PlayIcon.jsx';
 
 export default function WorkCard({ w, watch }) {
   // Битая картинка → полосатая заглушка. Начальное состояние «картинка есть»,
@@ -37,7 +38,7 @@ export default function WorkCard({ w, watch }) {
             />
           )}
           {!showImg && <span className="thumb-label">{w.thumbLabel}</span>}
-          <span className="play-badge" aria-hidden="true">▶</span>
+          <span className="play-badge" aria-hidden="true"><PlayIcon /></span>
         </button>
       )}
       <div className="work-body">

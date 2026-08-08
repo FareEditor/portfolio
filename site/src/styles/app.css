@@ -39,7 +39,8 @@ a:hover{color:var(--accent-warm)}
 .btn-primary:hover{background:var(--text);color:var(--bg)}
 .btn-secondary{display:inline-flex;align-items:center;gap:var(--sp-2);font-weight:500;color:var(--text);background:transparent;border:1px solid var(--line);padding:var(--sp-3) var(--sp-6);border-radius:var(--radius-sm);cursor:pointer;transition:border-color var(--dur-fast) var(--ease),background var(--dur-fast) var(--ease)}
 .btn-secondary:hover{border-color:var(--accent-line);background:var(--surface)}
-.btn-glyph{color:var(--accent)}
+.btn-glyph{display:inline-flex;color:var(--accent)}
+.btn-glyph svg{width:calc(var(--play-sm) * .4);height:calc(var(--play-sm) * .4)}
 .header-cta{font-size:var(--fs-sm);padding:var(--sp-2) var(--sp-5)}
 
 /* ---- playhead ---- */
@@ -72,8 +73,11 @@ a:hover{color:var(--accent-warm)}
 .hero-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--sp-3);margin-top:var(--sp-3)}
 
 /* ---- proof ---- */
-.proof-block{display:flex;flex-direction:column;gap:var(--sp-4);border-top:1px solid var(--line);padding-top:var(--sp-7)}
-.proof-title{font-family:var(--font-display);font-weight:700;font-size:var(--fs-h3);letter-spacing:-.01em;color:var(--text-dim)}
+.proof-block{display:flex;flex-direction:column;gap:var(--sp-2);border-top:1px solid var(--line);padding-top:var(--sp-7)}
+/* Заголовок — подпись к цифре: цифра доминирует, фраза объясняет её.
+   DOM-порядок «фраза → цифра» обязателен грамматически в обеих локалях
+   («totalling …» / «аудиторией …» требуют число после себя) */
+.proof-title{font-weight:500;font-size:var(--fs-lead);color:var(--text-dim);margin-top:var(--sp-2)}
 .proof-stat{font-family:var(--font-display);font-weight:800;font-size:var(--fs-stat);line-height:1.05;letter-spacing:-.03em}
 .proof-industries{font-family:var(--font-mono);font-size:var(--fs-mono-lg);letter-spacing:.08em;color:var(--text-dim);margin-top:var(--sp-2)}
 
@@ -84,8 +88,10 @@ a:hover{color:var(--accent-warm)}
 .work-thumb{position:relative;display:block;width:100%;aspect-ratio:16 / 9;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;cursor:pointer;padding:0;background-color:var(--bg);background-image:repeating-linear-gradient(135deg,var(--surface-raised) 0 var(--thumb-stripe),var(--surface) var(--thumb-stripe) calc(var(--thumb-stripe) * 2))}
 .thumb-label{position:absolute;inset:auto var(--sp-3) var(--sp-3) var(--sp-3);font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-dim);text-align:left}
 .work-thumb-img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}
-.play-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:var(--play-lg);height:var(--play-lg);border-radius:var(--radius-pill);background:var(--bg-blur);border:1px solid var(--accent-line);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:var(--fs-body);backdrop-filter:blur(6px)}
-.play-badge--sm{width:var(--play-sm);height:var(--play-sm);font-size:var(--fs-sm)}
+.play-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:var(--play-lg);height:var(--play-lg);border-radius:var(--radius-pill);background:var(--bg-blur);border:1px solid var(--accent-line);display:flex;align-items:center;justify-content:center;color:var(--accent);backdrop-filter:blur(6px)}
+.play-badge svg{width:calc(var(--play-lg) * .4);height:calc(var(--play-lg) * .4)}
+.play-badge--sm{width:var(--play-sm);height:var(--play-sm)}
+.play-badge--sm svg{width:calc(var(--play-sm) * .4);height:calc(var(--play-sm) * .4)}
 .embed-frame{display:block;width:100%;height:100%;border:0}
 .work-body{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0}
 .work-meta{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-dim)}

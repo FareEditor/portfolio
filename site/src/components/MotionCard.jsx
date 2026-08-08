@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PlayIcon from './PlayIcon.jsx';
 
 export default function MotionCard({ m }) {
   // См. WorkCard: заглушка при пустом thumbnail и при ошибке загрузки;
@@ -24,7 +25,7 @@ export default function MotionCard({ m }) {
             onError={() => setImgFailed(true)}
           />
         )}
-        <span className="play-badge play-badge--sm" aria-hidden="true">▶</span>
+        <span className="play-badge play-badge--sm" aria-hidden="true"><PlayIcon /></span>
         {!showImg && <span className="thumb-label">{m.thumbLabel}</span>}
       </button>
       <figcaption className="motion-caption">
