@@ -82,6 +82,7 @@ a:hover{color:var(--accent-warm)}
 .work-card:hover{border-color:var(--accent-line);background:var(--surface-raised)}
 .work-thumb{position:relative;display:block;width:100%;aspect-ratio:16 / 9;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;cursor:pointer;padding:0;background-color:var(--bg);background-image:repeating-linear-gradient(135deg,var(--surface-raised) 0 var(--thumb-stripe),var(--surface) var(--thumb-stripe) calc(var(--thumb-stripe) * 2))}
 .thumb-label{position:absolute;inset:auto var(--sp-3) var(--sp-3) var(--sp-3);font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-dim);text-align:left}
+.work-thumb-img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}
 .play-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:var(--play-lg);height:var(--play-lg);border-radius:var(--radius-pill);background:var(--bg-blur);border:1px solid var(--accent-line);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:var(--fs-body);backdrop-filter:blur(6px)}
 .play-badge--sm{width:var(--play-sm);height:var(--play-sm);font-size:var(--fs-sm)}
 .embed-frame{display:block;width:100%;height:100%;border:0}
@@ -98,6 +99,7 @@ a:hover{color:var(--accent-warm)}
 .motion-item{flex:0 0 300px;scroll-snap-align:start;display:flex;flex-direction:column;gap:var(--sp-3);margin:0}
 .motion-thumb{position:relative;display:block;width:100%;aspect-ratio:9 / 12;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;cursor:pointer;padding:0;background-color:var(--bg);background-image:repeating-linear-gradient(135deg,var(--surface-raised) 0 var(--thumb-stripe),var(--surface) var(--thumb-stripe) calc(var(--thumb-stripe) * 2));transition:border-color var(--dur) var(--ease)}
 .motion-thumb:hover{border-color:var(--accent-line)}
+.motion-thumb-img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}
 .motion-caption{display:flex;flex-direction:column;gap:var(--sp-1)}
 .motion-meta{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-dim)}
 .motion-name{font-size:var(--fs-sm);color:var(--text)}
