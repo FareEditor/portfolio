@@ -16,9 +16,9 @@ export default function Hero({ c, showreelId, openPlayer }) {
         <div className="hero-actions" data-reveal="true">
           <a className="btn-primary" href="#work">{c.primary}</a>
           {/* INTEGRATION: кнопка шоурила использует ту же заглушку плеера; SHOWREEL_ID временный */}
-          <button className="btn-secondary" type="button" data-youtube-id={showreelId} onClick={() => openPlayer(showreelId)}>
+{/*           <button className="btn-secondary" type="button" data-youtube-id={showreelId} onClick={() => openPlayer(showreelId)}>
             <span className="btn-glyph" aria-hidden="true"><PlayIcon /></span>{c.secondary}
-          </button>
+          </button> */}
         </div>
       </div>
     </section>
