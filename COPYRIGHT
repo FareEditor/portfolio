@@ -1,0 +1,63 @@
+Copyright (c) 2026 Eugene Fare (FARE, fareeditor.com)
+
+This repository is published under two different regimes. Read both before
+reusing anything.
+
+
+1. CODE — GPL-3.0-or-later
+--------------------------
+
+The following are licensed under the GNU General Public License, version 3
+or (at your option) any later version. The full text is in LICENSE.
+
+    site/src/**            except site/src/content, site/src/data
+                           and site/src/fonts (see sections 2 and 3)
+    site/index.html
+    site/ru/index.html
+    site/vite.config.js
+    site/prerender.js
+    site/package.json
+    site/public/admin/index.html
+    site/public/admin/config.yml
+    worker/src/**
+    worker/wrangler.jsonc
+    worker/package.json
+    worker/README.md
+    .gitlab-ci.yml
+    .gitignore
+
+Consequence for anyone forking: a derivative work built from these files must
+itself be released under GPL-3.0-or-later, with source available.
+
+
+2. CONTENT — all rights reserved
+--------------------------------
+
+No licence is granted for the following. They are not reusable, not
+adaptable and not redistributable, in whole or in part.
+
+    site/src/content/**       all user-facing copy, both locales
+    site/src/data/**          works data and site settings
+    site/public/media/**      thumbnails and every other media asset
+    design/**                 the approved design reference
+    the showreel referenced by showreel_id in site/src/data/settings.json
+    the name "FARE" and the FARE wordmark
+
+Reason: part of this material was produced for clients and its rights are
+theirs. It is not mine to license.
+
+design/FARE_Landing_dc.html embeds the complete CONTENT object for both
+locales and the full WORKS array — the same copy covered above — so the file
+cannot be GPL-3.0. The markup and styles it demonstrates exist under
+site/src, and there they are GPL-3.0.
+
+
+3. THIRD-PARTY
+--------------
+
+Dependencies declared in site/package.json and worker/package.json keep their
+own licences. MIT dependencies are compatible with GPL-3.0.
+
+The font files in site/src/fonts (Inter, Manrope, JetBrains Mono, subset to
+woff2) are third-party works under the SIL Open Font License 1.1, not covered
+by either regime above.
