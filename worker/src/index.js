@@ -4,7 +4,7 @@
 
 const SITE_ORIGIN = "https://fareeditor.com";
 
-// Селекты шлют стабильные ключи (value в site/src/content/{ru,en}.js),
+// Селекты шлют стабильные ключи (value в site/src/data/content/{ru,en}.json),
 // а не видимый текст: правка формулировок в контенте не может сломать приём заявок.
 const PROJECT_TYPES = ["long_form", "motion_graphics", "series", "other"];
 const BUDGETS = ["200_500", "500_1000", "1000_2000", "2000_plus"];

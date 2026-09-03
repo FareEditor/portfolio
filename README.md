@@ -54,8 +54,8 @@ site/
     entry-ru.jsx              client hydration, Russian
     entry-server.jsx          renderToString, used only by prerender.js
     components/               presentational components, one per section
-    content/en.js             all English copy
-    content/ru.js             all Russian copy
+    data/content/en.json      all English copy, written by the CMS
+    data/content/ru.json      all Russian copy, written by the CMS
     data/works/*.json         one file per work, written by the CMS
     data/works.js             glob, filter on `published`, sort on `order`
     data/settings.json        site settings, written by the CMS
@@ -323,16 +323,17 @@ last two items fail silently.
    If in doubt, run `npx wrangler kv --help`.
 5. **Secrets.** All three, via `wrangler secret put`. New Telegram bot, new
    chat, new Turnstile widget.
-6. **Content.** `site/src/content/en.js` and `site/src/content/ru.js` in
-   full. Do not translate one into the other — the whole point of the split
-   is that the locales say different things.
+6. **Content.** `site/src/data/content/en.json` and
+   `site/src/data/content/ru.json` in full, either directly or through the
+   Decap CMS **Тексты сайта** collection. Do not translate one into the other
+   — the whole point of the split is that the locales say different things.
 7. **Works and media.** Delete `site/src/data/works/*.json` and everything
    in `site/public/media/works`, then add your own. Update
    `site/src/data/settings.json` (status text, showreel id, contact URLs).
 8. **Form option keys.** If you change the choices in the project-type or
    budget selects, change them in **three** places: the `value` fields in
-   both `site/src/content/*.js`, and the `PROJECT_TYPES` / `BUDGETS` arrays
-   in `worker/src/index.js`. The Worker validates against those keys and
+   both `site/src/data/content/*.json`, and the `PROJECT_TYPES` / `BUDGETS`
+   arrays in `worker/src/index.js`. The Worker validates against those keys and
    returns `invalid_fields` for anything else. The visible labels are free to
    differ per locale — that is exactly why the selects submit stable keys
    rather than display text — but the keys must match on both sides. If you
@@ -387,7 +388,7 @@ dependencies this project uses are compatible with GPL-3.0. The bundled fonts
 
 ### Content — all rights reserved
 
-Every string in `site/src/content`, the works data in `site/src/data`,
+Every string in `site/src/data/content`, the works data in `site/src/data`,
 everything under `site/public/media`, the showreel, and the FARE name and
 wordmark. No licence is granted: not reusable, not adaptable, not
 redistributable.

@@ -23,6 +23,309 @@ editor:
   preview: false
 
 collections:
+  - name: content
+    label: Тексты сайта
+    files:
+      - name: ru
+        label: Русская версия
+        file: site/src/data/content/ru.json
+        fields:
+          - { label: CTA в шапке, name: cta, widget: string }
+          - label: Навигация
+            name: nav
+            widget: list
+            allow_add: false
+            min: 4
+            max: 4
+            field: { label: Пункт, name: label, widget: string }
+          - label: Первый экран
+            name: hero
+            widget: object
+            fields:
+              - { label: Заголовок, name: title, widget: string }
+              - { label: Подзаголовок, name: sub, widget: text }
+              - { label: Основная кнопка, name: primary, widget: string }
+              - { label: Кнопка шоурила, name: secondary, widget: string }
+          - label: Социальное доказательство
+            name: proof
+            widget: object
+            fields:
+              - { label: Надзаголовок, name: eyebrow, widget: string }
+              - { label: Заголовок, name: title, widget: string }
+              - { label: Число подписчиков, name: number, widget: string }
+              - { label: Тематики, name: industries, widget: string }
+          - label: Работы
+            name: work
+            widget: object
+            fields:
+              - { label: Надзаголовок, name: eyebrow, widget: string }
+              - { label: Заголовок, name: title, widget: string }
+              - { label: Заголовок моушн-фрагментов, name: motionTitle, widget: string }
+              - { label: Ссылка на YouTube, name: watch, widget: string }
+              - { label: Показать все, name: showAll, widget: string }
+              - { label: Подпись Play, name: play, widget: string }
+              - { label: Заглушка превью, name: thumb, widget: string }
+          - label: Процесс
+            name: process
+            widget: object
+            fields:
+              - { label: Надзаголовок, name: eyebrow, widget: string }
+              - { label: Заголовок, name: title, widget: string }
+              - label: Этапы
+                name: steps
+                widget: list
+                allow_add: false
+                min: 3
+                max: 3
+                summary: "{{fields.tc}} · {{fields.title}}"
+                fields:
+                  - { label: Таймкод, name: tc, widget: string }
+                  - { label: Заголовок, name: title, widget: string }
+                  - { label: Текст, name: body, widget: text }
+          - label: Почему я
+            name: why
+            widget: object
+            fields:
+              - { label: Надзаголовок, name: eyebrow, widget: string }
+              - { label: Заголовок, name: title, widget: string }
+              - label: Преимущества
+                name: items
+                widget: list
+                allow_add: false
+                min: 4
+                max: 4
+                summary: "{{fields.title}}"
+                fields:
+                  - { label: Заголовок, name: title, widget: string }
+                  - { label: Текст, name: body, widget: text }
+          - label: FAQ
+            name: faq
+            widget: object
+            fields:
+              - { label: Надзаголовок, name: eyebrow, widget: string }
+              - { label: Заголовок, name: title, widget: string }
+              - label: Вопросы
+                name: items
+                widget: list
+                allow_add: false
+                min: 6
+                max: 6
+                summary: "{{fields.q}}"
+                fields:
+                  - { label: Вопрос, name: q, widget: string }
+                  - { label: Ответ, name: a, widget: text }
+          - label: Контактная форма
+            name: contact
+            widget: object
+            fields:
+              - { label: Надзаголовок, name: eyebrow, widget: string }
+              - { label: Заголовок, name: title, widget: string }
+              - { label: Вводный текст, name: text, widget: text }
+              - { label: Срок ответа, name: reply, widget: string }
+              - label: Подписи полей
+                name: labels
+                widget: object
+                fields:
+                  - { label: Имя, name: name, widget: string }
+                  - { label: Контакт, name: contact, widget: string }
+                  - { label: Тип проекта, name: project_type, widget: string }
+                  - { label: Бюджет, name: budget, widget: string }
+                  - { label: Описание, name: message, widget: string }
+              - { label: Подсказка контакта, name: hint, widget: string }
+              - { label: Выберите, name: choose, widget: string }
+              - { label: Обязательное поле, name: required, widget: string }
+              - { label: Кнопка отправки, name: button, widget: string }
+              - { label: Отправка, name: sending, widget: string }
+              - { label: Успешная отправка, name: success, widget: text }
+              - { label: Ошибка отправки, name: error, widget: text }
+              - { label: Прямая ссылка, name: alt, widget: string }
+              - { label: Уведомление о данных, name: micro, widget: text }
+              - label: Типы проектов
+                name: project_type
+                widget: list
+                allow_add: false
+                min: 4
+                max: 4
+                summary: "{{fields.label}}"
+                fields:
+                  - { label: Системный ключ, name: value, widget: string, hint: Не менять — ключ проверяется Worker. }
+                  - { label: Подпись, name: label, widget: string }
+              - label: Диапазоны бюджета
+                name: budget
+                widget: list
+                allow_add: false
+                min: 4
+                max: 4
+                summary: "{{fields.label}}"
+                fields:
+                  - { label: Системный ключ, name: value, widget: string, hint: Не менять — ключ проверяется Worker. }
+                  - { label: Подпись, name: label, widget: string }
+          - label: Подвал
+            name: footer
+            widget: object
+            fields:
+              - { label: Copyright, name: copy, widget: string }
+              - label: Ссылки
+                name: links
+                widget: list
+                allow_add: false
+                min: 3
+                max: 3
+                summary: "{{fields.label}}"
+                fields:
+                  - { label: Подпись, name: label, widget: string }
+                  - { label: URL, name: href, widget: string }
+
+      - name: en
+        label: English version
+        file: site/src/data/content/en.json
+        fields:
+          - { label: Header CTA, name: cta, widget: string }
+          - label: Navigation
+            name: nav
+            widget: list
+            allow_add: false
+            min: 4
+            max: 4
+            field: { label: Item, name: label, widget: string }
+          - label: Hero
+            name: hero
+            widget: object
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Subtitle, name: sub, widget: text }
+              - { label: Primary button, name: primary, widget: string }
+              - { label: Showreel button, name: secondary, widget: string }
+          - label: Social proof
+            name: proof
+            widget: object
+            fields:
+              - { label: Eyebrow, name: eyebrow, widget: string }
+              - { label: Title, name: title, widget: string }
+              - { label: Subscriber count, name: number, widget: string }
+              - { label: Industries, name: industries, widget: string }
+          - label: Work
+            name: work
+            widget: object
+            fields:
+              - { label: Eyebrow, name: eyebrow, widget: string }
+              - { label: Title, name: title, widget: string }
+              - { label: Motion section title, name: motionTitle, widget: string }
+              - { label: YouTube link, name: watch, widget: string }
+              - { label: Show all, name: showAll, widget: string }
+              - { label: Play label, name: play, widget: string }
+              - { label: Thumbnail fallback, name: thumb, widget: string }
+          - label: Process
+            name: process
+            widget: object
+            fields:
+              - { label: Eyebrow, name: eyebrow, widget: string }
+              - { label: Title, name: title, widget: string }
+              - label: Steps
+                name: steps
+                widget: list
+                allow_add: false
+                min: 3
+                max: 3
+                summary: "{{fields.tc}} · {{fields.title}}"
+                fields:
+                  - { label: Timecode, name: tc, widget: string }
+                  - { label: Title, name: title, widget: string }
+                  - { label: Text, name: body, widget: text }
+          - label: Why me
+            name: why
+            widget: object
+            fields:
+              - { label: Eyebrow, name: eyebrow, widget: string }
+              - { label: Title, name: title, widget: string }
+              - label: Benefits
+                name: items
+                widget: list
+                allow_add: false
+                min: 4
+                max: 4
+                summary: "{{fields.title}}"
+                fields:
+                  - { label: Title, name: title, widget: string }
+                  - { label: Text, name: body, widget: text }
+          - label: FAQ
+            name: faq
+            widget: object
+            fields:
+              - { label: Eyebrow, name: eyebrow, widget: string }
+              - { label: Title, name: title, widget: string }
+              - label: Questions
+                name: items
+                widget: list
+                allow_add: false
+                min: 6
+                max: 6
+                summary: "{{fields.q}}"
+                fields:
+                  - { label: Question, name: q, widget: string }
+                  - { label: Answer, name: a, widget: text }
+          - label: Contact form
+            name: contact
+            widget: object
+            fields:
+              - { label: Eyebrow, name: eyebrow, widget: string }
+              - { label: Title, name: title, widget: string }
+              - { label: Intro text, name: text, widget: text }
+              - { label: Reply time, name: reply, widget: string }
+              - label: Field labels
+                name: labels
+                widget: object
+                fields:
+                  - { label: Name, name: name, widget: string }
+                  - { label: Contact, name: contact, widget: string }
+                  - { label: Project type, name: project_type, widget: string }
+                  - { label: Budget, name: budget, widget: string }
+                  - { label: Description, name: message, widget: string }
+              - { label: Contact hint, name: hint, widget: string }
+              - { label: Select placeholder, name: choose, widget: string }
+              - { label: Required field, name: required, widget: string }
+              - { label: Submit button, name: button, widget: string }
+              - { label: Sending state, name: sending, widget: string }
+              - { label: Success message, name: success, widget: text }
+              - { label: Error message, name: error, widget: text }
+              - { label: Direct contact link, name: alt, widget: string }
+              - { label: Data notice, name: micro, widget: text }
+              - label: Project types
+                name: project_type
+                widget: list
+                allow_add: false
+                min: 4
+                max: 4
+                summary: "{{fields.label}}"
+                fields:
+                  - { label: System key, name: value, widget: string, hint: Do not change. The key is validated by the Worker. }
+                  - { label: Label, name: label, widget: string }
+              - label: Budget ranges
+                name: budget
+                widget: list
+                allow_add: false
+                min: 4
+                max: 4
+                summary: "{{fields.label}}"
+                fields:
+                  - { label: System key, name: value, widget: string, hint: Do not change. The key is validated by the Worker. }
+                  - { label: Label, name: label, widget: string }
+          - label: Footer
+            name: footer
+            widget: object
+            fields:
+              - { label: Copyright, name: copy, widget: string }
+              - label: Links
+                name: links
+                widget: list
+                allow_add: false
+                min: 3
+                max: 3
+                summary: "{{fields.label}}"
+                fields:
+                  - { label: Label, name: label, widget: string }
+                  - { label: URL, name: href, widget: string }
+
   - name: works
     label: Работы
     label_singular: Работа

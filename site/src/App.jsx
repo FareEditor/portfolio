@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import ru from './content/ru.js';
-import en from './content/en.js';
+// INTEGRATION: site copy is managed in Decap CMS via data/content/*.json.
+import ru from './data/content/ru.json';
+import en from './data/content/en.json';
 import { WORKS } from './data/works.js';
 import settings from './data/settings.json';
 import Header from './components/Header.jsx';
