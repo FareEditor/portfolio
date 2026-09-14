@@ -21,6 +21,7 @@ a:hover{color:var(--accent-warm)}
 .js-reveal .hero-title{transition-delay:60ms}
 .js-reveal .hero-sub{transition-delay:120ms}
 .js-reveal .hero-actions{transition-delay:180ms}
+.js-reveal .hero-meta{transition-delay:240ms}
 
 @keyframes fare-pulse{0%,100%{box-shadow:0 0 0 0 var(--live-halo)}70%{box-shadow:0 0 0 6px var(--live-halo-0)}}
 @keyframes fare-spin{to{transform:rotate(360deg)}}
@@ -32,12 +33,13 @@ a:hover{color:var(--accent-warm)}
 .section-head{display:flex;flex-direction:column;gap:var(--sp-3);margin-bottom:var(--sp-7);border-top:1px solid var(--line);padding-top:var(--sp-7)}
 .section-head--plain{border-top:0;padding-top:0}
 .section-head--tight{margin-bottom:var(--sp-6)}
-.eyebrow{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-dim)}
-.section-title{font-family:var(--font-display);font-weight:800;font-size:var(--fs-h2);letter-spacing:-.025em}
+/* eyebrow — разметка, а не заголовок: тише по цвету и кеглю */
+.eyebrow{font-family:var(--font-mono);font-weight:500;font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-mute)}
+.section-title{font-family:var(--font-display);font-weight:var(--wt-black);font-size:var(--fs-h2);letter-spacing:-.025em}
 
-.btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:var(--sp-2);font-weight:500;color:var(--bg);background:var(--accent);border:0;padding:var(--sp-3) var(--sp-6);border-radius:var(--radius-sm);cursor:pointer;white-space:nowrap;transition:background var(--dur-fast) var(--ease),color var(--dur-fast) var(--ease)}
+.btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:var(--sp-2);font-weight:var(--wt-medium);color:var(--bg);background:var(--accent);border:0;padding:var(--sp-3) var(--sp-6);border-radius:var(--radius-sm);cursor:pointer;white-space:nowrap;transition:background var(--dur-fast) var(--ease),color var(--dur-fast) var(--ease)}
 .btn-primary:hover{background:var(--text);color:var(--bg)}
-.btn-secondary{display:inline-flex;align-items:center;gap:var(--sp-2);font-weight:500;color:var(--text);background:transparent;border:1px solid var(--line);padding:var(--sp-3) var(--sp-6);border-radius:var(--radius-sm);cursor:pointer;transition:border-color var(--dur-fast) var(--ease),background var(--dur-fast) var(--ease)}
+.btn-secondary{display:inline-flex;align-items:center;gap:var(--sp-2);font-weight:var(--wt-medium);color:var(--text);background:transparent;border:1px solid var(--line);padding:var(--sp-3) var(--sp-6);border-radius:var(--radius-sm);cursor:pointer;transition:border-color var(--dur-fast) var(--ease),background var(--dur-fast) var(--ease)}
 .btn-secondary:hover{border-color:var(--accent-line);background:var(--surface)}
 .btn-glyph{display:inline-flex;color:var(--accent)}
 .btn-glyph svg{width:calc(var(--play-sm) * .4);height:calc(var(--play-sm) * .4)}
@@ -49,29 +51,70 @@ a:hover{color:var(--accent-warm)}
 
 /* ---- header ---- */
 .site-header{position:sticky;top:0;z-index:var(--z-header);border-bottom:1px solid transparent;transition:background var(--dur) var(--ease),border-color var(--dur) var(--ease)}
-.header-inner{max-width:calc(var(--container) + var(--gutter) * 2);margin:0 auto;padding:0 var(--gutter);height:var(--header-h);display:flex;align-items:center;justify-content:space-between;gap:var(--sp-5)}
-.wordmark{font-family:var(--font-mono);font-weight:500;font-size:var(--fs-mono-lg);letter-spacing:var(--tracking-wordmark);color:var(--text);text-transform:uppercase}
+.header-inner{max-width:calc(var(--container) + var(--gutter) * 2);margin:0 auto;padding:0 var(--gutter);height:var(--header-h);display:flex;align-items:center;gap:var(--sp-5)}
+.wordmark{font-family:var(--font-mono);font-weight:500;font-size:var(--fs-mono-lg);letter-spacing:var(--tracking-wordmark);color:var(--text);text-transform:uppercase;flex:0 0 auto}
 .wordmark:hover{color:var(--accent)}
-.site-nav{display:flex;align-items:center;gap:var(--sp-6)}
-.nav-link{font-size:var(--fs-sm);color:var(--text-dim)}
-.nav-link:hover{color:var(--text)}
-.header-actions{display:flex;align-items:center;gap:var(--sp-4)}
-.lang-switch{display:flex;align-items:center;gap:var(--sp-1);padding:var(--sp-1);border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--surface)}
-.lang-btn{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;padding:var(--sp-1) var(--sp-3);border:0;border-radius:var(--radius-pill);cursor:pointer;transition:background var(--dur-fast) var(--ease),color var(--dur-fast) var(--ease)}
-.lang-btn:hover{color:var(--accent)}
+.site-nav{display:flex;align-items:center;gap:var(--sp-6);margin-left:auto}
+/* вес, а не цвет и не подчёркивание: активная ссылка тяжелее остальных */
+.nav-link{font-size:var(--fs-sm);font-weight:var(--wt-regular);color:var(--text-dim);transition:color var(--dur-fast) var(--ease),font-weight var(--dur-fast) var(--ease)}
+.nav-link:hover{color:var(--text);font-weight:var(--wt-medium)}
+.header-actions{display:flex;align-items:center;gap:var(--sp-4);flex:0 0 auto}
+.lang-switch{display:flex;align-items:center;gap:var(--sp-2)}
+/* переключатель локали без капсулы: состояние несёт вес, не фон */
+.lang-btn{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;font-weight:500;color:var(--text-mute);padding:var(--sp-1) 0;border:0;background:transparent;cursor:pointer;transition:color var(--dur-fast) var(--ease)}
+.lang-btn:hover{color:var(--text)}
+.lang-btn[aria-current="true"]{color:var(--text)}
+.lang-sep{color:var(--hairline);font-family:var(--font-mono);font-size:var(--fs-mono);user-select:none}
+
+/* ---- mobile nav ---- */
+/* <details>: открывается без JS. Escape, возврат фокуса и блокировка
+   прокрутки добавлены эффектом в Header.jsx поверх нативного поведения. */
+.nav-toggle{display:none}
+.nav-toggle > summary{list-style:none;display:flex;align-items:center;justify-content:center;width:40px;height:40px;margin-left:var(--sp-2);border:1px solid var(--line);border-radius:var(--radius-sm);cursor:pointer;color:var(--text);background:transparent;transition:border-color var(--dur-fast) var(--ease)}
+.nav-toggle > summary::-webkit-details-marker{display:none}
+.nav-toggle > summary:hover{border-color:var(--accent-line)}
+.nav-burger{position:relative;display:block;width:16px;height:2px;background:currentColor;transition:background var(--dur-fast) var(--ease)}
+.nav-burger::before,.nav-burger::after{content:"";position:absolute;left:0;width:16px;height:2px;background:currentColor;transition:transform var(--dur) var(--ease),top var(--dur) var(--ease)}
+.nav-burger::before{top:-5px}
+.nav-burger::after{top:5px}
+.nav-toggle[open] > summary .nav-burger{background:transparent}
+.nav-toggle[open] > summary .nav-burger::before{top:0;transform:rotate(45deg)}
+.nav-toggle[open] > summary .nav-burger::after{top:0;transform:rotate(-45deg)}
+/* Панель position:fixed выходит из потока и не скрывается нативным
+   механизмом <details> — в закрытом состоянии она оставалась видимой
+   полосой. Скрываем явно, не полагаясь на UA-поведение. */
+.nav-toggle:not([open]) .nav-panel{display:none}
+.nav-panel{position:fixed;inset:var(--header-h) 0 0 0;z-index:var(--z-menu);background:var(--bg);border-top:1px solid var(--hairline);padding:var(--sp-7) var(--gutter) var(--sp-8);display:flex;flex-direction:column;gap:var(--sp-6);overflow-y:auto}
+.nav-panel-links{display:flex;flex-direction:column;gap:var(--sp-5)}
+.nav-panel-link{font-family:var(--font-display);font-weight:var(--wt-bold);font-size:var(--fs-h3);letter-spacing:-.015em;color:var(--text)}
+.nav-panel-link:hover{color:var(--accent)}
+.nav-panel-foot{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-5);border-top:1px solid var(--hairline);padding-top:var(--sp-6);margin-top:auto}
 
 /* ---- hero ---- */
-.hero{position:relative;overflow:hidden;min-height:85vh;display:flex;align-items:center;padding:var(--sp-9) var(--gutter) var(--sp-8)}
-.hero-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:var(--grid-cell) var(--grid-cell);opacity:.22;mask-image:radial-gradient(ellipse 80% 60% at 50% 40%,#000 20%,transparent 78%);-webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 40%,#000 20%,transparent 78%)}
-.hero-glow-cool{position:absolute;top:-18%;left:-10%;width:52vw;height:52vw;pointer-events:none;background:radial-gradient(circle,var(--glow-cool),transparent 62%)}
-.hero-glow-warm{position:absolute;bottom:-24%;right:-12%;width:46vw;height:46vw;pointer-events:none;background:radial-gradient(circle,var(--glow-warm),transparent 62%)}
-.hero-inner{position:relative;max-width:var(--container);margin:0 auto;width:100%;display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--sp-5)}
-.status-pill{display:inline-flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-4);border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--surface)}
-.status-dot{width:7px;height:7px;border-radius:var(--radius-pill);background:var(--live);animation:fare-pulse 2.4s var(--ease) infinite}
-.hero-title{font-family:var(--font-display);font-weight:800;font-size:var(--fs-hero);line-height:1.04;letter-spacing:-.025em;max-width:22ch}
-.hero-title:lang(ru){max-width:22ch}
-.hero-sub{font-size:var(--fs-lead);color:var(--text-dim);max-width:56ch}
-.hero-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--sp-3);margin-top:var(--sp-3)}
+/* Композиция строится строками грида, а не центрированием: верхняя строка —
+   метка, средняя — заголовок, нижняя — подводка и действия. Пространство
+   задано соотношением строк, поэтому мобильных компенсаций не требуется.
+   Декоративные слои (сетка и два радиальных свечения) убраны: направление
+   держится на типографике и волосяных линиях, атмосферный фон с ними спорил. */
+.hero{position:relative;min-height:calc(100svh - var(--header-h));display:grid;grid-template-rows:auto 1fr auto;gap:var(--sp-7);width:100%;max-width:calc(var(--container) + var(--gutter) * 2);margin:0 auto;padding:var(--sp-8) var(--gutter) var(--sp-7)}
+.hero-inner{display:contents}
+.hero-mark{display:flex;align-items:center;gap:var(--sp-3);border-top:1px solid var(--hairline);padding-top:var(--sp-4)}
+.status-dot{flex:0 0 auto;width:6px;height:6px;border-radius:var(--radius-pill);background:var(--live);animation:fare-pulse 2.4s var(--ease) infinite}
+.hero-headline{display:flex;flex-direction:column;justify-content:center;gap:var(--sp-5)}
+/* вес — главный носитель иерархии: заголовок на верхнем крае оси Manrope */
+.hero-title{font-family:var(--font-display);font-weight:var(--wt-black);font-size:var(--fs-hero);line-height:1.02;letter-spacing:-.03em;max-width:18ch;text-wrap:balance}
+/* RU-заголовок короче EN на 18 знаков — своя мера, иначе строка рвётся раньше */
+.hero-title:lang(ru){max-width:15ch}
+.hero-foot{display:flex;flex-direction:column;gap:var(--sp-6);border-top:1px solid var(--hairline);padding-top:var(--sp-6)}
+.hero-sub{font-weight:var(--wt-light);font-size:var(--fs-lead);color:var(--text-dim);max-width:52ch}
+.hero-actions{display:flex;flex-wrap:wrap;gap:var(--sp-3)}
+
+@media (min-width:900px){
+  /* подводка и действия встают в две колонки: текст держит меру, действия
+     прижаты к правому краю рейки — пространство между ними структурное */
+  .hero-foot{flex-direction:row;align-items:flex-end;justify-content:space-between;gap:var(--sp-8)}
+  .hero-actions{flex:0 0 auto}
+}
 
 /* ---- proof ---- */
 .proof-block{display:flex;flex-direction:column;gap:var(--sp-2);border-top:1px solid var(--line);padding-top:var(--sp-7)}
@@ -83,31 +126,22 @@ a:hover{color:var(--accent-warm)}
 .proof-industries{font-family:var(--font-mono);font-size:var(--fs-mono-lg);letter-spacing:.08em;color:var(--text-dim);margin-top:var(--sp-2)}
 
 /* ---- work ---- */
-/* ---- work categories ---- */
-/* блок на категорию внутри секции работ; разделитель повторяет прежний ритм между блоками */
-.work-category + .work-category{margin-top:var(--sp-9);border-top:1px solid var(--line);padding-top:var(--sp-6)}
-.work-category-head{display:flex;flex-direction:column;gap:var(--sp-2);margin-bottom:var(--sp-5)}
-.work-category-title{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--accent-warm)}
-.work-category-blurb{font-size:var(--fs-sm);color:var(--text-dim);max-width:60ch}
+/* Блок категории отделён пространством и волосяной линией, не рамкой. */
+.work-category + .work-category{margin-top:var(--sp-10);border-top:1px solid var(--hairline);padding-top:var(--sp-7)}
+.work-category-head{display:flex;flex-direction:column;gap:var(--sp-2);margin-bottom:var(--sp-7)}
+.work-category-title{font-family:var(--font-mono);font-weight:500;font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-mute)}
+.work-category-blurb{font-weight:var(--wt-light);font-size:var(--fs-sm);color:var(--text-dim);max-width:60ch}
 
-/* auto-fill, а не auto-fit: auto-fit схлопывает пустые треки, и категория
-   с одной работой растянула бы карточку на всю ширину секции */
-.work-grid{display:grid;gap:var(--sp-6);grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr))}
-.work-card{display:grid;grid-template-columns:1fr;gap:var(--sp-5);align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md);padding:var(--sp-5);box-shadow:var(--shadow-card);transition:border-color var(--dur) var(--ease),background var(--dur) var(--ease)}
-.work-card:hover{border-color:var(--accent-line);background:var(--surface-raised)}
-/* featured: карточка шире остальных внутри своего блока. Раньше это считал JS
-   (span + cardCols в App.jsx), теперь — модификатор. Во вторую колонку
-   ложится текст, поэтому на узких экранах модификатор сам схлопывается. */
+.work-grid{display:grid;gap:var(--sp-9) var(--sp-6);grid-template-columns:repeat(auto-fill,minmax(min(100%,520px),1fr));grid-auto-rows:auto}
+/* Карточка без фона, рамки и скругления: превью и есть карточка,
+   текст под ним — подпись. Рамка осталась только у самого превью,
+   потому что превью — интерактивный элемент. */
+/* subgrid: превью, заголовок, мета, описание и ссылка встают в общие строки
+   сетки, поэтому строки подписи выравниваются между колонками даже когда
+   заголовки разной высоты. Без поддержки subgrid карточка остаётся обычным
+   гридом и строки просто текут — деградация, а не поломка. */
+.work-card{display:grid;gap:var(--sp-4);align-content:start;grid-row:span 5;grid-template-rows:subgrid}
 .work-card--featured{grid-column:1 / -1}
-/* Блок из одной-двух работ: карточка на всю ширину, превью и текст рядом.
-   До введения категорий это же решение принимал JS (single -> caseCols/cardCols
-   в App.jsx); :has() считает карточки без участия JS. Браузер без :has()
-   получает обычную плитку — деградация, а не поломка. */
-.work-grid:not(:has(.work-card:nth-child(3))){grid-template-columns:1fr}
-.work-grid:not(:has(.work-card:nth-child(3))) .work-card{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
-@media (min-width:760px){
-  .work-card--featured{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
-}
 .work-thumb{position:relative;display:block;width:100%;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;cursor:pointer;padding:0;background-color:var(--bg);background-image:repeating-linear-gradient(135deg,var(--surface-raised) 0 var(--thumb-stripe),var(--surface) var(--thumb-stripe) calc(var(--thumb-stripe) * 2));transition:border-color var(--dur) var(--ease)}
 .work-thumb:hover{border-color:var(--accent-line)}
 /* пропорция превью приходит из категории (поле aspect) и выбирается по белому
@@ -116,17 +150,21 @@ a:hover{color:var(--accent-warm)}
 .work-thumb--9x12{aspect-ratio:9 / 12}
 .work-thumb--1x1{aspect-ratio:1 / 1}
 .work-thumb--4x5{aspect-ratio:4 / 5}
-.thumb-label{position:absolute;inset:auto var(--sp-3) var(--sp-3) var(--sp-3);font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-dim);text-align:left}
+.thumb-label{position:absolute;inset:auto var(--sp-3) var(--sp-3) var(--sp-3);font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-mute);text-align:left}
 .work-thumb-img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}
-.play-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:var(--play-lg);height:var(--play-lg);border-radius:var(--radius-pill);background:var(--bg-blur);border:1px solid var(--accent-line);display:flex;align-items:center;justify-content:center;color:var(--accent);backdrop-filter:blur(6px)}
+.play-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:var(--play-lg);height:var(--play-lg);border-radius:var(--radius-pill);background:var(--bg-blur);border:1px solid var(--accent-line);display:flex;align-items:center;justify-content:center;color:var(--accent);backdrop-filter:blur(6px);transition:background var(--dur) var(--ease),color var(--dur) var(--ease)}
 .play-badge svg{width:calc(var(--play-lg) * .4);height:calc(var(--play-lg) * .4)}
+.work-thumb:hover .play-badge{background:var(--accent);color:var(--bg)}
 .embed-frame{display:block;width:100%;height:100%;border:0}
-.work-body{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0}
-.work-meta{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-dim)}
-.work-title{font-family:var(--font-display);font-weight:700;font-size:var(--fs-h3);line-height:1.25;letter-spacing:-.015em}
-.work-text{font-size:var(--fs-sm);color:var(--text-dim)}
-.work-link{font-size:var(--fs-sm);font-weight:500;margin-top:var(--sp-1)}
-.show-all-wrap{display:flex;justify-content:center;margin-top:var(--sp-7)}
+
+/* подпись под превью: заголовок тяжёлый, мета — тихая мелкая моноширинная */
+.work-title{font-family:var(--font-display);font-weight:var(--wt-bold);font-size:var(--fs-work);line-height:1.15;letter-spacing:-.02em;text-wrap:balance}
+/* мета собрана из трёх полей: имя клиента несёт вес, остальное — фон */
+.work-meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--sp-1) var(--sp-4);font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-mute)}
+.work-client{color:var(--text-dim)}
+.work-text{font-weight:var(--wt-light);font-size:var(--fs-sm);color:var(--text-dim);max-width:60ch}
+.work-link{font-size:var(--fs-sm);font-weight:var(--wt-medium);margin-top:var(--sp-1)}
+.show-all-wrap{display:flex;justify-content:flex-start;margin-top:var(--sp-7)}
 
 /* ---- process ---- */
 .process-list{display:grid;gap:var(--sp-6);grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
@@ -197,8 +235,17 @@ a:hover{color:var(--accent-warm)}
 .player-close:hover{border-color:var(--accent-line);color:var(--accent)}
 
 @media (max-width:820px){
+  /* Ниже 820px навигация и CTA переезжают в панель: строка шапки перестаёт
+     конкурировать за ширину, и overflow от длинной подписи CTA исчезает
+     вместе с самой кнопкой из строки. */
   .site-nav{display:none}
-  .hero{min-height:calc(100svh - var(--header-h))}
-  .hero-inner{transform:translateY(calc(var(--sp-7) * -1))}
+  .header-cta{display:none}
+  .nav-toggle{display:block}
+  .header-inner{gap:var(--sp-3)}
+  .header-actions{margin-left:auto}
+  /* компенсирующий translateY убран: композиция hero держится строками грида */
+  .hero{gap:var(--sp-6);padding-bottom:var(--sp-8)}
+  .hero-foot{gap:var(--sp-5)}
+  .work-grid{gap:var(--sp-8) var(--sp-5)}
 }
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}html{scroll-behavior:auto}}

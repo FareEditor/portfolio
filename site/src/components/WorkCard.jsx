@@ -65,12 +65,19 @@ export default function WorkCard({ w, watch, aspect }) {
           <span className="play-badge" aria-hidden="true"><PlayIcon /></span>
         </button>
       )}
-      <div className="work-body">
-        <p className="work-meta">{w.meta}</p>
-        <h4 className="work-title">{w.title}</h4>
-        <p className="work-text">{w.body}</p>
-        <a className="work-link" href={w.url} target="_blank" rel="noopener">{watch}</a>
-      </div>
+      {/* Подпись под превью: заголовок ведёт, мета и описание подчинены ему.
+          Мета собрана из трёх отдельных полей, а не склеена в строку — имя
+          клиента несёт вес, формат и хронометраж остаются фоном.
+          Обёртки нет намеренно: строки подписи лежат в гриде карточки,
+          чтобы выравниваться между колонками (subgrid в .work-card). */}
+      <h4 className="work-title">{w.title}</h4>
+      <p className="work-meta">
+        <span className="work-client">{w.client}</span>
+        <span>{w.format}</span>
+        <span>{w.duration}</span>
+      </p>
+      <p className="work-text">{w.body}</p>
+      <a className="work-link" href={w.url} target="_blank" rel="noopener">{watch}</a>
     </article>
   );
 }

@@ -105,9 +105,8 @@ export default function App({ lang }) {
     };
   }, []);
 
-  // Плеер-фасад: до клика — статичное превью. Кейс с этим youtube_id играет
-  // инлайн в своей 16:9 карточке (WorkCard); шоурил и моушн-фрагменты (9:12,
-  // 16:9 туда не влезает) открываются в модалке PlayerModal.
+  // Плеер-фасад: до клика — статичное превью. Работы играют инлайн в своих
+  // карточках (WorkCard); в модалке PlayerModal остаётся только шоурил.
   const openPlayer = (id) => setPlayingId(id);
   const closePlayer = useCallback(() => setPlayingId(null), []);
 
@@ -121,7 +120,10 @@ export default function App({ lang }) {
       youtube_id: w.youtube_id,
       thumbnail: w.thumbnail,
       featured: w.featured,
-      meta: [client, format, duration].join(" · "),
+      // мета уходит тремя полями, а не склеенной строкой: подача решается в CSS
+      client: client,
+      format: format,
+      duration: duration,
       title: title,
       body: lang === "en" ? w.body_en : w.body_ru,
       url: "https://www.youtube.com/watch?v=" + w.youtube_id,
@@ -178,9 +180,7 @@ export default function App({ lang }) {
     code: code,
     label: code,
     href: code === "ru" ? "/ru/" : "/",
-    active: lang === code,
-    bg: lang === code ? "var(--accent-soft)" : "transparent",
-    fg: lang === code ? "var(--accent)" : "var(--text-dim)"
+    active: lang === code
   }));
 
   // INTEGRATION: запись выбора языка в localStorage
@@ -242,6 +242,7 @@ export default function App({ lang }) {
         navItems={navItems}
         langLinks={langLinks}
         cta={c.cta}
+        menuLabel={c.menu}
         headerRef={headerRef}
         onLangSwitch={switchLang}
       />

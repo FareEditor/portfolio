@@ -113,6 +113,7 @@
     ]
   },
   "cta": "Discuss your project",
+  "menu": "[SLOT: mobile menu button label, EN, 1 word, role — open navigation on phone]",
   "work": {
     "eyebrow": "My work",
     "title": "Long-form videos",

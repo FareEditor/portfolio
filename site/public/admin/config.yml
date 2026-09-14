@@ -31,6 +31,7 @@ collections:
         file: site/src/data/content/ru.json
         fields:
           - { label: CTA в шапке, name: cta, widget: string }
+          - { label: Подпись кнопки меню, name: menu, widget: string, hint: "Доступная подпись кнопки мобильного меню. Видна скринридеру, на экране кнопка показана значком." }
           - label: Навигация
             name: nav
             widget: list
@@ -181,6 +182,7 @@ collections:
         file: site/src/data/content/en.json
         fields:
           - { label: Header CTA, name: cta, widget: string }
+          - { label: Menu button label, name: menu, widget: string, hint: "Accessible label for the mobile menu button. Read by screen readers; on screen the button shows an icon." }
           - label: Navigation
             name: nav
             widget: list
