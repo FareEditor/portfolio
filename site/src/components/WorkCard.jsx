@@ -1,19 +1,43 @@
 import { useState } from 'react';
 import PlayIcon from './PlayIcon.jsx';
 
-export default function WorkCard({ w, watch }) {
+// Пропорция превью — свойство категории. Белый список: значение из CMS не попадает
+// в разметку напрямую, неизвестный aspect молча откатывается на 16:9.
+const ASPECT_CLASS = {
+  '16:9': 'work-thumb--16x9',
+  '9:12': 'work-thumb--9x12',
+  '1:1': 'work-thumb--1x1',
+  '4:5': 'work-thumb--4x5',
+};
+const DEFAULT_ASPECT = '16:9';
+
+export function aspectClass(aspect) {
+  return ASPECT_CLASS[aspect] || ASPECT_CLASS[DEFAULT_ASPECT];
+}
+
+// Отношение сторон для width/height на <img>: резервирует место до загрузки картинки.
+const ASPECT_BOX = {
+  '16:9': [1280, 720],
+  '9:12': [900, 1200],
+  '1:1': [1000, 1000],
+  '4:5': [1000, 1250],
+};
+
+export default function WorkCard({ w, watch, aspect }) {
   // Битая картинка → полосатая заглушка. Начальное состояние «картинка есть»,
   // чтобы SSR-разметка и первый клиентский рендер совпадали; onError бывает
   // только в браузере.
   const [imgFailed, setImgFailed] = useState(false);
   const showImg = Boolean(w.thumbnail) && !imgFailed;
+  const [boxW, boxH] = ASPECT_BOX[aspect] || ASPECT_BOX[DEFAULT_ASPECT];
+  const thumbClass = 'work-thumb ' + aspectClass(aspect);
 
   return (
-    <article className="work-card" style={{ gridColumn: w.span, gridTemplateColumns: w.cardCols }}>
+    <article className={'work-card' + (w.featured ? ' work-card--featured' : '')}>
       {/* Плеер-фасад: iframe (youtube-nocookie, без трекинг-куки до согласия)
           монтируется только по клику — до этого лишь статичное превью */}
       {w.playing ? (
-        <div className="work-thumb">
+        <div className={thumbClass}>
           <iframe
             className="embed-frame"
             src={"https://www.youtube-nocookie.com/embed/" + w.youtube_id + "?autoplay=1"}
@@ -23,7 +47,7 @@ export default function WorkCard({ w, watch }) {
           ></iframe>
         </div>
       ) : (
-        <button className="work-thumb" type="button" data-youtube-id={w.youtube_id} data-thumbnail={w.thumbnail} onClick={w.play} aria-label={w.playLabel}>
+        <button className={thumbClass} type="button" data-youtube-id={w.youtube_id} data-thumbnail={w.thumbnail} onClick={w.play} aria-label={w.playLabel}>
           {showImg && (
             <img
               className="work-thumb-img"
@@ -32,8 +56,8 @@ export default function WorkCard({ w, watch }) {
               aria-hidden="true"
               loading="lazy"
               decoding="async"
-              width="1280"
-              height="720"
+              width={boxW}
+              height={boxH}
               onError={() => setImgFailed(true)}
             />
           )}
@@ -43,7 +67,7 @@ export default function WorkCard({ w, watch }) {
       )}
       <div className="work-body">
         <p className="work-meta">{w.meta}</p>
-        <h3 className="work-title">{w.title}</h3>
+        <h4 className="work-title">{w.title}</h4>
         <p className="work-text">{w.body}</p>
         <a className="work-link" href={w.url} target="_blank" rel="noopener">{watch}</a>
       </div>

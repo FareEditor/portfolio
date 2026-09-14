@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // INTEGRATION: site copy is managed in Decap CMS via data/content/*.json.
 import ru from './data/content/ru.json';
 import en from './data/content/en.json';
-import { WORKS } from './data/works.js';
+import { CATEGORIES } from './data/works.js';
 import settings from './data/settings.json';
 import Header from './components/Header.jsx';
 import Hero from './components/Hero.jsx';
@@ -33,7 +33,6 @@ export default function App({ lang }) {
   const c = CONTENT[lang];
 
   const [openFaq, setOpenFaq] = useState(-1);
-  const [showAll, setShowAll] = useState(false);
   const [form, setForm] = useState("idle");
   const [invalid, setInvalid] = useState({});
   const [selects, setSelects] = useState({ project_type: "", budget: "" });
@@ -112,15 +111,16 @@ export default function App({ lang }) {
   const openPlayer = (id) => setPlayingId(id);
   const closePlayer = useCallback(() => setPlayingId(null), []);
 
-  const mapWork = (w, extra) => {
+  const mapWork = (w) => {
     const client = lang === "en" ? w.client_en : w.client;
     const format = lang === "en" ? w.format_en : w.format;
     const duration = lang === "en" ? w.duration_en : w.duration;
     const title = lang === "en" ? w.title_en : w.title_ru;
-    return Object.assign({
+    return {
       key: w.slug,
       youtube_id: w.youtube_id,
       thumbnail: w.thumbnail,
+      featured: w.featured,
       meta: [client, format, duration].join(" · "),
       title: title,
       body: lang === "en" ? w.body_en : w.body_ru,
@@ -129,7 +129,7 @@ export default function App({ lang }) {
       playLabel: c.work.play + " — " + title,
       playing: playingId === w.youtube_id,
       play: () => openPlayer(w.youtube_id)
-    }, extra || {});
+    };
   };
 
   const submit = (e) => {
@@ -154,26 +154,18 @@ export default function App({ lang }) {
       .catch(() => setForm("error"));
   };
 
-  const published = WORKS.filter((w) => w.published).sort((a, b) => a.order - b.order);
-  const cases = published.filter((w) => w.type === "case");
-  const motion = published.filter((w) => w.type === "motion");
+  // Фильтрация и сортировка уже выполнены в data/works.js — здесь только локализация.
+  const categories = CATEGORIES.map((category) => ({
+    slug: category.slug,
+    aspect: category.aspect,
+    title: lang === "en" ? category.title_en : category.title_ru,
+    blurb: lang === "en" ? category.blurb_en : category.blurb_ru,
+    works: category.works.map(mapWork)
+  }));
 
-  // адаптивная раскладка по количеству кейсов: 1–2 → одна колонка, 3–6 → две, 7+ → две + «показать все»
-  const n = cases.length;
-  const single = n <= 2;
-  const caseCols = single ? "1fr" : "repeat(auto-fit,minmax(min(100%,420px),1fr))";
-  const capped = n >= 7 && !showAll;
-  const visible = capped ? cases.slice(0, 6) : cases;
-
-  const visibleCases = visible.map((w) =>
-    mapWork(w, {
-      span: !single && w.featured ? "1 / -1" : "auto",
-      cardCols: single || (!single && w.featured) ? "repeat(auto-fit,minmax(min(100%,340px),1fr))" : "1fr"
-    })
-  );
-
-  // В модалку уходит всё, что не играет инлайн в карточке кейса
-  const modalId = playingId && !cases.some((w) => w.youtube_id === playingId) ? playingId : null;
+  // Все карточки играют инлайн, поэтому модалка остаётся только за шоурилом
+  const inlineIds = CATEGORIES.flatMap((category) => category.works.map((w) => w.youtube_id));
+  const modalId = playingId && !inlineIds.includes(playingId) ? playingId : null;
   const playerLabels = lang === "en"
     ? { label: "Video player", close: "Close" }
     : { label: "Видеоплеер", close: "Закрыть" };
@@ -258,17 +250,11 @@ export default function App({ lang }) {
         <Hero
           c={{ ...c.hero, status: lang === "en" ? settings.status_en : settings.status }}
           showreelId={settings.showreel_id}
+          showreelEnabled={settings.showreel_enabled}
           openPlayer={openPlayer}
         />
         <Proof c={c.proof} />
-        <Work
-          c={c.work}
-          caseCols={caseCols}
-          visibleCases={visibleCases}
-          hasMoreCases={capped}
-          showAllCases={() => setShowAll(true)}
-          motionItems={motion.map((w) => mapWork(w))}
-        />
+        <Work c={c.work} categories={categories} />
         <Process c={c.process} />
         <Why c={c.why} />
         <Faq c={c.faq} faqItems={faqItems} />

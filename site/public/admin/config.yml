@@ -326,6 +326,58 @@ collections:
                   - { label: Label, name: label, widget: string }
                   - { label: URL, name: href, widget: string }
 
+  - name: categories
+    label: Категории работ
+    label_singular: Категория
+    folder: site/src/data/categories
+    format: json
+    extension: json
+    create: true
+    identifier_field: slug
+    slug: "{{fields.slug}}"
+    summary: "{{order}} · {{title_ru}}"
+    sortable_fields: ["order"]
+    fields:
+      - label: Slug
+        name: slug
+        widget: string
+        hint: "Имя файла и постоянный ключ категории — на него ссылаются работы. Только строчные латинские буквы, цифры и дефис. После публикации не менять."
+        pattern: ["^[a-z0-9-]+$", "Только строчные латинские буквы, цифры и дефис"]
+      - label: Опубликовано
+        name: published
+        widget: boolean
+        default: true
+        hint: "Снимите, чтобы убрать блок категории с сайта. Блок без опубликованных работ не показывается в любом случае."
+      - label: Порядок
+        name: order
+        widget: number
+        value_type: int
+        hint: "Позиция блока в секции работ, сортировка по возрастанию."
+      - label: Заголовок (RU)
+        name: title_ru
+        widget: string
+        hint: "Заголовок блока для русской версии."
+      - label: Заголовок (EN)
+        name: title_en
+        widget: string
+        hint: "Заголовок блока для английской версии — самостоятельный текст, не перевод."
+      - label: Подпись (RU)
+        name: blurb_ru
+        widget: string
+        required: false
+        hint: "Необязательная строка под заголовком для русской версии."
+      - label: Подпись (EN)
+        name: blurb_en
+        widget: string
+        required: false
+        hint: "То же для английской версии. Не перевод — своя формулировка."
+      - label: Пропорция превью
+        name: aspect
+        widget: select
+        options: ["16:9", "9:12", "1:1", "4:5"]
+        default: "16:9"
+        hint: "Форма превью у всех работ этой категории. 16:9 — горизонтальное видео, 9:12 — вертикальное."
+
   - name: works
     label: Работы
     label_singular: Работа
@@ -348,17 +400,19 @@ collections:
         widget: boolean
         default: true
         hint: "Снимите, чтобы скрыть работу с сайта без удаления файла."
-      - label: Тип
-        name: type
-        widget: select
-        options: ["case", "motion"]
-        default: "case"
-        hint: "case — карточка в сетке кейсов (16:9), motion — вертикальный фрагмент (9:12) в ленте «Моушн-фрагменты»."
-      - label: На всю ширину
+      - label: Категория
+        name: category
+        widget: relation
+        collection: categories
+        search_fields: ["slug", "title_ru", "title_en"]
+        value_field: slug
+        display_fields: ["title_ru"]
+        hint: "Блок, в котором показывается работа. Пропорция превью берётся из категории."
+      - label: Шире остальных
         name: featured
         widget: boolean
         default: false
-        hint: "Кейс занимает всю ширину сетки. Работает только для типа case и когда кейсов три и больше."
+        hint: "Карточка занимает всю ширину сетки внутри своего блока категории."
       - label: Порядок
         name: order
         widget: number
@@ -429,10 +483,15 @@ collections:
             name: status_en
             widget: string
             hint: "То же для английской версии, напр. «Available for projects»."
+          - label: Показывать кнопку шоурила
+            name: showreel_enabled
+            widget: boolean
+            default: false
+            hint: "Включает кнопку шоурила на первом экране. При выключенном переключателе кнопки нет."
           - label: Showreel ID
             name: showreel_id
             widget: string
-            hint: "YouTube ID шоурила (11 символов). Пока плеер не подключён — временная заглушка."
+            hint: "YouTube ID шоурила (11 символов). Используется, когда переключатель выше включён."
           - label: Контакт напрямую (RU)
             name: contact_url
             widget: string

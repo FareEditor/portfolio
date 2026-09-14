@@ -1,0 +1,10 @@
+{
+  "slug": "talking-head",
+  "published": true,
+  "order": 1,
+  "title_ru": "[SLOT: заголовок блока категории talking-head, RU, 1-3 слова]",
+  "title_en": "[SLOT: category block heading for talking-head, EN, 1-3 words]",
+  "blurb_ru": "[SLOT: подпись под заголовком talking-head, RU, 1 строка, ~60 знаков, роль — пояснить что за формат]",
+  "blurb_en": "[SLOT: sub-heading blurb for talking-head, EN, 1 line, ~60 chars, role — explain the format]",
+  "aspect": "16:9"
+}
