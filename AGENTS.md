@@ -21,19 +21,26 @@ into project enquiries. Not a showcase, not an art piece.
 - Keep dependencies minimal. Every new package needs a stated reason.
 - Prefer explicit configuration over convention-based magic.
 
-## Design source of truth
+## Design history
 
-`design/FARE-Landing.dc.html` is the approved design, produced in Codex Design.
-It uses a proprietary template runtime (`<x-dc>`, `<sc-for>`, `<sc-if>`, `{{ }}`)
-that does NOT run here — it is a reference, not code to execute.
+`design/FARE_Landing_dc.html` is the original approved design, produced in
+Claude Design. It uses a proprietary template runtime (`<x-dc>`, `<sc-for>`,
+`<sc-if>`, `{{ }}`) that does NOT run here.
 
-When porting:
-- Copy the `:root` token block verbatim. Do not rename or re-derive tokens.
-- Copy the CSS class rules as-is. Class names are already semantic.
-- Convert `<sc-for>` to `.map()`, `<sc-if>` to conditional rendering,
-  `{{ x }}` to JSX expressions.
-- The ten remaining inline `style` attributes are state-dependent by design.
-  Keep them inline in JSX; do not move them to CSS.
+**It is a historical artefact, not the source of truth.** The site has since
+moved to its own visual direction: tokens, type scale and CSS rules have been
+redefined and no longer match that file. Read it for provenance only — do not
+port from it, do not re-derive tokens from it, do not treat divergence from it
+as a defect.
+
+Current source of truth:
+- `site/src/styles/tokens.css` — design tokens.
+- `site/src/styles/app.css` — component styles.
+
+Standing rules that survived the redesign:
+- Presentation values (colours, opacity, transforms, layout strings) live in
+  CSS, not in props and not in `element.style`. Use a class or a custom
+  property.
 - Preserve every `INTEGRATION:` comment as a code comment at the same location.
 
 ## Content rules

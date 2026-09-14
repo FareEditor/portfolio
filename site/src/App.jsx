@@ -40,6 +40,8 @@ export default function App({ lang }) {
 
   const playheadRef = useRef(null);
   const headerRef = useRef(null);
+  const sentinelRef = useRef(null);
+  const headerIoRef = useRef(null);
   const ioRef = useRef(null);
   const triggeredRef = useRef(false);
   const safetyRef = useRef(0);
@@ -59,15 +61,10 @@ export default function App({ lang }) {
     const d = document.documentElement;
     const max = d.scrollHeight - window.innerHeight;
     const p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
-    if (playheadRef.current) playheadRef.current.style.width = (p * 100).toFixed(2) + "%";
+    // ширина индикатора — единственное, что остаётся вычисляемым:
+    // это доля прокрутки, а не оформление
+    if (playheadRef.current) playheadRef.current.style.setProperty("--playhead", p.toFixed(4));
     revealInView();
-    const h = headerRef.current;
-    if (h) {
-      const on = window.scrollY > 24;
-      h.style.background = on ? "var(--bg-blur)" : "transparent";
-      h.style.borderBottomColor = on ? "var(--line)" : "transparent";
-      h.style.backdropFilter = on ? "blur(14px)" : "none";
-    }
   };
 
   const setupReveal = () => {
@@ -92,6 +89,14 @@ export default function App({ lang }) {
     window.addEventListener("resize", onScroll, { passive: true });
     onScroll();
     setupReveal();
+    // Состояние «страница прокручена» — пересечение сентинела, а не порог в px.
+    // Высота сентинела задана в CSS, магического числа в JS нет.
+    if (sentinelRef.current && headerRef.current) {
+      headerIoRef.current = new IntersectionObserver(
+        ([entry]) => headerRef.current.classList.toggle("is-scrolled", !entry.isIntersecting)
+      );
+      headerIoRef.current.observe(sentinelRef.current);
+    }
     // страховка: если ни scroll, ни IO не сработали (страница во фрейме) — показываем всё
     safetyRef.current = setTimeout(() => {
       revealInView();
@@ -102,6 +107,7 @@ export default function App({ lang }) {
       window.removeEventListener("resize", onScroll);
       clearTimeout(safetyRef.current);
       if (ioRef.current) ioRef.current.disconnect();
+      if (headerIoRef.current) headerIoRef.current.disconnect();
     };
   }, []);
 
@@ -233,6 +239,8 @@ export default function App({ lang }) {
 
   return (
     <>
+      <div className="scroll-sentinel" ref={sentinelRef} aria-hidden="true"></div>
+
       <div className="playhead">
         <div className="playhead-fill" ref={playheadRef}></div>
       </div>

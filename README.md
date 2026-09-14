@@ -33,14 +33,16 @@ transitions and hand-written observers only.
 
 ```
 .gitlab-ci.yml                two pipelines: site → GitLab Pages, worker → Cloudflare
-CLAUDE.md                     working notes for Claude Code
+AGENTS.md                     working notes for coding agents (identical to CLAUDE.md)
+CLAUDE.md                     working notes for Claude Code (identical to AGENTS.md)
 COPYRIGHT                     which paths are GPL-3.0 and which are all rights reserved
 LICENSE                       GPL-3.0 text; applies to the code only
 design/
-  FARE_Landing_dc.html        the approved design, produced in Claude Design, kept as a
-                              reference. It uses a proprietary template runtime
-                              (<x-dc>, <sc-for>, <sc-if>, {{ }}) that does not execute
-                              here. Read it, do not run it.
+  FARE_Landing_dc.html        the original design, produced in Claude Design. Historical
+                              artefact, not the source of truth: the site has since moved
+                              to its own visual direction and no longer matches this file.
+                              It uses a proprietary template runtime (<x-dc>, <sc-for>,
+                              <sc-if>, {{ }}) that does not execute here.
 site/
   index.html                  English document (/): canonical, hreflang, first-visit redirect
   ru/index.html               Russian document (/ru/)
@@ -59,8 +61,8 @@ site/
     data/works/*.json         one file per work, written by the CMS
     data/works.js             glob, filter on `published`, sort on `order`
     data/settings.json        site settings, written by the CMS
-    fonts/                    subset woff2: Inter, Manrope, JetBrains Mono
-    styles/tokens.css         design tokens, copied verbatim from the design file
+    fonts/                    subset woff2: Onest (variable), JetBrains Mono
+    styles/tokens.css         design tokens, the source of truth for the visual system
     styles/app.css            component styles
 worker/
   wrangler.jsonc              Worker name, route, KV binding

@@ -11,10 +11,6 @@ const ASPECT_CLASS = {
 };
 const DEFAULT_ASPECT = '16:9';
 
-export function aspectClass(aspect) {
-  return ASPECT_CLASS[aspect] || ASPECT_CLASS[DEFAULT_ASPECT];
-}
-
 // Отношение сторон для width/height на <img>: резервирует место до загрузки картинки.
 const ASPECT_BOX = {
   '16:9': [1280, 720],
@@ -30,7 +26,7 @@ export default function WorkCard({ w, watch, aspect }) {
   const [imgFailed, setImgFailed] = useState(false);
   const showImg = Boolean(w.thumbnail) && !imgFailed;
   const [boxW, boxH] = ASPECT_BOX[aspect] || ASPECT_BOX[DEFAULT_ASPECT];
-  const thumbClass = 'work-thumb ' + aspectClass(aspect);
+  const thumbClass = 'work-thumb ' + (ASPECT_CLASS[aspect] || ASPECT_CLASS[DEFAULT_ASPECT]);
 
   return (
     <article className={'work-card' + (w.featured ? ' work-card--featured' : '')}>

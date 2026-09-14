@@ -35,7 +35,7 @@ function CategoryBlock({ category, watch, showAllLabel }) {
 
 export default function Work({ c, categories }) {
   return (
-    <section className="section" id="work" aria-labelledby="work-title">
+    <section className="section section--work" id="work" aria-labelledby="work-title">
       <div className="section-head section-head--plain" data-reveal="true">
         <span className="eyebrow">{c.eyebrow}</span>
         <h2 className="section-title" id="work-title">{c.title}</h2>

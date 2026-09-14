@@ -1,47 +1,28 @@
 /* ---- self-hosted fonts (Google Fonts subsets, latin + cyrillic) ---- */
-/* Inter и Manrope — variable: одна ось wght на файл (fvar: Inter 100-900,
-   Manrope 200-800). Раньше на каждый файл приходилось по два @font-face с
-   дискретными весами — это запирало ось. Диапазон объявляется один раз;
-   браузер грузит тот же файл, число сетевых запросов не меняется. */
+/* Onest — одна вариативная гарнитура на весь сайт, ось wght 100..900
+   (проверено разбором fvar в самих файлах; Google объявляет 300..800,
+   фактический диапазон шире). Лицензия SIL OFL 1.1.
+   Один @font-face на файл, вес — диапазоном: ось не запирается.
+   JetBrains Mono — static, единственный вес 500, работает как разметка. */
 
 /* cyrillic */
 @font-face {
-  font-family: 'Inter';
+  font-family: 'Onest';
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url(../fonts/inter-cyrillic.woff2) format('woff2');
+  src: url(../fonts/onest-cyrillic.woff2) format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 /* latin */
 @font-face {
-  font-family: 'Inter';
+  font-family: 'Onest';
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url(../fonts/inter-latin.woff2) format('woff2');
+  src: url(../fonts/onest-latin.woff2) format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
-/* cyrillic */
-@font-face {
-  font-family: 'Manrope';
-  font-style: normal;
-  font-weight: 200 800;
-  font-display: swap;
-  src: url(../fonts/manrope-cyrillic.woff2) format('woff2');
-  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
-}
-/* latin */
-@font-face {
-  font-family: 'Manrope';
-  font-style: normal;
-  font-weight: 200 800;
-  font-display: swap;
-  src: url(../fonts/manrope-latin.woff2) format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-/* JetBrains Mono — static, единственный вес 500. Диапазон не объявляем,
-   синтетическое начертание не используем. */
 /* cyrillic */
 @font-face {
   font-family: 'JetBrains Mono';
@@ -62,39 +43,46 @@
 }
 
 /* ---- DESIGN TOKENS ---- */
+/* Светлая тема — единственная. Нейтрали слегка уведены в холод, чтобы
+   остаться в голубой семье бренда. Контрастные отношения посчитаны:
+   см. раздел «Светлая тема» в отчёте этапа. */
 :root{
-  --bg:#0B0D12;
-  --surface:#12151C;
-  --surface-raised:#181C25;
-  --line:#232833;
-  /* волосяная линия — основной разделитель вместо рамок; тише, чем --line */
-  --hairline:#1B1F28;
-  --text:#EDEFF3;
-  --text-dim:#8C94A3;
-  /* служебная разметка (eyebrow, мета): тише, чем --text-dim */
-  --text-mute:#666E7C;
-  --accent:#4DA3FF;
-  --accent-warm:#E8A33D;
-  --live:#45C08A;
+  --bg:#FBFCFD;
+  --surface:#F2F5F8;
+  --surface-raised:#E9EEF4;
+  /* --line — граница интерактивных элементов, держит 3:1 к фону.
+     --hairline — тихий разделитель, контраст к нему не предъявляется. */
+  --line:#7E8C9E;
+  --hairline:#E3E9F0;
+  --text:#0E1319;
+  --text-dim:#4A5566;
+  --text-mute:#5C6878;
+  --accent:#0B62D6;
+  --accent-warm:#9A6212;
+  --live:#1B7A4F;
 
-  --accent-soft:rgba(77,163,255,.12);
-  --accent-line:rgba(77,163,255,.32);
-  --bg-blur:rgba(11,13,18,.82);
-  --shadow-card:0 1px 0 rgba(255,255,255,.03) inset;
-  --live-halo:rgba(69,192,138,.45);
-  --live-halo-0:rgba(69,192,138,0);
-  --on-accent-dim:rgba(11,13,18,.3);
+  --accent-soft:rgba(11,98,214,.10);
+  --accent-line:rgba(11,98,214,.34);
+  /* подложка плавающей капсулы header и оверлея плеера */
+  --bg-blur:rgba(251,252,253,.78);
+  --live-halo:rgba(27,122,79,.38);
+  --live-halo-0:rgba(27,122,79,0);
+  --on-accent-dim:rgba(251,252,253,.35);
+  /* затемнение под модалкой: на светлой странице подложка обязана быть тёмной */
+  --scrim:rgba(14,19,25,.58);
+  /* тень капсулы: на светлом фоне отделяет её от контента под ней */
+  --shadow-capsule:0 1px 2px rgba(14,19,25,.05),0 8px 24px rgba(14,19,25,.07);
 
-  --font-display:'Manrope',system-ui,sans-serif;
-  --font-body:'Inter',system-ui,sans-serif;
+  /* одна гарнитура на весь текст; display и body различаются весом и кеглем,
+     имена токенов сохранены, чтобы не переписывать правила */
+  --font-display:'Onest',system-ui,sans-serif;
+  --font-body:'Onest',system-ui,sans-serif;
   --font-mono:'JetBrains Mono',ui-monospace,monospace;
 
-  /* вес — главный инструмент иерархии; значения внутри осей fvar
-     (Inter 100-900, Manrope 200-800) */
+  /* вес — главный инструмент иерархии; значения внутри оси Onest 100..900 */
   --wt-light:300;
   --wt-regular:400;
   --wt-medium:500;
-  --wt-semibold:600;
   --wt-bold:700;
   --wt-black:800;
 
@@ -122,10 +110,14 @@
   --dur-slow:620ms;
   --ease:cubic-bezier(.22,.61,.36,1);
 
+  /* текстовая рейка держит меру 60-75 знаков; медиа идёт шире неё */
   --container:1200px;
+  --container-wide:1640px;
+  --measure:68ch;
   --gutter:clamp(20px,5vw,40px);
   --section-y:clamp(72px,9vw,132px);
   --header-h:68px;
+  --header-top:clamp(10px,1.4vw,18px);
   --tracking-mono:.16em;
   --tracking-wordmark:.28em;
   --thumb-stripe:10px;
