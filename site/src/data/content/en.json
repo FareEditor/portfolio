@@ -1,140 +1,178 @@
 {
-  "cta": "Start a project",
-  "nav": ["Work", "Process", "About", "Contact"],
-  "hero": {
-    "title": "Long-form video editing and motion graphics",
-    "sub": "Full post-production in one place — cut, graphics, sound, colour. You send the footage, you get a finished video.",
-    "primary": "View work",
-    "secondary": "Watch showreel"
-  },
-  "proof": {
-    "eyebrow": "TRUSTED BY",
-    "title": "Worked with YouTube channels totalling",
-    "number": "1,300,000+ subscribers",
-    "industries": "Gaming · Real estate · Personal brands · Economics & finance"
-  },
-  "work": {
-    "eyebrow": "WORK",
-    "title": "Selected projects",
-    "motionTitle": "Motion fragments",
-    "watch": "Watch on YouTube ↗",
-    "showAll": "Show all",
-    "play": "Play",
-    "thumb": "16:9 preview"
-  },
-  "process": {
-    "eyebrow": "HOW IT WORKS",
-    "title": "Three steps to a finished video",
-    "steps": [
+  "contact": {
+    "project_type": [
       {
-        "tc": "BEFORE DAY 1",
-        "title": "Brief",
-        "body": "We go over the project, references and deadline. Timelines are agreed upfront; if yours is tight, say so early. The clock starts when the footage arrives."
+        "value": "long_form",
+        "label": "Long-form video (10+ minutes)"
       },
       {
-        "tc": "DAY 1–6",
-        "title": "Edit",
-        "body": "Rough cut for approval, then revisions. You see progress, not a week of silence."
+        "value": "motion_graphics",
+        "label": "Motion graphics"
+      },
+      {
+        "value": "series",
+        "label": "Video series"
+      },
+      {
+        "value": "other",
+        "label": "Other"
+      }
+    ],
+    "success": "Request sent. Please expect a reply within 24 hours.",
+    "micro": "I use your details only to respond to your enquiry. I retain them for 90 days, then delete them.",
+    "budget": [
+      {
+        "value": "200_500",
+        "label": "$200–500"
+      },
+      {
+        "value": "500_1000",
+        "label": "$500–1,000"
+      },
+      {
+        "value": "1000_2000",
+        "label": "$1,000–2,000"
+      },
+      {
+        "value": "2000_plus",
+        "label": "$2,000+"
+      }
+    ],
+    "hint": "Please specify the platform and your username. For example: @FareEditor on Telegram.",
+    "error": "Unable to send your request. Please check your connection and try again, or contact me directly on Telegram.",
+    "alt": "Or contact me directly on Telegram →",
+    "eyebrow": "GET IN TOUCH",
+    "reply": "I reply within 24 hours",
+    "text": "Briefly describe your project. If it interests me, I will reply within 24 hours.",
+    "button": "Send enquiry",
+    "choose": "Select",
+    "title": "Tell me about your project",
+    "sending": "Sending",
+    "required": "Required field",
+    "labels": {
+      "name": "Your name",
+      "contact": "How can I reach you?",
+      "project_type": "What type of project do you have?",
+      "budget": "What is your budget?",
+      "message": "Briefly describe your project"
+    }
+  },
+  "nav": [
+    "My work",
+    "Process",
+    "Why work with me",
+    "Contact"
+  ],
+  "proof": {
+    "eyebrow": "CLIENT EXPERIENCE",
+    "title": "I have worked with channels with a combined audience of",
+    "number": "1,300,000+ subscribers",
+    "industries": "Across gaming, real estate, personal brands, economics and finance"
+  },
+  "why": {
+    "eyebrow": "WHY WORK WITH ME?",
+    "title": "More than effective editing. Here is what I bring to your project",
+    "items": [
+      {
+        "title": "No low-quality AI-generated content",
+        "body": "I do not use generative AI unless you explicitly request it. No AI upscaling, synthetic voices or AI-generated images. All materials come from publicly available sources and are cleared for use without platform claims."
+      },
+      {
+        "title": "Asynchronous communication",
+        "body": "I work with creators across time zones in Russian and English. We communicate asynchronously, ensuring your project is delivered on time."
+      },
+      {
+        "title": "Long-term collaboration",
+        "body": "I can move straight from one completed project to the next and remain consistently available over the long term. Most client engagements have ended before my capacity to continue supporting them did."
+      },
+      {
+        "title": "Automated routine tasks",
+        "body": "I automate routine tasks, such as organising source footage, with custom plugins. This frees up more time for editing and reduces time spent on repetitive work."
+      }
+    ]
+  },
+  "process": {
+    "eyebrow": "HOW WE WORK",
+    "title": "Our collaboration follows three stages",
+    "steps": [
+      {
+        "tc": "BEFORE YOU SEND THE FOOTAGE",
+        "title": "Project agreement",
+        "body": "We discuss the brief, the volume of source footage, references and deadlines. I accept urgent projects at a higher rate."
+      },
+      {
+        "tc": "DAYS 1–6",
+        "title": "Editing",
+        "body": "Once I receive the footage, I begin editing. I send drafts for your review and approval, incorporating your feedback. You see progress throughout the process."
       },
       {
         "tc": "DAY 7",
-        "title": "Delivery",
-        "body": "Final master in the formats you need. A 10-minute video takes one week from start."
+        "title": "Final delivery",
+        "body": "I deliver the final version via your preferred storage service. A 10-minute video with motion graphics typically takes one full week to complete."
       }
     ]
   },
-  "why": {
-    "eyebrow": "WHY ME",
-    "title": "What you get besides the edit",
-    "items": [
-      {
-        "title": "No generative AI",
-        "body": "No AI upscaling, no synthetic voices, no generated inserts. Every asset is cleared — no surprises from the platforms later."
-      },
-      {
-        "title": "Russian and English",
-        "body": "I work with creators in any time zone. Communication is asynchronous and deadlines don't suffer for it."
-      },
-      {
-        "title": "19 months on a single channel",
-        "body": "From October 2023 to May 2025 I was the in-house editor for gaming channel Eiriley, which grew by 15,000 subscribers over that period. I'm built for long-term work, not one-off jobs."
-      },
-      {
-        "title": "I write my own tools",
-        "body": "Routine work — sorting and prepping footage — gets automated in code rather than done by hand. Less time on logistics, more on the edit."
-      }
-    ]
+  "cta": "Discuss your project",
+  "work": {
+    "eyebrow": "My work",
+    "title": "Long-form videos",
+    "motionTitle": "Motion graphics highlights",
+    "watch": "Watch on YouTube ↗",
+    "showAll": "Show all",
+    "play": "Watch",
+    "thumb": "16:9 preview"
   },
   "faq": {
-    "eyebrow": "QUESTIONS",
-    "title": "What clients usually ask",
+    "eyebrow": "F.A.Q",
+    "title": "Frequently asked questions",
     "items": [
       {
-        "q": "What does it cost?",
-        "a": "It depends on runtime, the amount of graphics and the deadline. The floor is $200. I give an exact quote after the brief and a rough range in my first reply."
+        "q": "How much do your services cost?",
+        "a": "The final price depends on the references, the volume of source footage and the delivery deadline. Long-form videos start at $200. We agree on the exact price during our discussion."
       },
       {
-        "q": "How long does it take?",
-        "a": "A 10-minute video takes one week from start. Timelines are agreed before work begins — if you have a hard deadline, mention it in your first message."
+        "q": "How long does editing take?",
+        "a": "A 10-minute video with a moderate amount of motion graphics is completed within a week. We agree on deadlines in advance, and I guarantee that I will meet them."
       },
       {
-        "q": "How do I send the footage?",
-        "a": "Whatever works for you: Google Drive, Dropbox, any file host. We'll settle format and codec at the brief so nothing gets compressed twice."
+        "q": "How should I send you the footage?",
+        "a": "Use whichever method suits you: Google Drive, Dropbox, Nextcloud, your own FTP server or another file-sharing service. The only requirement is that the service supports high-speed downloads."
       },
       {
-        "q": "How many revisions are included?",
-        "a": "Two rounds within the agreed scope. Beyond that we discuss it — at that point it's usually a change of direction rather than a fix."
+        "q": "How many revisions are included in the price?",
+        "a": "I include two rounds of revisions in the project budget as standard. Any further rounds are agreed separately, as these usually involve a change in the project concept rather than refinements to the existing edit."
       },
       {
-        "q": "Do you work with clients abroad?",
-        "a": "Yes. Russian and English, fully asynchronous, time zones aren't a factor."
+        "q": "Do you work with international clients?",
+        "a": "Yes. I work with clients in CIS and Western markets in Russian and English, delivering the highest quality for clients anywhere in the world."
       },
       {
-        "q": "Do you use AI?",
-        "a": "No. Not for footage, not for voice, not for upscaling. Everything is done by hand and every asset is cleared."
+        "q": "Do you use AI in your work?",
+        "a": "Only if you explicitly request it. Otherwise, I do not use AI-generated voices, graphics or inserts. Everything is created or sourced manually, without generative AI."
       }
     ]
   },
-  "contact": {
-    "eyebrow": "CONTACT",
-    "title": "Tell me about the project",
-    "text": "Describe the job in a couple of lines — I'll come back with a price range and a timeline.",
-    "reply": "I reply within 24 hours",
-    "labels": {
-      "name": "Your name",
-      "contact": "How to reach you",
-      "project_type": "Project type",
-      "budget": "Budget",
-      "message": "About the project"
-    },
-    "hint": "Email, Telegram — whatever suits you",
-    "choose": "Select",
-    "required": "Required",
-    "button": "Send request",
-    "sending": "Sending",
-    "success": "Request sent. I'll reply within 24 hours.",
-    "error": "Couldn't send that. Check your connection and try again — or reach out on X.",
-    "alt": "Or message me on X →",
-    "micro": "Your details are used only to reply to this request. Stored for 90 days, then deleted.",
-    "project_type": [
-      { "value": "long_form", "label": "Long-form video (10+ minutes)" },
-      { "value": "motion_graphics", "label": "Motion graphics" },
-      { "value": "series", "label": "Video series" },
-      { "value": "other", "label": "Something else" }
-    ],
-    "budget": [
-      { "value": "200_500", "label": "$200–500" },
-      { "value": "500_1000", "label": "$500–1,000" },
-      { "value": "1000_2000", "label": "$1,000–2,000" },
-      { "value": "2000_plus", "label": "$2,000+" }
-    ]
+  "hero": {
+    "title": "Complete video editing and motion graphics: from raw footage to final delivery",
+    "sub": "I handle the entire editing process: assembly, colour correction, graphics and sound design. You provide the footage and receive a finished video.",
+    "primary": "View my work",
+    "secondary": "Showreel"
   },
   "footer": {
     "copy": "© FARE 2026",
     "links": [
-      { "label": "Telegram", "href": "https://t.me/fareeditor" },
-      { "label": "Email", "href": "mailto:contact@fareeditor.com" },
-      { "label": "X", "href": "https://x.com/FareEditor" }
+      {
+        "label": "Telegram",
+        "href": "https://t.me/fareeditor"
+      },
+      {
+        "label": "Email",
+        "href": "mailto:contact@fareeditor.com"
+      },
+      {
+        "label": "X",
+        "href": "https://x.com/FareEditor"
+      }
     ]
   }
 }
