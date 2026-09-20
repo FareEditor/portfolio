@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 // Публичный site key; без него (локальная сборка) остаётся заглушка слота
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
-export default function Contact({ c, contactUrl, fields, isSuccess, showForm, isError, isSending, submitLabel, submitCursor, submitOpacity, onSubmit }) {
+export default function Contact({ c, contactUrl, fields, isSuccess, showForm, isError, isSending, submitLabel, submitCursor, submitOpacity, onSubmit, children }) {
   const slotRef = useRef(null);
   const widgetIdRef = useRef(null);
 
@@ -102,6 +102,10 @@ export default function Contact({ c, contactUrl, fields, isSuccess, showForm, is
           )}
         </div>
       </div>
+
+      {/* Карточки каналов связи — параллельный форме путь, не её замена.
+          Содержимое приходит слотом: секция ничего не знает об их данных. */}
+      {children}
     </section>
   );
 }

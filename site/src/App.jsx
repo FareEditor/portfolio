@@ -5,6 +5,8 @@ import en from './data/content/en.json';
 import { CATEGORIES } from './data/works.js';
 // INTEGRATION: показатели секции статистики — файл stats.json в Decap CMS
 import stats from './data/stats.json';
+// INTEGRATION: карточки каналов связи — файл contacts.json в Decap CMS
+import contacts from './data/contacts.json';
 import settings from './data/settings.json';
 import Header from './components/Header.jsx';
 import Hero from './components/Hero.jsx';
@@ -14,6 +16,7 @@ import Process from './components/Process.jsx';
 import Why from './components/Why.jsx';
 import Faq from './components/Faq.jsx';
 import Contact from './components/Contact.jsx';
+import ContactCards from './components/ContactCards.jsx';
 import Footer from './components/Footer.jsx';
 import PlayerModal from './components/PlayerModal.jsx';
 import './styles/tokens.css';
@@ -191,6 +194,34 @@ export default function App({ lang }) {
   // поэтому живёт в коде рядом с подписями плеера, а не в content/*.json
   const workTabsLabel = lang === "en" ? "Work categories" : "Категории работ";
 
+  // Поведение карточки задаётся kind из CMS через белый список: неизвестное
+  // значение не даёт ни ссылки, ни обработчика, а не ломает разметку.
+  // Ссылки Telegram и X берутся из settings.contact_url / contact_url_en —
+  // это те же самые адреса, второго места хранения для них не заводится.
+  const CONTACT_HREF = {
+    telegram: settings.contact_url,
+    twitter: settings.contact_url_en
+  };
+  const noActionHint = lang === "en" ? "no link" : "ссылки нет";
+  const contactCards = contacts.items.map((item, i) => {
+    const value = lang === "en" ? item.value_en : item.value;
+    const subject = lang === "en" ? item.subject_en : item.subject_ru;
+    // encodeURIComponent обязателен: кириллица и пробелы в теме иначе уезжают
+    // в mailto как есть и обрезаются почтовым клиентом на первом же пробеле
+    const mailto = "mailto:" + value + (subject ? "?subject=" + encodeURIComponent(subject) : "");
+    const href = item.kind === "email" ? mailto : (CONTACT_HREF[item.kind] || null);
+    return {
+      key: i,
+      kind: item.kind,
+      label: lang === "en" ? item.label_en : item.label_ru,
+      value: value,
+      href: href,
+      external: Boolean(CONTACT_HREF[item.kind]),
+      noAction: item.kind === "location",
+      noActionHint: noActionHint
+    };
+  });
+
   const sending = form === "sending";
 
   const navItems = c.nav.map((label, i) => ({ label: label, href: ["#work", "#process", "#about", "#contact"][i] }));
@@ -292,7 +323,9 @@ export default function App({ lang }) {
           submitCursor={sending ? "not-allowed" : "pointer"}
           submitOpacity={sending ? "0.7" : "1"}
           onSubmit={submit}
-        />
+        >
+          <ContactCards cards={contactCards} />
+        </Contact>
       </main>
 
       <Footer wordmark="FARE" c={c.footer} />

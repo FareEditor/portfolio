@@ -355,6 +355,54 @@ collections:
                 widget: string
                 hint: "То же для английской версии. Не перевод — своя формулировка."
 
+  - name: contacts
+    label: Карточки контактов
+    files:
+      - name: contacts
+        label: Каналы связи
+        file: site/src/data/contacts.json
+        fields:
+          - label: Карточки
+            name: items
+            widget: list
+            allow_add: false
+            min: 4
+            max: 4
+            summary: "{{fields.kind}} · {{fields.value}}"
+            hint: "Четыре карточки под формой. Количество фиксировано раскладкой — порядок меняется перетаскиванием."
+            fields:
+              - label: Тип карточки
+                name: kind
+                widget: select
+                options: ["email", "location", "telegram", "twitter"]
+                hint: "Определяет иконку и поведение: email открывает почту, location ничего не открывает, telegram и twitter ведут по ссылкам из «Настройки сайта». Не менять без правки кода."
+              - label: Ярлык (RU)
+                name: label_ru
+                widget: string
+                hint: "Подпись над значением, одно слово."
+              - label: Ярлык (EN)
+                name: label_en
+                widget: string
+                hint: "То же для английской версии."
+              - label: Значение (RU)
+                name: value
+                widget: string
+                hint: "То, что видно на карточке: адрес почты, город, имя аккаунта."
+              - label: Значение (EN)
+                name: value_en
+                widget: string
+                hint: "То же для английской версии."
+              - label: Тема письма (RU)
+                name: subject_ru
+                widget: string
+                required: false
+                hint: "Только для карточки email: подставляется в тему письма. У остальных карточек оставить пустым."
+              - label: Тема письма (EN)
+                name: subject_en
+                widget: string
+                required: false
+                hint: "То же для английской версии — по теме письма видно, с какой локали пришёл контакт."
+
   - name: categories
     label: Категории работ
     label_singular: Категория
@@ -524,8 +572,8 @@ collections:
           - label: Контакт напрямую (RU)
             name: contact_url
             widget: string
-            hint: "Ссылка «написать напрямую» для русской версии — Telegram."
+            hint: "Ссылка «написать напрямую» для русской версии — Telegram. Этот же адрес открывает карточка Telegram в блоке контактов."
           - label: Контакт напрямую (EN)
             name: contact_url_en
             widget: string
-            hint: "Для английской версии — X. Каналы у локалей разные намеренно, не синхронизировать."
+            hint: "Для английской версии — X. Каналы у локалей разные намеренно, не синхронизировать. Этот же адрес открывает карточка Twitter в блоке контактов."

@@ -8,6 +8,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 a{color:var(--accent);text-decoration:none;transition:color var(--dur-fast) var(--ease)}
 a:hover{color:var(--accent-warm)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:var(--radius-sm)}
+/* видно только скринридеру: дополняет видимую подпись, а не заменяет её */
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;clip-path:inset(50%);overflow:hidden;white-space:nowrap}
 ::selection{background:var(--accent-soft)}
 
 /* ---- progressive enhancement: контент виден без JS ---- */
@@ -27,6 +29,21 @@ a:hover{color:var(--accent-warm)}
 @keyframes fare-spin{to{transform:rotate(360deg)}}
 @keyframes fare-fade{from{opacity:0}to{opacity:1}}
 @keyframes fare-tab-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* «здесь нет действия»: четыре затухающих колебания и красная рамка,
+   возвращающаяся к --line на последней пятой длительности */
+@keyframes fare-no-action{
+  0%{transform:translateX(0);border-color:var(--danger)}
+  20%{transform:translateX(-6px);border-color:var(--danger)}
+  40%{transform:translateX(5px);border-color:var(--danger)}
+  60%{transform:translateX(-3px);border-color:var(--danger)}
+  80%{transform:translateX(2px);border-color:var(--danger)}
+  100%{transform:translateX(0);border-color:var(--line)}
+}
+/* тот же сигнал без движения: только цвет рамки, ступенями, без transform */
+@keyframes fare-no-action-quiet{
+  0%,80%{border-color:var(--danger)}
+  100%{border-color:var(--line)}
+}
 
 /* ---- shared ---- */
 .section{width:100%;max-width:calc(var(--container) + var(--gutter) * 2);margin:0 auto;padding:0 var(--gutter) var(--section-y)}
@@ -60,6 +77,19 @@ a:hover{color:var(--accent-warm)}
    тапа и карточка остаётся увеличенной до следующего касания в другом месте. */
 @media (hover:hover) and (pointer:fine){
   .card--interactive:hover{transform:scale(var(--card-hover-scale));box-shadow:var(--shadow-glow-hover);border-color:var(--accent-line)}
+}
+/* Модификатор, а не правка базового класса: карточка выглядит и ведёт себя
+   как остальные, но на активацию отвечает отказом вместо перехода.
+   Анимация навешивается классом .is-shaking из React и снимается по
+   onAnimationEnd — повторная активация запускает её заново. */
+.card--no-action.is-shaking{animation:fare-no-action var(--dur-shake) var(--ease)}
+/* Единственный канал, которым карточка сообщает «действия нет». Общее правило
+   внизу файла сводит animation-duration к .001ms у всего подряд — здесь это
+   стёрло бы сигнал молча, поэтому !important бьёт !important: специфичность
+   (0,2,0) против (0,0,0) у * решает исход. Движение при этом снимается:
+   остаётся только смена цвета рамки, ступенями, без transform. */
+@media (prefers-reduced-motion:reduce){
+  .card--no-action.is-shaking{animation:fare-no-action-quiet var(--dur-shake) steps(1,end)!important}
 }
 /* Общее правило внизу файла сводит transition-duration к 1e-06s, но сам
    transform оставляет — замер показал мгновенный скачок на 5%, а не отсутствие
@@ -278,6 +308,28 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
 .contact-reply{display:inline-flex;align-items:center;gap:var(--sp-2);font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--accent-warm)}
 .reply-dot{width:6px;height:6px;border-radius:var(--radius-pill);background:var(--accent-warm)}
 .contact-alt{font-size:var(--fs-sm);font-weight:500;margin-top:var(--sp-2)}
+
+/* Карточки каналов: та же симметричная сетка и тот же брейкпоинт 900px,
+   что у .stats-grid — на странице одна точка перелома для блоков-сеток.
+   Лежат под .contact-layout: форма остаётся основным действием, карточки —
+   параллельным каналом и закрывающей полосой секции. */
+.contact-cards{display:grid;gap:var(--sp-6) var(--sp-5);grid-template-columns:repeat(2,1fr);list-style:none;margin:var(--sp-8) 0 0;padding:0}
+@media (min-width:900px){
+  .contact-cards{grid-template-columns:repeat(4,1fr)}
+}
+/* ячейка тянет карточку на всю свою высоту: ряд остаётся ровным */
+.contact-cell{display:grid}
+/* a, button и div приводятся к одному виду: кнопка иначе принесёт свои
+   шрифт, фон и выключку по центру */
+.contact-card{display:flex;flex-direction:column;align-items:flex-start;gap:var(--sp-3);text-align:left;font:inherit;color:inherit;text-decoration:none;cursor:pointer}
+.contact-card-icon{display:flex;color:var(--accent)}
+.contact-card-icon svg{width:calc(var(--play-sm) * .5);height:calc(var(--play-sm) * .5)}
+.contact-card-label{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-mute)}
+/* overflow-wrap: адрес почты не имеет точек переноса и на 375 в колонке
+   шириной 155px иначе вылезает за карточку */
+.contact-card-value{font-size:var(--fs-sm);font-weight:var(--wt-medium);overflow-wrap:anywhere}
+/* ссылка внутри карточки не перекрашивается по общему правилу для a:hover */
+.contact-card:hover .contact-card-value{color:var(--text)}
 .contact-panel{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius-md);padding:var(--sp-6)}
 .contact-form{display:flex;flex-direction:column;gap:var(--sp-5);position:relative}
 .field{display:flex;flex-direction:column;gap:var(--sp-2)}
