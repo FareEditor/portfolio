@@ -2,17 +2,17 @@
   "items": [
     {
       "kind": "email",
-      "label_ru": "[SLOT: ярлык карточки email, RU, 1 слово, роль — назвать канал связи]",
-      "label_en": "[SLOT: label for the email card, EN, 1 word, role — name the channel]",
+      "label_ru": "Почта",
+      "label_en": "Mail",
       "value": "contact@fareeditor.com",
       "value_en": "contact@fareeditor.com",
-      "subject_ru": "[SLOT: тема письма при клике на email-карточку, RU, короткая фраза, роль — помочь владельцу сразу понять источник письма]",
-      "subject_en": "[SLOT: subject line for the email card, EN, short phrase, role — let the owner see at a glance where the email came from]"
+      "subject_ru": "Связь по рабочей задаче",
+      "subject_en": "Communication regarding a work task"
     },
     {
       "kind": "location",
-      "label_ru": "[SLOT: ярлык карточки локации, RU, 1 слово, роль — назвать что показывает карточка]",
-      "label_en": "[SLOT: label for the location card, EN, 1 word, role — name what the card shows]",
+      "label_ru": "Локация",
+      "label_en": "Location",
       "value": "Россия",
       "value_en": "Russia",
       "subject_ru": "",
@@ -20,8 +20,8 @@
     },
     {
       "kind": "telegram",
-      "label_ru": "[SLOT: ярлык карточки Telegram, RU, 1 слово, роль — назвать канал связи]",
-      "label_en": "[SLOT: label for the Telegram card, EN, 1 word, role — name the channel]",
+      "label_ru": "Telegram",
+      "label_en": "Telegram",
       "value": "@FareEditor",
       "value_en": "@FareEditor",
       "subject_ru": "",
@@ -29,8 +29,8 @@
     },
     {
       "kind": "twitter",
-      "label_ru": "[SLOT: ярлык карточки Twitter/X, RU, 1 слово, роль — назвать канал связи]",
-      "label_en": "[SLOT: label for the Twitter/X card, EN, 1 word, role — name the channel]",
+      "label_ru": "Twitter",
+      "label_en": "Twitter",
       "value": "@FareEditor",
       "value_en": "@FareEditor",
       "subject_ru": "",
