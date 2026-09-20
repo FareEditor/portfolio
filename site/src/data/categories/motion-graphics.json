@@ -2,9 +2,9 @@
   "slug": "motion-graphics",
   "published": true,
   "order": 3,
-  "title_ru": "[SLOT: заголовок блока категории motion-graphics, RU, 1-3 слова]",
-  "title_en": "[SLOT: category block heading for motion-graphics, EN, 1-3 words]",
-  "blurb_ru": "[SLOT: подпись под заголовком motion-graphics, RU, 1 строка, ~60 знаков, роль — пояснить что за формат]",
-  "blurb_en": "[SLOT: sub-heading blurb for motion-graphics, EN, 1 line, ~60 chars, role — explain the format]",
+  "title_ru": "Человек вокруг компании",
+  "title_en": "Human around Company",
+  "blurb_ru": "Когда бюрократическая машина кажется бездушной крайне важно показать роль человека в компании. Именно это я и сделал",
+  "blurb_en": "When the bureaucratic machine seems soulless, it is crucial to highlight the human element within the company. That is precisely what I did.",
   "aspect": "16:9"
 }
