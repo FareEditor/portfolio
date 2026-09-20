@@ -63,12 +63,6 @@
     "Why work with me",
     "Contact"
   ],
-  "proof": {
-    "eyebrow": "CLIENT EXPERIENCE",
-    "title": "I have worked with channels with a combined audience of",
-    "number": "1,300,000+ subscribers",
-    "industries": "Across gaming, real estate, personal brands, economics and finance"
-  },
   "why": {
     "eyebrow": "WHY WORK WITH ME?",
     "title": "More than effective editing. Here is what I bring to your project",
@@ -113,7 +107,7 @@
     ]
   },
   "cta": "Discuss your project",
-  "menu": "[SLOT: mobile menu button label, EN, 1 word, role — open navigation on phone]",
+  "menu": "Open menu",
   "work": {
     "eyebrow": "My work",
     "title": "Long-form videos",

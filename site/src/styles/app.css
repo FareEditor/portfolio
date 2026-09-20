@@ -30,7 +30,7 @@ a:hover{color:var(--accent-warm)}
 
 /* ---- shared ---- */
 .section{width:100%;max-width:calc(var(--container) + var(--gutter) * 2);margin:0 auto;padding:0 var(--gutter) var(--section-y)}
-.section--proof{padding-top:var(--section-y)}
+.section--stats{padding-top:var(--section-y)}
 .section-head{display:flex;flex-direction:column;gap:var(--sp-3);margin-bottom:var(--sp-7);border-top:1px solid var(--hairline);padding-top:var(--sp-7)}
 .section-head--plain{border-top:0;padding-top:0}
 .section-head--tight{margin-bottom:var(--sp-6)}
@@ -125,14 +125,21 @@ a:hover{color:var(--accent-warm)}
   .hero-actions{flex:0 0 auto}
 }
 
-/* ---- proof ---- */
-.proof-block{display:flex;flex-direction:column;gap:var(--sp-2);border-top:1px solid var(--hairline);padding-top:var(--sp-7)}
-/* Заголовок — подпись к цифре: цифра доминирует, фраза объясняет её.
-   DOM-порядок «фраза → цифра» обязателен грамматически в обеих локалях
-   («totalling …» / «аудиторией …» требуют число после себя) */
-.proof-title{font-weight:500;font-size:var(--fs-lead);color:var(--text-dim);margin-top:var(--sp-2)}
-.proof-stat{font-family:var(--font-display);font-weight:800;font-size:var(--fs-stat);line-height:1.05;letter-spacing:-.03em}
-.proof-industries{font-family:var(--font-mono);font-size:var(--fs-mono-lg);letter-spacing:.08em;color:var(--text-dim);margin-top:var(--sp-2)}
+/* ---- stats ---- */
+/* Четыре равноправные плашки: тот же приём, что был у одиночного показателя
+   proof (рейка сверху, крупное число, тихая подпись), размноженный вчетверо.
+   Брейкпоинт 900px взят у .why-grid — на странице уже одна точка перелома
+   для блоков-сеток, второй заводить незачем. Ниже неё 2×2, выше — один ряд. */
+.stats-grid{display:grid;gap:var(--sp-6) var(--sp-5);grid-template-columns:repeat(2,1fr);list-style:none;margin:0;padding:0}
+@media (min-width:900px){
+  .stats-grid{grid-template-columns:repeat(4,1fr)}
+}
+/* рейка сверху — тихий разделитель колонок, поэтому --hairline, не --line */
+.stat{display:flex;flex-direction:column;gap:var(--sp-2);border-top:1px solid var(--hairline);padding-top:var(--sp-4)}
+/* число берёт верх оси Onest, как заголовок hero: вес несёт иерархию */
+.stat-value{font-family:var(--font-display);font-weight:var(--wt-black);font-size:var(--fs-stat);line-height:1.05;letter-spacing:-.03em}
+/* подпись — тихая моноширинная строка, подача взята у прежней .proof-industries */
+.stat-label{font-family:var(--font-mono);font-size:var(--fs-mono-lg);letter-spacing:.08em;color:var(--text-dim)}
 
 /* ---- work ---- */
 /* Секция работ живёт на общей рейке --container, как hero, proof и остальные:

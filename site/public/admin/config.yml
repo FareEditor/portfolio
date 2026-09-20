@@ -47,14 +47,6 @@ collections:
               - { label: Подзаголовок, name: sub, widget: text }
               - { label: Основная кнопка, name: primary, widget: string }
               - { label: Кнопка шоурила, name: secondary, widget: string }
-          - label: Социальное доказательство
-            name: proof
-            widget: object
-            fields:
-              - { label: Надзаголовок, name: eyebrow, widget: string }
-              - { label: Заголовок, name: title, widget: string }
-              - { label: Число подписчиков, name: number, widget: string }
-              - { label: Тематики, name: industries, widget: string }
           - label: Работы
             name: work
             widget: object
@@ -198,14 +190,6 @@ collections:
               - { label: Subtitle, name: sub, widget: text }
               - { label: Primary button, name: primary, widget: string }
               - { label: Showreel button, name: secondary, widget: string }
-          - label: Social proof
-            name: proof
-            widget: object
-            fields:
-              - { label: Eyebrow, name: eyebrow, widget: string }
-              - { label: Title, name: title, widget: string }
-              - { label: Subscriber count, name: number, widget: string }
-              - { label: Industries, name: industries, widget: string }
           - label: Work
             name: work
             widget: object
@@ -327,6 +311,39 @@ collections:
                 fields:
                   - { label: Label, name: label, widget: string }
                   - { label: URL, name: href, widget: string }
+
+  - name: stats
+    label: Показатели
+    files:
+      - name: stats
+        label: Цифры о себе
+        file: site/src/data/stats.json
+        fields:
+          - label: Показатели
+            name: items
+            widget: list
+            allow_add: false
+            min: 4
+            max: 4
+            summary: "{{fields.value}} · {{fields.label_ru}}"
+            hint: "Четыре плашки в один ряд под первым экраном. Количество фиксировано — порядок меняется перетаскиванием."
+            fields:
+              - label: Значение (RU)
+                name: value
+                widget: string
+                hint: "Короткая форма, например «100+» или «24ч». Обновляется вручную по мере роста практики."
+              - label: Значение (EN)
+                name: value_en
+                widget: string
+                hint: "То же для английской версии, например «100+» или «24h»."
+              - label: Подпись (RU)
+                name: label_ru
+                widget: string
+                hint: "1–2 слова под цифрой: что именно она считает."
+              - label: Подпись (EN)
+                name: label_en
+                widget: string
+                hint: "То же для английской версии. Не перевод — своя формулировка."
 
   - name: categories
     label: Категории работ

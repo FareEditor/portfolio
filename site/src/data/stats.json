@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "value": "3+",
+      "value_en": "3+",
+      "label_ru": "[SLOT: подпись к цифре \"3+\", RU, 1-2 слова, роль — назвать что считает эта цифра]",
+      "label_en": "[SLOT: caption for \"3+\", EN, 1-2 words, role — name what this number counts]"
+    },
+    {
+      "value": "100+",
+      "value_en": "100+",
+      "label_ru": "[SLOT: подпись к цифре \"100+\", RU, 1-2 слова, роль — назвать что считает эта цифра]",
+      "label_en": "[SLOT: caption for \"100+\", EN, 1-2 words, role — name what this number counts]"
+    },
+    {
+      "value": "10+",
+      "value_en": "10+",
+      "label_ru": "[SLOT: подпись к цифре \"10+\", RU, 1-2 слова, роль — назвать что считает эта цифра]",
+      "label_en": "[SLOT: caption for \"10+\", EN, 1-2 words, role — name what this number counts]"
+    },
+    {
+      "value": "24ч",
+      "value_en": "24h",
+      "label_ru": "[SLOT: подпись к цифре \"24ч\", RU, 1-2 слова, роль — назвать что считает эта цифра, не повторять формулировку из секции контактов]",
+      "label_en": "[SLOT: caption for \"24h\", EN, 1-2 words, role — name what this number counts, do not repeat the contact-section wording]"
+    }
+  ]
+}

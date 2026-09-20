@@ -3,10 +3,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import ru from './data/content/ru.json';
 import en from './data/content/en.json';
 import { CATEGORIES } from './data/works.js';
+// INTEGRATION: показатели секции статистики — файл stats.json в Decap CMS
+import stats from './data/stats.json';
 import settings from './data/settings.json';
 import Header from './components/Header.jsx';
 import Hero from './components/Hero.jsx';
-import Proof from './components/Proof.jsx';
+import Stats from './components/Stats.jsx';
 import Work from './components/Work.jsx';
 import Process from './components/Process.jsx';
 import Why from './components/Why.jsx';
@@ -162,6 +164,14 @@ export default function App({ lang }) {
       .catch(() => setForm("error"));
   };
 
+  // Порядок показателей — позиция в массиве stats.json: список фиксированной длины,
+  // переупорядочивается перетаскиванием в CMS. Отдельного поля order нет намеренно.
+  const statItems = stats.items.map((s, i) => ({
+    key: i,
+    value: lang === "en" ? s.value_en : s.value,
+    label: lang === "en" ? s.label_en : s.label_ru
+  }));
+
   // Фильтрация и сортировка уже выполнены в data/works.js — здесь только локализация.
   const categories = CATEGORIES.map((category) => ({
     slug: category.slug,
@@ -265,7 +275,7 @@ export default function App({ lang }) {
           showreelEnabled={settings.showreel_enabled}
           openPlayer={openPlayer}
         />
-        <Proof c={c.proof} />
+        <Stats items={statItems} />
         <Work c={c.work} categories={categories} tabsLabel={workTabsLabel} />
         <Process c={c.process} />
         <Why c={c.why} />
