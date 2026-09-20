@@ -275,7 +275,7 @@ export default function App({ lang }) {
           showreelEnabled={settings.showreel_enabled}
           openPlayer={openPlayer}
         />
-        <Stats items={statItems} />
+        <Stats items={statItems} industries={c.stats.industries} />
         <Work c={c.work} categories={categories} tabsLabel={workTabsLabel} />
         <Process c={c.process} />
         <Why c={c.why} />

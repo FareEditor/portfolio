@@ -42,6 +42,32 @@ a:hover{color:var(--accent-warm)}
 .btn-primary:hover{background:var(--text);color:var(--bg)}
 .btn-secondary{display:inline-flex;align-items:center;gap:var(--sp-2);font-weight:var(--wt-medium);color:var(--text);background:transparent;border:1px solid var(--line);padding:var(--sp-3) var(--sp-6);border-radius:var(--radius-sm);cursor:pointer;transition:border-color var(--dur-fast) var(--ease),background var(--dur-fast) var(--ease)}
 .btn-secondary:hover{border-color:var(--accent-line);background:var(--surface)}
+/* Интерактивная карточка — общий паттерн, не привязанный к секции.
+   Сейчас применён к .stat, рассчитан на контактные карточки: класс не знает
+   ничего о статистике, всё специфичное остаётся в .stat / .stats-grid.
+   Геометрия взята у .why-item (--radius-md), рамка — --line, потому что
+   установленное разделение отдаёт --line границам интерактивных элементов,
+   а --hairline тихим разделителям. */
+.card--interactive{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-md);padding:var(--sp-5);box-shadow:var(--shadow-glow);transition:box-shadow var(--dur) var(--ease),transform var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+/* Наведённая или сфокусированная карточка поднимается над соседями: без этого
+   её свечение и увеличенные края уходят под фон следующей карточки в сетке. */
+.card--interactive:hover,
+.card--interactive:focus-visible{z-index:1}
+/* общий :focus-visible переписывает border-radius на --radius-sm и срезал бы
+   угол карточки; обводка фокуса не масштабирует и не спорит с hover */
+.card--interactive:focus-visible{border-radius:var(--radius-md)}
+/* Зум только там, где наведение настоящее: на тач-экране :hover залипает после
+   тапа и карточка остаётся увеличенной до следующего касания в другом месте. */
+@media (hover:hover) and (pointer:fine){
+  .card--interactive:hover{transform:scale(var(--card-hover-scale));box-shadow:var(--shadow-glow-hover);border-color:var(--accent-line)}
+}
+/* Общее правило внизу файла сводит transition-duration к 1e-06s, но сам
+   transform оставляет — замер показал мгновенный скачок на 5%, а не отсутствие
+   движения. Поэтому масштаб снимается явно; свечение и рамка остаются, они
+   не движение. Правило идёт после hover-блока: специфичность та же (0,2,0). */
+@media (prefers-reduced-motion:reduce){
+  .card--interactive:hover{transform:none}
+}
 .btn-glyph{display:inline-flex;color:var(--accent)}
 .btn-glyph svg{width:calc(var(--play-sm) * .4);height:calc(var(--play-sm) * .4)}
 .header-cta{font-size:var(--fs-sm);padding:var(--sp-2) var(--sp-5)}
@@ -134,12 +160,22 @@ a:hover{color:var(--accent-warm)}
 @media (min-width:900px){
   .stats-grid{grid-template-columns:repeat(4,1fr)}
 }
-/* рейка сверху — тихий разделитель колонок, поэтому --hairline, не --line */
-.stat{display:flex;flex-direction:column;gap:var(--sp-2);border-top:1px solid var(--hairline);padding-top:var(--sp-4)}
+/* рамку, радиус, отступ и свечение даёт .card--interactive; здесь — только
+   внутренняя раскладка числа и подписи */
+.stat{display:flex;flex-direction:column;gap:var(--sp-2)}
 /* число берёт верх оси Onest, как заголовок hero: вес несёт иерархию */
 .stat-value{font-family:var(--font-display);font-weight:var(--wt-black);font-size:var(--fs-stat);line-height:1.05;letter-spacing:-.03em}
 /* подпись — тихая моноширинная строка, подача взята у прежней .proof-industries */
 .stat-label{font-family:var(--font-mono);font-size:var(--fs-mono-lg);letter-spacing:.08em;color:var(--text-dim)}
+/* Объединяющая подпись ко всем четырём показателям сразу: отделена от сетки
+   волосяной линией, кегль и цвет ниже, чем у .stat-label, — строка комментирует
+   ряд, а не спорит с ним. Отступ сверху больше, чем вылет свечения нижних
+   карточек при наведении, иначе линия попадала бы в подсветку.
+   Выключка влево: на странице одна ось выключки, и длинная строка в RU
+   центрированной рвалась бы рваным блоком на узких ширинах.
+   Меры --measure здесь нет намеренно: она обрезала бы линию на 68ch посреди
+   сетки шириной в контейнер. Строка и без неё укладывается в одну на десктопе. */
+.stats-note{margin-top:var(--sp-7);border-top:1px solid var(--hairline);padding-top:var(--sp-4);font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:.08em;color:var(--text-mute)}
 
 /* ---- work ---- */
 /* Секция работ живёт на общей рейке --container, как hero, proof и остальные:

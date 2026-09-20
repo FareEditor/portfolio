@@ -47,6 +47,11 @@ collections:
               - { label: Подзаголовок, name: sub, widget: text }
               - { label: Основная кнопка, name: primary, widget: string }
               - { label: Кнопка шоурила, name: secondary, widget: string }
+          - label: Показатели
+            name: stats
+            widget: object
+            fields:
+              - { label: Сферы работы, name: industries, widget: string, hint: "Строка под сеткой показателей — общая подпись ко всем четырём цифрам. Сами цифры и их подписи живут в коллекции «Показатели»." }
           - label: Работы
             name: work
             widget: object
@@ -190,6 +195,11 @@ collections:
               - { label: Subtitle, name: sub, widget: text }
               - { label: Primary button, name: primary, widget: string }
               - { label: Showreel button, name: secondary, widget: string }
+          - label: Stats
+            name: stats
+            widget: object
+            fields:
+              - { label: Industries, name: industries, widget: string, hint: "Line under the stats grid — one caption for all four figures. The figures themselves live in the «Показатели» collection." }
           - label: Work
             name: work
             widget: object
