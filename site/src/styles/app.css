@@ -178,6 +178,14 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
    занимают разное число строк. Без поддержки subgrid строки просто текут. */
 .work-card{display:grid;gap:var(--sp-4);align-content:start;grid-row:span 5;grid-template-rows:subgrid;margin-bottom:var(--sp-9)}
 .work-card--featured{grid-column:1 / -1}
+/* Единственная карточка в блоке занимает всю ширину сетки: колонка в половину
+   рейки рядом с пустым местом читается как недогруженная страница, а не как
+   приём. Правило зависит только от того, одна карточка в сетке или нет —
+   при двух и более (включая нечётные 3, 5) все держат общий масштаб колонки,
+   и непарная последняя оставляет пустую половину строки.
+   :only-child, а не подсчёт в JS: число карточек приходит из CMS и меняется
+   без пересборки логики, а ширина — презентация, ей место в CSS. */
+.work-grid > .work-card:only-child{grid-column:1 / -1}
 .work-thumb{position:relative;display:block;width:100%;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;cursor:pointer;padding:0;background-color:var(--surface);background-image:repeating-linear-gradient(135deg,var(--surface-raised) 0 var(--thumb-stripe),var(--surface) var(--thumb-stripe) calc(var(--thumb-stripe) * 2));transition:border-color var(--dur) var(--ease)}
 .work-thumb:hover{border-color:var(--accent-line)}
 /* пропорция превью приходит из категории (поле aspect) и выбирается по белому
