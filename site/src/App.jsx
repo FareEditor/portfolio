@@ -313,7 +313,6 @@ export default function App({ lang }) {
         <Faq c={c.faq} faqItems={faqItems} />
         <Contact
           c={c.contact}
-          contactUrl={lang === "en" ? settings.contact_url_en : settings.contact_url}
           fields={fields}
           isSuccess={form === "success"}
           showForm={form !== "success"}

@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 // Публичный site key; без него (локальная сборка) остаётся заглушка слота
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
-export default function Contact({ c, contactUrl, fields, isSuccess, showForm, isError, isSending, submitLabel, submitCursor, submitOpacity, onSubmit, children }) {
+export default function Contact({ c, fields, isSuccess, showForm, isError, isSending, submitLabel, submitCursor, submitOpacity, onSubmit, children }) {
   const slotRef = useRef(null);
   const widgetIdRef = useRef(null);
 
@@ -37,10 +37,13 @@ export default function Contact({ c, contactUrl, fields, isSuccess, showForm, is
           <span className="eyebrow">{c.eyebrow}</span>
           <h2 className="section-title" id="contact-title">{c.title}</h2>
           <p className="contact-text">{c.text}</p>
-          <p className="contact-reply">
-            <span className="reply-dot" aria-hidden="true"></span>{c.reply}
-          </p>
-          <a className="contact-alt" href={contactUrl} target="_blank" rel="noopener noreferrer">{c.alt}</a>
+
+          {/* Карточки каналов связи — параллельный форме путь, не её замена.
+              Стоят в левой колонке под текстом: срок ответа и прямую ссылку
+              на Telegram они показывают сами, отдельные строки под ними
+              повторяли бы то же самое дважды на одном экране.
+              Содержимое приходит слотом: секция ничего не знает об их данных. */}
+          {children}
         </div>
 
         <div className="contact-panel">
@@ -102,10 +105,6 @@ export default function Contact({ c, contactUrl, fields, isSuccess, showForm, is
           )}
         </div>
       </div>
-
-      {/* Карточки каналов связи — параллельный форме путь, не её замена.
-          Содержимое приходит слотом: секция ничего не знает об их данных. */}
-      {children}
     </section>
   );
 }

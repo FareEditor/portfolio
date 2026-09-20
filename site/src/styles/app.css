@@ -305,18 +305,15 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
 .contact-layout{border-top:1px solid var(--hairline);padding-top:var(--sp-7);display:grid;gap:var(--sp-8);align-items:start;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
 .contact-intro{display:flex;flex-direction:column;gap:var(--sp-4)}
 .contact-text{font-size:var(--fs-lead);color:var(--text-dim);max-width:44ch}
-.contact-reply{display:inline-flex;align-items:center;gap:var(--sp-2);font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--accent-warm)}
-.reply-dot{width:6px;height:6px;border-radius:var(--radius-pill);background:var(--accent-warm)}
-.contact-alt{font-size:var(--fs-sm);font-weight:500;margin-top:var(--sp-2)}
 
-/* Карточки каналов: та же симметричная сетка и тот же брейкпоинт 900px,
-   что у .stats-grid — на странице одна точка перелома для блоков-сеток.
-   Лежат под .contact-layout: форма остаётся основным действием, карточки —
-   параллельным каналом и закрывающей полосой секции. */
-.contact-cards{display:grid;gap:var(--sp-6) var(--sp-5);grid-template-columns:repeat(2,1fr);list-style:none;margin:var(--sp-8) 0 0;padding:0}
-@media (min-width:900px){
-  .contact-cards{grid-template-columns:repeat(4,1fr)}
-}
+/* Карточки каналов живут в левой колонке .contact-layout, под текстом.
+   Сетка 2x2 на любой ширине, без брейкпоинта: колонка — это половина секции,
+   и четыре карточки в ряд в неё уже не помещаются читаемо. Ширина карточки
+   при этом почти не меняется относительно прежней полосы во всю секцию
+   (272px против 282px на 1280), поэтому отдельного «узкого» модификатора
+   к .card--interactive не потребовалось.
+   margin-top добавляется к gap самой колонки (--sp-4). */
+.contact-cards{display:grid;gap:var(--sp-5);grid-template-columns:repeat(2,1fr);list-style:none;margin:var(--sp-4) 0 0;padding:0}
 /* ячейка тянет карточку на всю свою высоту: ряд остаётся ровным */
 .contact-cell{display:grid}
 /* a, button и div приводятся к одному виду: кнопка иначе принесёт свои

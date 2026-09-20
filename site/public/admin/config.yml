@@ -119,7 +119,6 @@ collections:
               - { label: Надзаголовок, name: eyebrow, widget: string }
               - { label: Заголовок, name: title, widget: string }
               - { label: Вводный текст, name: text, widget: text }
-              - { label: Срок ответа, name: reply, widget: string }
               - label: Подписи полей
                 name: labels
                 widget: object
@@ -136,7 +135,6 @@ collections:
               - { label: Отправка, name: sending, widget: string }
               - { label: Успешная отправка, name: success, widget: text }
               - { label: Ошибка отправки, name: error, widget: text }
-              - { label: Прямая ссылка, name: alt, widget: string }
               - { label: Уведомление о данных, name: micro, widget: text }
               - label: Типы проектов
                 name: project_type
@@ -267,7 +265,6 @@ collections:
               - { label: Eyebrow, name: eyebrow, widget: string }
               - { label: Title, name: title, widget: string }
               - { label: Intro text, name: text, widget: text }
-              - { label: Reply time, name: reply, widget: string }
               - label: Field labels
                 name: labels
                 widget: object
@@ -284,7 +281,6 @@ collections:
               - { label: Sending state, name: sending, widget: string }
               - { label: Success message, name: success, widget: text }
               - { label: Error message, name: error, widget: text }
-              - { label: Direct contact link, name: alt, widget: string }
               - { label: Data notice, name: micro, widget: text }
               - label: Project types
                 name: project_type
