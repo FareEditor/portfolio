@@ -26,6 +26,7 @@ a:hover{color:var(--accent-warm)}
 @keyframes fare-pulse{0%,100%{box-shadow:0 0 0 0 var(--live-halo)}70%{box-shadow:0 0 0 6px var(--live-halo-0)}}
 @keyframes fare-spin{to{transform:rotate(360deg)}}
 @keyframes fare-fade{from{opacity:0}to{opacity:1}}
+@keyframes fare-tab-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 /* ---- shared ---- */
 .section{width:100%;max-width:calc(var(--container) + var(--gutter) * 2);margin:0 auto;padding:0 var(--gutter) var(--section-y)}
@@ -134,15 +135,38 @@ a:hover{color:var(--accent-warm)}
 .proof-industries{font-family:var(--font-mono);font-size:var(--fs-mono-lg);letter-spacing:.08em;color:var(--text-dim);margin-top:var(--sp-2)}
 
 /* ---- work ---- */
-/* Секция работ выходит за общую рейку: медиа — продукт, оно растёт.
-   Текстовые части внутри карточки меру не меняют. */
-.section--work{max-width:calc(var(--container-wide) + var(--gutter) * 2)}
-/* заголовок секции и шапка категории остаются на общей левой рейке */
-.section--work > .section-head,
-.work-category-head{max-width:var(--container);margin-left:auto;margin-right:auto;width:100%}
-.work-category + .work-category{margin-top:var(--sp-10);border-top:1px solid var(--hairline);padding-top:var(--sp-7)}
+/* Секция работ живёт на общей рейке --container, как hero, proof и остальные:
+   собственная ширина уводила превью влево относительно всей страницы. */
+
+/* Табы категорий — фильтр, а не разметка блоков: видна одна категория за раз.
+   Прогрессивное усиление держится на классе .js-reveal у <html>: инлайн-скрипт
+   в <head> ставит его до первой отрисовки, а страховочный таймер снимает, если
+   бандл не загрузился. Нет .js-reveal — нет и табов: все категории идут подряд
+   со своими заголовками, ни одна работа не скрыта. */
+.work-tabs{display:none}
+.js-reveal .work-tabs{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-bottom:var(--sp-7)}
+/* пилюля повторяет геометрию капсулы header; активный таб взят в ту же пару
+   accent / bg, что и .btn-primary, неактивный — в рамку .btn-secondary.
+   min-height удерживает палец: 44px — минимальная цель нажатия. */
+.work-tab{display:inline-flex;align-items:center;min-height:var(--play-sm);padding:var(--sp-2) var(--sp-5);border:1px solid var(--line);border-radius:var(--radius-pill);background:transparent;color:var(--text-dim);font-family:var(--font-mono);font-weight:500;font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;cursor:pointer;transition:border-color var(--dur-fast) var(--ease),background var(--dur-fast) var(--ease),color var(--dur-fast) var(--ease)}
+.work-tab:hover{border-color:var(--accent-line);background:var(--surface);color:var(--text)}
+.work-tab[aria-selected="true"],
+.work-tab[aria-selected="true"]:hover{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+/* общий :focus-visible скругляет по --radius-sm и срезал бы пилюлю */
+.work-tab:focus-visible{border-radius:var(--radius-pill)}
+
+.js-reveal .work-category[data-active="false"]{display:none}
+/* переключение — только CSS-анимация появления; prefers-reduced-motion гасит её
+   общим правилом внизу файла, конечное состояние при этом обычное */
+.js-reveal .work-category[data-active="true"]{animation:fare-tab-in var(--dur) var(--ease)}
+/* без JS категории читаются подряд и разделены рейкой */
+html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);border-top:1px solid var(--hairline);padding-top:var(--sp-7)}
 .work-category-head{display:flex;flex-direction:column;gap:var(--sp-2);margin-bottom:var(--sp-7)}
 .work-category-title{font-family:var(--font-mono);font-weight:500;font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-mute)}
+/* с табами заголовок категории дублировал бы активный таб: с экрана он уходит,
+   в дереве доступности остаётся — панель получает заголовок, а иерархия
+   страницы не теряет ступень h3 между h2 секции и h4 работы */
+.js-reveal .work-category-title{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;clip-path:inset(50%);overflow:hidden;white-space:nowrap}
 .work-category-blurb{font-weight:var(--wt-light);font-size:var(--fs-sm);color:var(--text-dim);max-width:var(--measure)}
 
 /* row-gap равен интервалу между строками подписи: subgrid наследует row-gap

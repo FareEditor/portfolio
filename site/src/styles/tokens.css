@@ -110,9 +110,8 @@
   --dur-slow:620ms;
   --ease:cubic-bezier(.22,.61,.36,1);
 
-  /* текстовая рейка держит меру 60-75 знаков; медиа идёт шире неё */
+  /* одна рейка на все секции; мера текста внутри неё — --measure */
   --container:1200px;
-  --container-wide:1640px;
   --measure:68ch;
   --gutter:clamp(20px,5vw,40px);
   --section-y:clamp(72px,9vw,132px);

@@ -177,6 +177,9 @@ export default function App({ lang }) {
   const playerLabels = lang === "en"
     ? { label: "Video player", close: "Close" }
     : { label: "Видеоплеер", close: "Закрыть" };
+  // служебная подпись группы табов: имя роли для скринридера, не текст страницы —
+  // поэтому живёт в коде рядом с подписями плеера, а не в content/*.json
+  const workTabsLabel = lang === "en" ? "Work categories" : "Категории работ";
 
   const sending = form === "sending";
 
@@ -263,7 +266,7 @@ export default function App({ lang }) {
           openPlayer={openPlayer}
         />
         <Proof c={c.proof} />
-        <Work c={c.work} categories={categories} />
+        <Work c={c.work} categories={categories} tabsLabel={workTabsLabel} />
         <Process c={c.process} />
         <Why c={c.why} />
         <Faq c={c.faq} faqItems={faqItems} />
