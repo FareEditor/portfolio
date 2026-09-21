@@ -463,6 +463,37 @@ collections:
         default: "16:9"
         hint: "Форма превью у всех работ этой категории. 16:9 — горизонтальное видео, 9:12 — вертикальное."
 
+  - name: metric-types
+    label: Типы метрик
+    label_singular: Тип метрики
+    folder: site/src/data/metric-types
+    format: json
+    extension: json
+    create: true
+    identifier_field: slug
+    slug: "{{fields.slug}}"
+    summary: "{{order}} · {{label_ru}}"
+    sortable_fields: ["order"]
+    fields:
+      - label: Slug
+        name: slug
+        widget: string
+        hint: "Постоянный ключ типа — на него ссылаются метрики в отзывах. Только строчные латинские буквы, цифры и дефис. После использования в отзыве не менять."
+        pattern: ["^[a-z0-9-]+$", "Только строчные латинские буквы, цифры и дефис"]
+      - label: Порядок
+        name: order
+        widget: number
+        value_type: int
+        hint: "Порядок в выпадающем списке при выборе типа метрики."
+      - label: Подпись (RU)
+        name: label_ru
+        widget: string
+        hint: "Короткая подпись под значением в карточке, 1-3 слова."
+      - label: Подпись (EN)
+        name: label_en
+        widget: string
+        hint: "То же для английской версии."
+
   - name: testimonials
     label: Отзывы
     label_singular: Отзыв
@@ -510,11 +541,79 @@ collections:
         name: quote_en
         widget: text
         hint: "Для английской версии — своя формулировка, не перевод русской."
+      - label: Тематика канала (RU)
+        name: channel_topic_ru
+        widget: string
+        hint: "Ниша клиента свободным текстом, напр. «Гейминг». Не список — вписывается под каждый отзыв."
+      - label: Тематика канала (EN)
+        name: channel_topic_en
+        widget: string
+        hint: "То же для английской версии."
       - label: Логотип
         name: logo
         widget: image
         required: false
         hint: "Квадратная картинка: на карточке обрезается в круг. Без неё карточка идёт без аватара."
+      - label: Верхняя метрика — значение
+        name: top_metric_value
+        widget: string
+        hint: "Число закрытых проектов с этим клиентом. Одно значение на обе локали."
+      - label: Верхняя метрика — подпись (RU)
+        name: top_metric_label_ru
+        widget: string
+        hint: "Подпись под крупным числом, 1-3 слова."
+      - label: Верхняя метрика — подпись (EN)
+        name: top_metric_label_en
+        widget: string
+        hint: "То же для английской версии."
+      - label: Метрика 1 — тип
+        name: metric_1_type
+        widget: relation
+        collection: metric-types
+        search_fields: ["slug", "label_ru", "label_en"]
+        value_field: slug
+        display_fields: ["label_ru"]
+        hint: "Выбор из справочника «Типы метрик». Подпись в карточке берётся оттуда."
+      - label: Метрика 1 — значение (RU)
+        name: metric_1_value_ru
+        widget: string
+        hint: "Короткая форма с единицами, напр. «12 дней» или «3ч → 12мин»."
+      - label: Метрика 1 — значение (EN)
+        name: metric_1_value_en
+        widget: string
+        hint: "То же для английской версии: единицы и запись отличаются от русской."
+      - label: Метрика 2 — тип
+        name: metric_2_type
+        widget: relation
+        collection: metric-types
+        search_fields: ["slug", "label_ru", "label_en"]
+        value_field: slug
+        display_fields: ["label_ru"]
+        hint: "Выбор из справочника «Типы метрик». Подпись в карточке берётся оттуда."
+      - label: Метрика 2 — значение (RU)
+        name: metric_2_value_ru
+        widget: string
+        hint: "Короткая форма с единицами, напр. «12 дней» или «3ч → 12мин»."
+      - label: Метрика 2 — значение (EN)
+        name: metric_2_value_en
+        widget: string
+        hint: "То же для английской версии: единицы и запись отличаются от русской."
+      - label: Метрика 3 — тип
+        name: metric_3_type
+        widget: relation
+        collection: metric-types
+        search_fields: ["slug", "label_ru", "label_en"]
+        value_field: slug
+        display_fields: ["label_ru"]
+        hint: "Выбор из справочника «Типы метрик». Подпись в карточке берётся оттуда."
+      - label: Метрика 3 — значение (RU)
+        name: metric_3_value_ru
+        widget: string
+        hint: "Короткая форма с единицами, напр. «12 дней» или «3ч → 12мин»."
+      - label: Метрика 3 — значение (EN)
+        name: metric_3_value_en
+        widget: string
+        hint: "То же для английской версии: единицы и запись отличаются от русской."
 
   - name: works
     label: Работы

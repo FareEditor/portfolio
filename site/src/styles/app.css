@@ -301,17 +301,36 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
    ради тач-жеста, но полосу прокрутки прячем — заявленный интерфейс кнопки. */
 .testimonial-track{display:flex;gap:var(--sp-5);overflow-x:auto;scroll-snap-type:x mandatory;list-style:none;margin:0;padding:var(--sp-2) 0;scrollbar-width:none;-ms-overflow-style:none}
 .testimonial-track::-webkit-scrollbar{display:none}
-/* flex-basis фиксирует ширину карточки: шаг кнопки считается от неё */
-.testimonial{flex:0 0 min(100%,360px);scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:var(--sp-3)}
+/* flex-basis фиксирует ширину карточки: шаг кнопки считается от неё.
+   420px, а не прежние 360: карточка результата несёт шапку, крупную метрику,
+   цитату и панель из трёх ячеек — на 360 нижние ячейки схлопывались. */
+.testimonial{flex:0 0 min(100%,420px);scroll-snap-align:start;display:flex;flex-direction:column;align-items:stretch;gap:var(--sp-3)}
+/* шапка: медальон и идентификация канала в одну строку */
+.testimonial-head{display:flex;align-items:center;gap:var(--sp-3)}
+.testimonial-id{display:flex;flex-direction:column;gap:var(--sp-1);min-width:0}
 /* Логотип канала — круглый аватар, не превью работы: система пропорций
    .work-thumb--* сюда не относится, здесь всегда 1:1. */
-.testimonial-logo{width:var(--play-sm);height:var(--play-sm);border-radius:var(--radius-pill);object-fit:cover;background:var(--surface);border:1px solid var(--hairline)}
+.testimonial-logo{flex:0 0 auto;width:var(--play-sm);height:var(--play-sm);border-radius:var(--radius-pill);object-fit:cover;background:var(--surface);border:1px solid var(--hairline)}
 /* Два разных акцента, оба уже в ходу на странице: имя — контрастом веса Onest
    (как .work-title), роль — цветом --accent в моноширинной микроразметке
    (как .step-tc). Третьего способа выделения не вводится. */
 .testimonial-name{font-family:var(--font-display);font-weight:var(--wt-bold);font-size:var(--fs-h3);letter-spacing:-.015em}
-.testimonial-role{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--accent)}
+/* Пилюля тематики: геометрия .work-tab, но без рамки и без акцента — акцент
+   в карточке уже занят ролью, две подсвеченные микроподписи спорили бы. */
+.testimonial-topic{align-self:flex-start;display:inline-flex;padding:var(--sp-1) var(--sp-3);border-radius:var(--radius-pill);background:var(--surface);color:var(--text-dim);font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase}
+/* Главный результат карточки: та же пара «крупное число + тихая подпись»,
+   что у .stat-value / .stat-label, на ступень мельче кеглем — карточка стоит
+   в ленте, а не во весь контейнер. */
+.testimonial-top-value{font-family:var(--font-display);font-weight:var(--wt-black);font-size:var(--fs-h2);line-height:1.05;letter-spacing:-.03em;margin-top:var(--sp-2)}
+.testimonial-top-label{font-family:var(--font-mono);font-size:var(--fs-mono-lg);color:var(--text-dim)}
+.testimonial-role{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--accent);margin-top:var(--sp-2)}
 .testimonial-quote{font-size:var(--fs-sm);color:var(--text-dim);max-width:var(--measure)}
+/* Панель второстепенных метрик: обособлена полутоном --surface и прижата
+   к низу карточки, чтобы панели соседних карточек стояли на одной линии. */
+.testimonial-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3);list-style:none;margin:auto 0 0;padding:var(--sp-4);background:var(--surface);border-radius:var(--radius-sm)}
+.testimonial-metric{display:flex;flex-direction:column;gap:var(--sp-1);min-width:0}
+.testimonial-metric-value{font-weight:var(--wt-medium);font-size:var(--fs-sm);overflow-wrap:anywhere}
+.testimonial-metric-label{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:.04em;color:var(--text-mute);overflow-wrap:anywhere}
 
 /* ---- process ---- */
 .process-list{display:grid;gap:var(--sp-6);grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}

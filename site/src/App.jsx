@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // INTEGRATION: site copy is managed in Decap CMS via data/content/*.json.
 import ru from './data/content/ru.json';
 import en from './data/content/en.json';
-import { CATEGORIES, TESTIMONIALS } from './data/works.js';
+import { CATEGORIES, TESTIMONIALS, METRIC_TYPES } from './data/works.js';
 // INTEGRATION: показатели секции статистики — файл stats.json в Decap CMS
 import stats from './data/stats.json';
 // INTEGRATION: карточки каналов связи — файл contacts.json в Decap CMS
@@ -197,13 +197,30 @@ export default function App({ lang }) {
   const testimonialNav = lang === "en"
     ? { prev: "Previous testimonial", next: "Next testimonial" }
     : { prev: "Предыдущий отзыв", next: "Следующий отзыв" };
-  // Имя канала — identity, одно на обе локали; роль и текст локализуются.
+  // Справочник типов метрик по slug: подпись нижней ячейки приходит оттуда,
+  // в самой записи отзыва лежит только ссылка и значение.
+  const metricLabels = Object.fromEntries(
+    METRIC_TYPES.map((m) => [m.slug, lang === "en" ? m.label_en : m.label_ru])
+  );
+  // Имя канала — identity, одно на обе локали; тематика, роль, текст и значения
+  // метрик локализуются. Слот с неизвестным типом молча выпадает, а не ломает
+  // карточку — тот же принцип белого списка, что у aspect в WorkCard.
   const testimonials = TESTIMONIALS.map((t) => ({
     slug: t.slug,
     channel_name: t.channel_name,
     logo: t.logo,
+    topic: lang === "en" ? t.channel_topic_en : t.channel_topic_ru,
     role: lang === "en" ? t.role_en : t.role_ru,
-    quote: lang === "en" ? t.quote_en : t.quote_ru
+    quote: lang === "en" ? t.quote_en : t.quote_ru,
+    topMetricValue: t.top_metric_value,
+    topMetricLabel: lang === "en" ? t.top_metric_label_en : t.top_metric_label_ru,
+    metrics: [1, 2, 3]
+      .map((i) => ({
+        type: t["metric_" + i + "_type"],
+        label: metricLabels[t["metric_" + i + "_type"]],
+        value: lang === "en" ? t["metric_" + i + "_value_en"] : t["metric_" + i + "_value_ru"]
+      }))
+      .filter((m) => m.label)
   }));
 
   // Поведение карточки задаётся kind из CMS через белый список: неизвестное

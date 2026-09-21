@@ -64,10 +64,32 @@ export default function Testimonials({ c, items, navLabels }) {
       <ul className="testimonial-track" id="testimonials-track" ref={trackRef} data-reveal="true">
         {items.map((t) => (
           <li className="testimonial card--interactive" key={t.slug}>
-            {t.logo && <img className="testimonial-logo" src={t.logo} alt="" loading="lazy" decoding="async" width="88" height="88" />}
-            <p className="testimonial-name">{t.channel_name}</p>
+            <div className="testimonial-head">
+              {t.logo && <img className="testimonial-logo" src={t.logo} alt="" loading="lazy" decoding="async" width="88" height="88" />}
+              <div className="testimonial-id">
+                <p className="testimonial-name">{t.channel_name}</p>
+                {t.topic && <p className="testimonial-topic">{t.topic}</p>}
+              </div>
+            </div>
+
+            {/* Главный результат: тот же приём, что у плашек статистики —
+                крупное число, тихая подпись под ним. */}
+            <p className="testimonial-top-value">{t.topMetricValue}</p>
+            <p className="testimonial-top-label">{t.topMetricLabel}</p>
+
             <p className="testimonial-role">{t.role}</p>
             <p className="testimonial-quote">{t.quote}</p>
+
+            {/* Три нижние метрики — перечень пар «значение / тип», поэтому ul.
+                Подпись берётся из справочника metric-types по slug. */}
+            <ul className="testimonial-metrics">
+              {t.metrics.map((m) => (
+                <li className="testimonial-metric" key={m.type}>
+                  <p className="testimonial-metric-value">{m.value}</p>
+                  <p className="testimonial-metric-label">{m.label}</p>
+                </li>
+              ))}
+            </ul>
           </li>
         ))}
       </ul>
