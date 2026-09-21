@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // INTEGRATION: site copy is managed in Decap CMS via data/content/*.json.
 import ru from './data/content/ru.json';
 import en from './data/content/en.json';
-import { CATEGORIES } from './data/works.js';
+import { CATEGORIES, TESTIMONIALS } from './data/works.js';
 // INTEGRATION: показатели секции статистики — файл stats.json в Decap CMS
 import stats from './data/stats.json';
 // INTEGRATION: карточки каналов связи — файл contacts.json в Decap CMS
@@ -12,6 +12,7 @@ import Header from './components/Header.jsx';
 import Hero from './components/Hero.jsx';
 import Stats from './components/Stats.jsx';
 import Work from './components/Work.jsx';
+import Testimonials from './components/Testimonials.jsx';
 import Process from './components/Process.jsx';
 import Why from './components/Why.jsx';
 import Faq from './components/Faq.jsx';
@@ -193,6 +194,17 @@ export default function App({ lang }) {
   // служебная подпись группы табов: имя роли для скринридера, не текст страницы —
   // поэтому живёт в коде рядом с подписями плеера, а не в content/*.json
   const workTabsLabel = lang === "en" ? "Work categories" : "Категории работ";
+  const testimonialNav = lang === "en"
+    ? { prev: "Previous testimonial", next: "Next testimonial" }
+    : { prev: "Предыдущий отзыв", next: "Следующий отзыв" };
+  // Имя канала — identity, одно на обе локали; роль и текст локализуются.
+  const testimonials = TESTIMONIALS.map((t) => ({
+    slug: t.slug,
+    channel_name: t.channel_name,
+    logo: t.logo,
+    role: lang === "en" ? t.role_en : t.role_ru,
+    quote: lang === "en" ? t.quote_en : t.quote_ru
+  }));
 
   // Поведение карточки задаётся kind из CMS через белый список: неизвестное
   // значение не даёт ни ссылки, ни обработчика, а не ломает разметку.
@@ -308,6 +320,7 @@ export default function App({ lang }) {
         />
         <Stats items={statItems} industries={c.stats.industries} />
         <Work c={c.work} categories={categories} tabsLabel={workTabsLabel} />
+        <Testimonials c={c.testimonials} items={testimonials} navLabels={testimonialNav} />
         <Process c={c.process} />
         <Why c={c.why} />
         <Faq c={c.faq} faqItems={faqItems} />

@@ -1,0 +1,11 @@
+{
+  "slug": "sample-three",
+  "published": false,
+  "order": 3,
+  "channel_name": "[SLOT: имя канала или клиента, одно значение на обе локали, роль — чей это отзыв]",
+  "role_ru": "[SLOT: роль автора отзыва, RU, 1-3 слова, роль — кем он приходится проекту]",
+  "role_en": "[SLOT: role of the person quoted, EN, 1-3 words, role — how they relate to the project]",
+  "quote_ru": "[SLOT: текст отзыва, RU, 2-4 предложения, роль — что клиент получил от работы]",
+  "quote_en": "[SLOT: testimonial text, EN, 2-4 sentences, role — what the client got out of the work; own wording, not a translation of the RU one]",
+  "logo": ""
+}

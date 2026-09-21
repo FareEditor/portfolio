@@ -283,6 +283,36 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
 .work-link{font-size:var(--fs-sm);font-weight:var(--wt-medium);margin-top:var(--sp-1)}
 .show-all-wrap{display:flex;justify-content:flex-start;margin-top:var(--sp-7)}
 
+/* ---- testimonials ---- */
+/* Заголовок и кнопки в одной строке: кнопки управляют лентой под ними,
+   поэтому стоят рядом с её заголовком, а не плавают над карточками. */
+.testimonials-head{flex-direction:row;align-items:flex-end;justify-content:space-between;gap:var(--sp-5);flex-wrap:wrap}
+/* заголовок забирает остаток строки, иначе длинный h2 выталкивает кнопки
+   на следующую строку раньше, чем кончается место */
+.testimonials-title-group{flex:1 1 280px;min-width:0}
+.testimonials-nav-group{display:flex;gap:var(--sp-2);flex:0 0 auto}
+/* Кнопка — та же карточка: .card--interactive даёт рамку, свечение и зум,
+   .card--no-action — отказ на границе. Здесь только геометрия, правило идёт
+   после .card--interactive и перебивает его padding при равной специфичности. */
+.testimonial-nav{display:flex;align-items:center;justify-content:center;width:var(--play-sm);height:var(--play-sm);padding:0;color:var(--text);cursor:pointer}
+.testimonial-nav svg{width:calc(var(--play-sm) * .45);height:calc(var(--play-sm) * .45)}
+
+/* Лента: один слой, снап по началу карточки. overflow-x оставлен открытым
+   ради тач-жеста, но полосу прокрутки прячем — заявленный интерфейс кнопки. */
+.testimonial-track{display:flex;gap:var(--sp-5);overflow-x:auto;scroll-snap-type:x mandatory;list-style:none;margin:0;padding:var(--sp-2) 0;scrollbar-width:none;-ms-overflow-style:none}
+.testimonial-track::-webkit-scrollbar{display:none}
+/* flex-basis фиксирует ширину карточки: шаг кнопки считается от неё */
+.testimonial{flex:0 0 min(100%,360px);scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:var(--sp-3)}
+/* Логотип канала — круглый аватар, не превью работы: система пропорций
+   .work-thumb--* сюда не относится, здесь всегда 1:1. */
+.testimonial-logo{width:var(--play-sm);height:var(--play-sm);border-radius:var(--radius-pill);object-fit:cover;background:var(--surface);border:1px solid var(--hairline)}
+/* Два разных акцента, оба уже в ходу на странице: имя — контрастом веса Onest
+   (как .work-title), роль — цветом --accent в моноширинной микроразметке
+   (как .step-tc). Третьего способа выделения не вводится. */
+.testimonial-name{font-family:var(--font-display);font-weight:var(--wt-bold);font-size:var(--fs-h3);letter-spacing:-.015em}
+.testimonial-role{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--accent)}
+.testimonial-quote{font-size:var(--fs-sm);color:var(--text-dim);max-width:var(--measure)}
+
 /* ---- process ---- */
 .process-list{display:grid;gap:var(--sp-6);grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
 .process-step{display:flex;flex-direction:column;gap:var(--sp-3);border-top:2px solid var(--accent);padding-top:var(--sp-4)}

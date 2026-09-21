@@ -52,6 +52,12 @@ collections:
             widget: object
             fields:
               - { label: Сферы работы, name: industries, widget: string, hint: "Строка под сеткой показателей — общая подпись ко всем четырём цифрам. Сами цифры и их подписи живут в коллекции «Показатели»." }
+          - label: Отзывы
+            name: testimonials
+            widget: object
+            fields:
+              - { label: Надзаголовок, name: eyebrow, widget: string }
+              - { label: Заголовок, name: title, widget: string }
           - label: Работы
             name: work
             widget: object
@@ -198,6 +204,12 @@ collections:
             widget: object
             fields:
               - { label: Industries, name: industries, widget: string, hint: "Line under the stats grid — one caption for all four figures. The figures themselves live in the «Показатели» collection." }
+          - label: Testimonials
+            name: testimonials
+            widget: object
+            fields:
+              - { label: Eyebrow, name: eyebrow, widget: string }
+              - { label: Title, name: title, widget: string }
           - label: Work
             name: work
             widget: object
@@ -450,6 +462,59 @@ collections:
         options: ["16:9", "9:12", "1:1", "4:5"]
         default: "16:9"
         hint: "Форма превью у всех работ этой категории. 16:9 — горизонтальное видео, 9:12 — вертикальное."
+
+  - name: testimonials
+    label: Отзывы
+    label_singular: Отзыв
+    folder: site/src/data/testimonials
+    format: json
+    extension: json
+    create: true
+    identifier_field: slug
+    slug: "{{fields.slug}}"
+    summary: "{{order}} · {{channel_name}}"
+    sortable_fields: ["order"]
+    fields:
+      - label: Slug
+        name: slug
+        widget: string
+        hint: "Имя файла и постоянный ключ записи. Только строчные латинские буквы, цифры и дефис. После публикации не менять."
+        pattern: ["^[a-z0-9-]+$", "Только строчные латинские буквы, цифры и дефис"]
+      - label: Опубликован
+        name: published
+        widget: boolean
+        default: false
+        hint: "Пока не опубликован ни один отзыв, секция на сайте не показывается вообще."
+      - label: Порядок
+        name: order
+        widget: number
+        value_type: int
+        hint: "Позиция в ленте, сортировка по возрастанию."
+      - label: Канал или клиент
+        name: channel_name
+        widget: string
+        hint: "Имя собственное — одно значение на обе локали, не переводится."
+      - label: Роль (RU)
+        name: role_ru
+        widget: string
+        hint: "Кем автор приходится проекту, напр. «Владелец канала»."
+      - label: Роль (EN)
+        name: role_en
+        widget: string
+        hint: "То же для английской версии."
+      - label: Текст отзыва (RU)
+        name: quote_ru
+        widget: text
+        hint: "Отзыв для русской версии."
+      - label: Текст отзыва (EN)
+        name: quote_en
+        widget: text
+        hint: "Для английской версии — своя формулировка, не перевод русской."
+      - label: Логотип
+        name: logo
+        widget: image
+        required: false
+        hint: "Квадратная картинка: на карточке обрезается в круг. Без неё карточка идёт без аватара."
 
   - name: works
     label: Работы
