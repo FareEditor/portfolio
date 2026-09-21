@@ -133,11 +133,15 @@ export default function BeforeAfter({ c, labels }) {
       {/* Шторка — сам контейнер: тянуть можно за любую его точку, ручка лишь
           показывает границу и держит фокус. */}
       <div className="ba" ref={rootRef} data-armed={String(armed)} onPointerDown={onPointerDown} onPointerMove={onPointerMove}>
-        <video className="ba-video" ref={beforeRef} src={armed ? SRC.before : undefined} preload="none"
-               muted loop playsInline onCanPlay={ready} onTimeUpdate={onTimeUpdate} tabIndex={-1} aria-hidden="true" />
+        {/* Слои: .ba-clip обрезает inset справа, то есть оставляет видимой
+            ЛЕВУЮ полосу до позиции шторки — значит обрезанный слой это «до»,
+            а нижний слой проступает справа и это «после». Менять местами
+            нельзя, не поменяв заодно направление clip-path. */}
+        <video className="ba-video" ref={afterRef} src={armed ? SRC.after : undefined} preload="none"
+               muted loop playsInline onCanPlay={ready} tabIndex={-1} aria-hidden="true" />
         <div className="ba-clip">
-          <video className="ba-video" ref={afterRef} src={armed ? SRC.after : undefined} preload="none"
-                 muted loop playsInline onCanPlay={ready} tabIndex={-1} aria-hidden="true" />
+          <video className="ba-video" ref={beforeRef} src={armed ? SRC.before : undefined} preload="none"
+                 muted loop playsInline onCanPlay={ready} onTimeUpdate={onTimeUpdate} tabIndex={-1} aria-hidden="true" />
         </div>
 
         <span className="ba-label ba-label--before">{labels.before}</span>
