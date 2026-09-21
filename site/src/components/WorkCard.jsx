@@ -73,7 +73,7 @@ export default function WorkCard({ w, watch, aspect }) {
         <span>{w.duration}</span>
       </p>
       <p className="work-text">{w.body}</p>
-      <a className="work-link" href={w.url} target="_blank" rel="noopener">{watch}</a>
+      <a className="work-link" href={w.url} target="_blank" rel="noopener noreferrer" aria-label={w.watchLabel}>{watch}</a>
     </article>
   );
 }

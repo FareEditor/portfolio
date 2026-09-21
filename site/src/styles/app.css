@@ -129,7 +129,9 @@ a:hover{color:var(--accent-warm)}
 .lang-btn{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;font-weight:500;color:var(--text-mute);padding:var(--sp-1) 0;border:0;background:transparent;cursor:pointer;transition:color var(--dur-fast) var(--ease)}
 .lang-btn:hover{color:var(--text)}
 .lang-btn[aria-current="true"]{color:var(--text)}
-.lang-sep{color:var(--line);font-family:var(--font-mono);font-size:var(--fs-mono);user-select:none}
+/* --text-mute, а не --line: разделитель хоть и декоративен, но это видимый
+   текст, и на --line он давал 3.33:1 при пороге 4.5 */
+.lang-sep{color:var(--text-mute);font-family:var(--font-mono);font-size:var(--fs-mono);user-select:none}
 
 /* ---- mobile nav ---- */
 /* <details>: открывается без JS. Escape, возврат фокуса и блокировка

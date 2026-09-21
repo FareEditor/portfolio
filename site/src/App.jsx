@@ -29,8 +29,9 @@ const CONTENT = { ru, en };
 // cap повторяет FIELD_CAPS воркера: клиент режет длину там же, где режет сервер,
 // иначе слишком длинный ввод проходит локальную проверку и падает «сетевой» ошибкой
 const FIELD_ORDER = [
-  { name: "name", kind: "text", cap: 200 },
-  { name: "contact", kind: "text", hint: true, cap: 200 },
+  { name: "name", kind: "text", cap: 200, autoComplete: "name" },
+  // канал связи — не email и не телефон, браузеру подсказывать нечего
+  { name: "contact", kind: "text", hint: true, cap: 200, autoComplete: "off" },
   { name: "project_type", kind: "select", cap: 100 },
   { name: "budget", kind: "select", cap: 100 },
   { name: "message", kind: "textarea", cap: 5000 }
@@ -153,6 +154,9 @@ export default function App({ lang }) {
       url: "https://www.youtube.com/watch?v=" + w.youtube_id,
       thumbLabel: c.work.thumb,
       playLabel: c.work.play + " — " + title,
+      // Две карточки давали ссылки с одинаковым доступным именем;
+      // видимый текст входит в имя целиком, поэтому 2.5.3 соблюдён.
+      watchLabel: c.work.watch + " — " + title,
       playing: playingId === w.youtube_id,
       play: () => openPlayer(w.youtube_id)
     };
@@ -314,6 +318,7 @@ export default function App({ lang }) {
     isSelect: f.kind === "select",
     isTextarea: f.kind === "textarea",
     maxLength: f.cap,
+    autoComplete: f.autoComplete,
     options: f.kind === "select" ? c.contact[f.name] : [],
     showHint: !!f.hint,
     showError: !!invalid[f.name],

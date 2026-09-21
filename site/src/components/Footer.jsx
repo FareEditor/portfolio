@@ -5,7 +5,7 @@ export default function Footer({ wordmark, c }) {
         <span className="wordmark">{wordmark}</span>
         <nav className="footer-nav">
           {c.links.map((l) => (
-            <a className="footer-link" href={l.href} target="_blank" rel="noopener" key={l.label}>{l.label}</a>
+            <a className="footer-link" href={l.href} target="_blank" rel="noopener noreferrer" key={l.label}>{l.label}</a>
           ))}
         </nav>
         <span className="footer-copy">{c.copy}</span>

@@ -55,12 +55,12 @@ export default function Contact({ c, fields, isSuccess, showForm, isError, isSen
           )}
           {showForm && (
             /* INTEGRATION: endpoint формы — POST /api/contact (Cloudflare Worker) */
-            <form className="contact-form" noValidate onSubmit={onSubmit}>
+            <form className="contact-form" method="post" noValidate onSubmit={onSubmit}>
               {fields.map((fd) => (
                 <div className="field" key={fd.key}>
                   <label className="field-label" htmlFor={fd.id}>{fd.label}</label>
                   {fd.isText && (
-                    <input className="field-input" id={fd.id} name={fd.name} type="text" required maxLength={fd.maxLength} disabled={fd.disabled} aria-invalid={fd.invalid} />
+                    <input className="field-input" id={fd.id} name={fd.name} type="text" required maxLength={fd.maxLength} disabled={fd.disabled} aria-invalid={fd.invalid} autoComplete={fd.autoComplete} />
                   )}
                   {fd.isSelect && (
                     <select className="field-select" id={fd.id} name={fd.name} required disabled={fd.disabled} aria-invalid={fd.invalid} value={fd.value} onChange={fd.onChange}>
