@@ -220,9 +220,10 @@ a:hover{color:var(--accent-warm)}
    width: обрезка композитится, ширина дёргала бы layout на каждом кадре drag.
    Позиция приходит переменной --ba-pos (0-100%) из компонента — величина,
    а не оформление, тем же приёмом, что --playhead. */
-/* 70% ширины секции по просьбе владельца; aspect-ratio держит 16:9 сам,
-   высота отдельно не задаётся. margin-inline центрирует уменьшенный блок. */
-.ba{--ba-pos:50%;position:relative;aspect-ratio:16 / 9;width:70%;margin-inline:auto;overflow:hidden;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);touch-action:none;cursor:ew-resize;user-select:none}
+/* Ширина — общий токен --container-narrow, тот же, что у секции работ;
+   aspect-ratio держит 16:9 сам, высота отдельно не задаётся.
+   margin-inline центрирует уменьшенный блок. */
+.ba{--ba-pos:50%;position:relative;aspect-ratio:16 / 9;width:var(--container-narrow);margin-inline:auto;overflow:hidden;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);touch-action:none;cursor:ew-resize;user-select:none}
 .ba-video{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}
 .ba-clip{position:absolute;inset:0;clip-path:inset(0 calc(100% - var(--ba-pos)) 0 0)}
 
@@ -249,8 +250,17 @@ a:hover{color:var(--accent-warm)}
 .ba-spinner{width:16px;height:16px;border:2px solid var(--hairline);border-top-color:var(--accent);border-radius:var(--radius-pill);animation:fare-spin .7s linear infinite}
 
 /* ---- work ---- */
-/* Секция работ живёт на общей рейке --container, как hero, proof и остальные:
-   собственная ширина уводила превью влево относительно всей страницы. */
+/* Секция работ живёт на той же узкой рейке, что и слайдер before/after:
+   владелец закрепил их совпадение как принцип, поэтому обе стороны читают
+   один токен --container-narrow, а не два синхронизируемых вручную числа.
+   Сужаются все три части секции — шапка, табы и панели категорий: заголовок
+   на широкой рейке над узкой сеткой рвал бы секцию надвое, ровно как это
+   было с широким контейнером сетки до пилота v3.
+   Сама сетка карточек не трогается: auto-fill/minmax сам отдаёт меньше
+   колонок на суженном контейнере. */
+.section--work > .section-head,
+.section--work > .work-tabs,
+.section--work > .work-category{width:var(--container-narrow);margin-inline:auto}
 
 /* Табы категорий — фильтр, а не разметка блоков: видна одна категория за раз.
    Прогрессивное усиление держится на классе .js-reveal у <html>: инлайн-скрипт
