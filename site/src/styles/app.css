@@ -223,7 +223,7 @@ a:hover{color:var(--accent-warm)}
 /* Ширина — общий токен --container-narrow, тот же, что у секции работ;
    aspect-ratio держит 16:9 сам, высота отдельно не задаётся.
    margin-inline центрирует уменьшенный блок. */
-.ba{--ba-pos:50%;position:relative;aspect-ratio:16 / 9;width:var(--container-narrow);margin-inline:auto;overflow:hidden;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);touch-action:none;cursor:ew-resize;user-select:none}
+.ba{--ba-pos:50%;position:relative;aspect-ratio:16 / 9;width:100%(--container-narrow);margin-inline:auto;overflow:hidden;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);touch-action:none;cursor:ew-resize;user-select:none}
 .ba-video{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}
 .ba-clip{position:absolute;inset:0;clip-path:inset(0 calc(100% - var(--ba-pos)) 0 0)}
 
@@ -258,9 +258,7 @@ a:hover{color:var(--accent-warm)}
    было с широким контейнером сетки до пилота v3.
    Сама сетка карточек не трогается: auto-fill/minmax сам отдаёт меньше
    колонок на суженном контейнере. */
-.section--work > .section-head,
-.section--work > .work-tabs,
-.section--work > .work-category{width:var(--container-narrow);margin-inline:auto}
+
 
 /* Табы категорий — фильтр, а не разметка блоков: видна одна категория за раз.
    Прогрессивное усиление держится на классе .js-reveal у <html>: инлайн-скрипт
