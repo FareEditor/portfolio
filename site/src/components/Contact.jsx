@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 // Публичный site key; без него (локальная сборка) остаётся заглушка слота
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
-export default function Contact({ c, fields, isSuccess, showForm, isError, isSending, submitLabel, submitCursor, submitOpacity, onSubmit, children }) {
+export default function Contact({ c, fields, isSuccess, showForm, isError, isSending, submitLabel, onSubmit, children }) {
   const slotRef = useRef(null);
   const widgetIdRef = useRef(null);
 
@@ -60,10 +60,10 @@ export default function Contact({ c, fields, isSuccess, showForm, isError, isSen
                 <div className="field" key={fd.key}>
                   <label className="field-label" htmlFor={fd.id}>{fd.label}</label>
                   {fd.isText && (
-                    <input className="field-input" id={fd.id} name={fd.name} type="text" required maxLength={fd.maxLength} disabled={fd.disabled} aria-invalid={fd.invalid} style={{ borderColor: fd.borderColor }} />
+                    <input className="field-input" id={fd.id} name={fd.name} type="text" required maxLength={fd.maxLength} disabled={fd.disabled} aria-invalid={fd.invalid} />
                   )}
                   {fd.isSelect && (
-                    <select className="field-select" id={fd.id} name={fd.name} required disabled={fd.disabled} aria-invalid={fd.invalid} value={fd.value} onChange={fd.onChange} style={{ borderColor: fd.borderColor, color: fd.selectColor }}>
+                    <select className="field-select" id={fd.id} name={fd.name} required disabled={fd.disabled} aria-invalid={fd.invalid} value={fd.value} onChange={fd.onChange}>
                       <option value="" disabled>{c.choose}</option>
                       {fd.options.map((op) => (
                         <option value={op.value} key={op.value}>{op.label}</option>
@@ -71,7 +71,7 @@ export default function Contact({ c, fields, isSuccess, showForm, isError, isSen
                     </select>
                   )}
                   {fd.isTextarea && (
-                    <textarea className="field-textarea" id={fd.id} name={fd.name} rows="5" required maxLength={fd.maxLength} disabled={fd.disabled} aria-invalid={fd.invalid} style={{ borderColor: fd.borderColor }}></textarea>
+                    <textarea className="field-textarea" id={fd.id} name={fd.name} rows="5" required maxLength={fd.maxLength} disabled={fd.disabled} aria-invalid={fd.invalid}></textarea>
                   )}
                   {fd.showHint && <span className="field-hint">{c.hint}</span>}
                   {fd.showError && <span className="field-error" role="alert">{c.required}</span>}
@@ -96,7 +96,7 @@ export default function Contact({ c, fields, isSuccess, showForm, isError, isSen
 
               {isError && <p className="form-error" role="alert">{c.error}</p>}
 
-              <button className="btn-primary btn-submit" type="submit" disabled={isSending} style={{ cursor: submitCursor, opacity: submitOpacity }}>
+              <button className="btn-primary btn-submit" type="submit" disabled={isSending}>
                 {isSending && <span className="spinner" aria-hidden="true"></span>}
                 {submitLabel}
               </button>

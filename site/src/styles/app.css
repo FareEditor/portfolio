@@ -220,10 +220,10 @@ a:hover{color:var(--accent-warm)}
    width: обрезка композитится, ширина дёргала бы layout на каждом кадре drag.
    Позиция приходит переменной --ba-pos (0-100%) из компонента — величина,
    а не оформление, тем же приёмом, что --playhead. */
-/* Ширина — общий токен --container-narrow, тот же, что у секции работ;
-   aspect-ratio держит 16:9 сам, высота отдельно не задаётся.
-   margin-inline центрирует уменьшенный блок. */
-.ba{--ba-pos:50%;position:relative;aspect-ratio:16 / 9;width:100% (--container-narrow);margin-inline:auto;overflow:hidden;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);touch-action:none;cursor:ew-resize;user-select:none}
+/* Во всю ширину секции; aspect-ratio держит 16:9 сам, высота отдельно
+   не задаётся. margin-inline оставлен: он ничего не меняет при width:100%,
+   но переживёт возможное сужение блока. */
+.ba{--ba-pos:50%;position:relative;aspect-ratio:16 / 9;width:100%;margin-inline:auto;overflow:hidden;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);touch-action:none;cursor:ew-resize;user-select:none}
 .ba-video{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}
 .ba-clip{position:absolute;inset:0;clip-path:inset(0 calc(100% - var(--ba-pos)) 0 0)}
 
@@ -250,16 +250,13 @@ a:hover{color:var(--accent-warm)}
 .ba-spinner{width:16px;height:16px;border:2px solid var(--hairline);border-top-color:var(--accent);border-radius:var(--radius-pill);animation:fare-spin .7s linear infinite}
 
 /* ---- work ---- */
-/* Секция работ живёт на той же узкой рейке, что и слайдер before/after:
-   владелец закрепил их совпадение как принцип, поэтому обе стороны читают
-   один токен --container-narrow, а не два синхронизируемых вручную числа.
-   Сужаются все три части секции — шапка, табы и панели категорий: заголовок
-   на широкой рейке над узкой сеткой рвал бы секцию надвое, ровно как это
-   было с широким контейнером сетки до пилота v3.
-   Сама сетка карточек не трогается: auto-fill/minmax сам отдаёт меньше
-   колонок на суженном контейнере. */
-
-
+/* Зазор до следующей секции принадлежит секции, а не последней карточке:
+   margin карточек нужен для интервала между ними и в последнем ряду лишний,
+   поэтому сетка его снимает отрицательным margin, а секция добавляет ту же
+   величину к своему padding. Итоговый зазор не меняется, но его источник
+   больше не зависит от того, сколько карточек оказалось в нижнем ряду —
+   в двухколоночной сетке :last-child покрывал бы только одну из двух. */
+.section--work{--work-card-gap:var(--sp-9);padding-bottom:calc(var(--section-y) + var(--work-card-gap))}
 /* Табы категорий — фильтр, а не разметка блоков: видна одна категория за раз.
    Прогрессивное усиление держится на классе .js-reveal у <html>: инлайн-скрипт
    в <head> ставит его до первой отрисовки, а страховочный таймер снимает, если
@@ -294,11 +291,15 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
 /* row-gap равен интервалу между строками подписи: subgrid наследует row-gap
    родителя, и прежние --sp-9 разносили мета и описание внутри карточки.
    Интервал между карточками задан отдельно, через margin-bottom. */
-.work-grid{display:grid;gap:var(--sp-4) var(--sp-7);grid-template-columns:repeat(auto-fill,minmax(min(100%,560px),1fr));grid-auto-rows:auto}
+.work-grid{display:grid;gap:var(--sp-4) var(--sp-7);grid-template-columns:repeat(auto-fill,minmax(min(100%,560px),1fr));grid-auto-rows:auto;margin-bottom:calc(var(--work-card-gap) * -1)}
 /* Карточка без фона и рамки: превью и есть карточка, текст под ним — подпись.
    subgrid выравнивает строки подписи между колонками, когда заголовки
    занимают разное число строк. Без поддержки subgrid строки просто текут. */
-.work-card{display:grid;gap:var(--sp-4);align-content:start;grid-row:span 5;grid-template-rows:subgrid;margin-bottom:var(--sp-9)}
+/* Интервал между карточками — собственный margin, а не row-gap сетки:
+   subgrid наследует row-gap родителя для строк подписи внутри карточки,
+   поэтому у сетки он маленький. Величина лежит в --work-card-gap на секции,
+   чтобы отступ под последним рядом и padding секции не разъехались. */
+.work-card{display:grid;gap:var(--sp-4);align-content:start;grid-row:span 5;grid-template-rows:subgrid;margin-bottom:var(--work-card-gap)}
 .work-card--featured{grid-column:1 / -1}
 .work-thumb{position:relative;display:block;width:100%;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;cursor:pointer;padding:0;background-color:var(--surface);background-image:repeating-linear-gradient(135deg,var(--surface-raised) 0 var(--thumb-stripe),var(--surface) var(--thumb-stripe) calc(var(--thumb-stripe) * 2));transition:border-color var(--dur) var(--ease)}
 .work-thumb:hover{border-color:var(--accent-line)}
@@ -398,7 +399,13 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
 .faq-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-5);text-align:left;background:transparent;border:0;padding:var(--sp-5) 0;cursor:pointer;font-family:var(--font-body);font-size:var(--fs-body);font-weight:500;transition:color var(--dur-fast) var(--ease)}
 .faq-trigger:hover{color:var(--accent)}
 .faq-icon{flex:0 0 auto;font-family:var(--font-mono);color:var(--text-dim);transition:transform var(--dur) var(--ease)}
-.faq-panel{display:grid;transition:grid-template-rows var(--dur) var(--ease),opacity var(--dur) var(--ease)}
+/* Раскрытое состояние приходит атрибутом data-open — тем же приёмом, что
+   data-active у панели категории и data-armed у слайдера. aria-expanded
+   остаётся на кнопке для скринридера, стилями он не управляет. */
+.faq-panel{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows var(--dur) var(--ease),opacity var(--dur) var(--ease)}
+.faq-item[data-open="true"] .faq-trigger{color:var(--accent)}
+.faq-item[data-open="true"] .faq-icon{transform:rotate(45deg)}
+.faq-item[data-open="true"] .faq-panel{grid-template-rows:1fr;opacity:1}
 .faq-panel-inner{overflow:hidden;min-height:0}
 .faq-answer{font-size:var(--fs-sm);color:var(--text-dim);padding:0 var(--sp-8) var(--sp-5) 0;max-width:70ch}
 
@@ -433,6 +440,14 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
 .field{display:flex;flex-direction:column;gap:var(--sp-2)}
 .field-label{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-dim)}
 .field-input,.field-select,.field-textarea{background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-sm);padding:var(--sp-3) var(--sp-4);width:100%;transition:border-color var(--dur-fast) var(--ease)}
+/* Состояния полей — на нативных селекторах, без классов-модификаторов и без
+   присвоений в style: aria-invalid уже стоит на поле для скринридера, а
+   :invalid у select истинно ровно тогда, когда пустой обязательный select. */
+.field-input[aria-invalid="true"],
+.field-select[aria-invalid="true"],
+.field-textarea[aria-invalid="true"]{border-color:var(--accent-warm)}
+.field-select{color:var(--text)}
+.field-select:invalid{color:var(--text-dim)}
 .field-select{appearance:none;-webkit-appearance:none;cursor:pointer}
 .field-textarea{resize:vertical;font-family:var(--font-body)}
 .field-hint{font-size:var(--fs-mono-lg);color:var(--text-dim)}
@@ -441,6 +456,8 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
 .turnstile-slot{height:64px;border:1px dashed var(--line);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-dim)}
 .form-error{font-size:var(--fs-sm);color:var(--accent-warm);border-left:2px solid var(--accent-warm);padding-left:var(--sp-4)}
 .btn-submit{padding:var(--sp-4) var(--sp-6);gap:var(--sp-3)}
+/* Отправка в процессе: disabled уже выставлен, отдельного флага не нужно */
+.btn-submit:disabled{cursor:not-allowed;opacity:.7}
 .spinner{width:14px;height:14px;border:2px solid var(--on-accent-dim);border-top-color:var(--bg);border-radius:var(--radius-pill);animation:fare-spin .7s linear infinite}
 .form-micro{font-size:var(--fs-mono-lg);color:var(--text-dim);line-height:1.5}
 .form-success{display:flex;flex-direction:column;gap:var(--sp-4);align-items:flex-start;padding:var(--sp-5) 0}
@@ -476,6 +493,6 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
   .hero{gap:var(--sp-6);padding-bottom:var(--sp-8)}
   .hero-foot{gap:var(--sp-5)}
   .work-grid{gap:var(--sp-4) var(--sp-5)}
-  .work-card{margin-bottom:var(--sp-8)}
+  .section--work{--work-card-gap:var(--sp-8)}
 }
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}html{scroll-behavior:auto}}

@@ -52,6 +52,7 @@ export default function App({ lang }) {
   const ioRef = useRef(null);
   const triggeredRef = useRef(false);
   const safetyRef = useRef(0);
+  const rafRef = useRef(0);
 
   const reveal = (el) => { el.dataset.revealed = "1"; };
 
@@ -91,7 +92,16 @@ export default function App({ lang }) {
     // до первой отрисовки, иначе пререндеренный контент мигнёт.
     // Отметка о гидрации гасит страховочный таймер из того же скрипта.
     document.documentElement.setAttribute("data-hydrated", "1");
-    const onScrollEvent = () => { triggeredRef.current = true; onScroll(); };
+    // Обработчик скролла ограничен одним вызовом на кадр: revealInView
+    // обходит все [data-reveal] через querySelectorAll, а scroll прилетает
+    // чаще, чем браузер рисует. rAF, а не setTimeout — привязка к отрисовке,
+    // а не к произвольному интервалу; это throttle, не debounce: reveal
+    // продолжает срабатывать во время прокрутки, а не после её конца.
+    const onScrollEvent = () => {
+      triggeredRef.current = true;
+      if (rafRef.current) return;
+      rafRef.current = requestAnimationFrame(() => { rafRef.current = 0; onScroll(); });
+    };
     window.addEventListener("scroll", onScrollEvent, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
     onScroll();
@@ -113,6 +123,7 @@ export default function App({ lang }) {
       window.removeEventListener("scroll", onScrollEvent);
       window.removeEventListener("resize", onScroll);
       clearTimeout(safetyRef.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       if (ioRef.current) ioRef.current.disconnect();
       if (headerIoRef.current) headerIoRef.current.disconnect();
     };
@@ -200,8 +211,10 @@ export default function App({ lang }) {
     before: c.beforeAfter.before,
     after: c.beforeAfter.after,
     ...(lang === "en"
-      ? { slider: "Comparison wipe position", play: "Play comparison", pause: "Pause comparison", loading: "Loading" }
-      : { slider: "Положение шторки сравнения", play: "Запустить сравнение", pause: "Остановить сравнение", loading: "Загрузка" })
+      ? { slider: "Comparison wipe position", play: "Play comparison", pause: "Pause comparison", loading: "Loading",
+          description: "Two silent clips playing side by side under a draggable divider: the raw camera footage on the left, the same fragment after editing on the right." }
+      : { slider: "Положение шторки сравнения", play: "Запустить сравнение", pause: "Остановить сравнение", loading: "Загрузка",
+          description: "Два немых ролика идут одновременно под перетаскиваемой границей: слева исходный материал с камеры, справа тот же фрагмент после монтажа." })
   };
   const testimonialNav = lang === "en"
     ? { prev: "Previous testimonial", next: "Next testimonial" }
@@ -288,10 +301,6 @@ export default function App({ lang }) {
       btnId: "faq-btn-" + i,
       panelId: "faq-panel-" + i,
       expanded: String(open),
-      color: open ? "var(--accent)" : "var(--text)",
-      iconTransform: open ? "rotate(45deg)" : "rotate(0deg)",
-      rows: open ? "1fr" : "0fr",
-      opacity: open ? "1" : "0",
       toggle: () => setOpenFaq(open ? -1 : i)
     };
   });
@@ -309,9 +318,7 @@ export default function App({ lang }) {
     showHint: !!f.hint,
     showError: !!invalid[f.name],
     invalid: invalid[f.name] ? "true" : "false",
-    borderColor: invalid[f.name] ? "var(--accent-warm)" : "var(--line)",
     value: f.kind === "select" ? selects[f.name] : undefined,
-    selectColor: f.kind === "select" && !selects[f.name] ? "var(--text-dim)" : "var(--text)",
     onChange: f.kind === "select"
       ? (e) => { const v = e.target.value; setSelects((s) => Object.assign({}, s, { [f.name]: v })); }
       : undefined,
@@ -360,8 +367,6 @@ export default function App({ lang }) {
           isError={form === "error"}
           isSending={sending}
           submitLabel={sending ? c.contact.sending : c.contact.button}
-          submitCursor={sending ? "not-allowed" : "pointer"}
-          submitOpacity={sending ? "0.7" : "1"}
           onSubmit={submit}
         >
           <ContactCards cards={contactCards} />

@@ -130,6 +130,12 @@ export default function BeforeAfter({ c, labels }) {
         <h2 className="section-title" id="ba-title">{c.title}</h2>
       </div>
 
+      {/* Оба ролика немые и помечены aria-hidden, поэтому само сравнение
+          незрячему пользователю недоступно. Служебное описание объясняет,
+          что показывает блок; это инфраструктура доступности, а не текст
+          страницы, поэтому пишется здесь, как aria-label табов и кнопок. */}
+      <p className="sr-only">{labels.description}</p>
+
       {/* Шторка — сам контейнер: тянуть можно за любую его точку, ручка лишь
           показывает границу и держит фокус. */}
       <div className="ba" ref={rootRef} data-armed={String(armed)} onPointerDown={onPointerDown} onPointerMove={onPointerMove}>
