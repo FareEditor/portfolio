@@ -77,7 +77,6 @@ export default function Testimonials({ c, items, navLabels }) {
             <p className="testimonial-top-value">{t.topMetricValue}</p>
             <p className="testimonial-top-label">{t.topMetricLabel}</p>
 
-            <p className="testimonial-role">{t.role}</p>
             <p className="testimonial-quote">{t.quote}</p>
 
             {/* Три нижние метрики — перечень пар «значение / тип», поэтому ul.

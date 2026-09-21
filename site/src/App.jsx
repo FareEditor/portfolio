@@ -202,7 +202,7 @@ export default function App({ lang }) {
   const metricLabels = Object.fromEntries(
     METRIC_TYPES.map((m) => [m.slug, lang === "en" ? m.label_en : m.label_ru])
   );
-  // Имя канала — identity, одно на обе локали; тематика, роль, текст и значения
+  // Имя канала — identity, одно на обе локали; тематика, текст и значения
   // метрик локализуются. Слот с неизвестным типом молча выпадает, а не ломает
   // карточку — тот же принцип белого списка, что у aspect в WorkCard.
   const testimonials = TESTIMONIALS.map((t) => ({
@@ -210,7 +210,6 @@ export default function App({ lang }) {
     channel_name: t.channel_name,
     logo: t.logo,
     topic: lang === "en" ? t.channel_topic_en : t.channel_topic_ru,
-    role: lang === "en" ? t.role_en : t.role_ru,
     quote: lang === "en" ? t.quote_en : t.quote_ru,
     topMetricValue: t.top_metric_value,
     topMetricLabel: lang === "en" ? t.top_metric_label_en : t.top_metric_label_ru,

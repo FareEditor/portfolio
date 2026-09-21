@@ -525,14 +525,6 @@ collections:
         name: channel_name
         widget: string
         hint: "Имя собственное — одно значение на обе локали, не переводится."
-      - label: Роль (RU)
-        name: role_ru
-        widget: string
-        hint: "Кем автор приходится проекту, напр. «Владелец канала»."
-      - label: Роль (EN)
-        name: role_en
-        widget: string
-        hint: "То же для английской версии."
       - label: Текст отзыва (RU)
         name: quote_ru
         widget: text
