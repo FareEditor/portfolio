@@ -58,6 +58,14 @@ collections:
             fields:
               - { label: Надзаголовок, name: eyebrow, widget: string }
               - { label: Заголовок, name: title, widget: string }
+          - label: Сравнение до/после
+            name: beforeAfter
+            widget: object
+            fields:
+              - { label: Надзаголовок, name: eyebrow, widget: string }
+              - { label: Заголовок, name: title, widget: string }
+              - { label: Подпись слева, name: before, widget: string, hint: "Исходный материал." }
+              - { label: Подпись справа, name: after, widget: string, hint: "Смонтированный результат." }
           - label: Работы
             name: work
             widget: object
@@ -210,6 +218,14 @@ collections:
             fields:
               - { label: Eyebrow, name: eyebrow, widget: string }
               - { label: Title, name: title, widget: string }
+          - label: Before / after
+            name: beforeAfter
+            widget: object
+            fields:
+              - { label: Eyebrow, name: eyebrow, widget: string }
+              - { label: Title, name: title, widget: string }
+              - { label: Left label, name: before, widget: string, hint: "Raw material." }
+              - { label: Right label, name: after, widget: string, hint: "Edited result." }
           - label: Work
             name: work
             widget: object

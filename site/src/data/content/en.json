@@ -113,6 +113,12 @@
     "eyebrow": "[SLOT: eyebrow for the testimonials section, EN, 1-3 words, role — name the section alongside «MY WORK», «HOW WE WORK»]",
     "title": "[SLOT: heading for the testimonials section, EN, one sentence, role — say why these testimonials are worth trusting; own wording, not a translation]"
   },
+  "beforeAfter": {
+    "eyebrow": "[SLOT: eyebrow for the comparison section, EN, 1-3 words, role — name the section alongside «MY WORK», «HOW WE WORK»]",
+    "title": "[SLOT: heading for the comparison section, EN, one sentence, role — say what the wipe actually shows; own wording, not a translation]",
+    "before": "[SLOT: label for the left side of the wipe, EN, 1-2 words, role — name the raw material]",
+    "after": "[SLOT: label for the right side of the wipe, EN, 1-2 words, role — name the edited result]"
+  },
   "work": {
     "eyebrow": "My work",
     "title": "Long-form videos",

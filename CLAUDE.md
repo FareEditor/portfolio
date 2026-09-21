@@ -74,5 +74,11 @@ Standing rules that survived the redesign:
   `wrangler secret` / GitLab CI variables in production.
 - Do not add a YouTube iframe on page load. Previews are static images;
   the player mounts on click.
+  **Agreed exception — the before/after section.** Its two `<video>` elements
+  carry `preload="none"` and no `src` until an `IntersectionObserver` reports
+  the section on screen; nothing is requested while the visitor has not
+  scrolled to it. This follows the rule rather than breaking it: the ban is on
+  loading a player the visitor is not looking at. Do not "fix" it back to a
+  click-to-play facade — the two clips only make sense playing side by side.
 - Do not send transactional email. iCloud custom domain cannot do it and
   Workers cannot speak SMTP. Telegram + KV only.

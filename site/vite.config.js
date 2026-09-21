@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -7,6 +8,15 @@ import react from '@vitejs/plugin-react';
 // отсутствие переменной) закрыта от индексации — ошибка конфигурации
 // прячет недоделанный сайт, а не сливает его в индекс.
 const isProduction = process.env.DEPLOY_ENV === 'production';
+
+// Секция «до/после» существует, только если оба ролика физически лежат в public.
+// Роль published-флага здесь играет наличие файлов: владелец кладёт их и
+// пересобирает, пустой слайдер с заглушкой вместо видео не показывается никогда.
+// public/ не проходит через бандлер, поэтому import.meta.glob его не видит —
+// проверка делается на этапе чтения конфига и уезжает в define.
+const BEFORE_AFTER_DIR = 'public/media/before-after';
+const hasBeforeAfter = ['before.mp4', 'after.mp4']
+  .every((f) => existsSync(resolve(import.meta.dirname, BEFORE_AFTER_DIR, f)));
 
 const robotsGuard = () => ({
   name: 'robots-guard',
@@ -45,6 +55,7 @@ export default defineConfig(({ isSsrBuild, mode }) => {
   return {
     // Absolute base so hashed assets resolve from both / and /ru/
     base: '/',
+    define: { __HAS_BEFORE_AFTER__: JSON.stringify(hasBeforeAfter) },
     plugins: [react(), ...(isSsrBuild ? [] : [robotsGuard()])],
     server: {
       // Локально /api уходит в `wrangler dev` (worker/), форма работает без CORS

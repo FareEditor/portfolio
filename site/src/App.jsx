@@ -11,6 +11,7 @@ import settings from './data/settings.json';
 import Header from './components/Header.jsx';
 import Hero from './components/Hero.jsx';
 import Stats from './components/Stats.jsx';
+import BeforeAfter from './components/BeforeAfter.jsx';
 import Work from './components/Work.jsx';
 import Testimonials from './components/Testimonials.jsx';
 import Process from './components/Process.jsx';
@@ -194,6 +195,14 @@ export default function App({ lang }) {
   // служебная подпись группы табов: имя роли для скринридера, не текст страницы —
   // поэтому живёт в коде рядом с подписями плеера, а не в content/*.json
   const workTabsLabel = lang === "en" ? "Work categories" : "Категории работ";
+  // Служебные подписи слайдера: имена ролей для скринридера, не текст страницы.
+  const baLabels = {
+    before: c.beforeAfter.before,
+    after: c.beforeAfter.after,
+    ...(lang === "en"
+      ? { slider: "Comparison wipe position", play: "Play comparison", pause: "Pause comparison", loading: "Loading" }
+      : { slider: "Положение шторки сравнения", play: "Запустить сравнение", pause: "Остановить сравнение", loading: "Загрузка" })
+  };
   const testimonialNav = lang === "en"
     ? { prev: "Previous testimonial", next: "Next testimonial" }
     : { prev: "Предыдущий отзыв", next: "Следующий отзыв" };
@@ -335,6 +344,9 @@ export default function App({ lang }) {
           openPlayer={openPlayer}
         />
         <Stats items={statItems} industries={c.stats.industries} />
+        {/* Секции нет, пока оба ролика не лежат в public/media/before-after —
+            флаг считает vite.config при чтении конфига. */}
+        {__HAS_BEFORE_AFTER__ && <BeforeAfter c={c.beforeAfter} labels={baLabels} />}
         <Work c={c.work} categories={categories} tabsLabel={workTabsLabel} />
         <Testimonials c={c.testimonials} items={testimonials} navLabels={testimonialNav} />
         <Process c={c.process} />
