@@ -437,6 +437,17 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
 .contact-card-value{font-size:var(--fs-sm);font-weight:var(--wt-medium);overflow-wrap:anywhere}
 /* ссылка внутри карточки не перекрашивается по общему правилу для a:hover */
 .contact-card:hover .contact-card-value{color:var(--text)}
+/* Замена формы без JS. display:none по умолчанию — раскрывает только <style>
+   внутри <noscript>, который браузер разбирает при выключенных скриптах.
+   Колонку в .contact-layout занимает ту же, что форма: auto-fit отдаёт её
+   второй ячейке, когда .contact-panel скрыта. */
+.contact-fallback{display:none;flex-direction:column;gap:var(--sp-4);background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius-md);padding:var(--sp-6)}
+.contact-fallback-note{font-size:var(--fs-sm);color:var(--text-dim)}
+/* карточки в замене уже не под текстом, верхний отступ им не нужен */
+.contact-fallback .contact-cards{margin-top:0}
+/* в панели замены карточки уже, чем в левой колонке: на узких экранах два
+   столбца рвут e-mail по буквам — ставим один */
+@media (max-width:480px){.contact-fallback .contact-cards{grid-template-columns:1fr}}
 .contact-panel{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius-md);padding:var(--sp-6)}
 .contact-form{display:flex;flex-direction:column;gap:var(--sp-5);position:relative}
 .field{display:flex;flex-direction:column;gap:var(--sp-2)}

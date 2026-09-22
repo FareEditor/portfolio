@@ -150,6 +150,7 @@ collections:
               - { label: Успешная отправка, name: success, widget: text }
               - { label: Ошибка отправки, name: error, widget: text }
               - { label: Уведомление о данных, name: micro, widget: text }
+              - { label: Текст вместо формы без JavaScript, name: noscript, widget: text }
               - label: Типы проектов
                 name: project_type
                 widget: list
@@ -310,6 +311,7 @@ collections:
               - { label: Success message, name: success, widget: text }
               - { label: Error message, name: error, widget: text }
               - { label: Data notice, name: micro, widget: text }
+              - { label: Text shown instead of the form without JavaScript, name: noscript, widget: text }
               - label: Project types
                 name: project_type
                 widget: list

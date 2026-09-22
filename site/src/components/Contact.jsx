@@ -32,6 +32,13 @@ export default function Contact({ c, fields, isSuccess, showForm, isError, isSen
 
   return (
     <section className="section" id="contact" aria-labelledby="contact-title">
+      {/* Отсутствие JS нельзя обнаружить скриптом — только разметкой. Браузер
+          разбирает содержимое <noscript> лишь когда скрипты выключены, поэтому
+          это единственный честный переключатель. dangerouslySetInnerHTML нужен
+          технически: при включённом JS браузер держит содержимое noscript как
+          текст, а не как DOM, и обычные children дали бы рассинхрон гидрации. */}
+      <noscript dangerouslySetInnerHTML={{ __html: '<style>.contact-panel{display:none}.contact-fallback{display:flex}.contact-intro .contact-cards{display:none}</style>' }} />
+
       <div className="contact-layout">
         <div className="contact-intro" data-reveal="true">
           <span className="eyebrow">{c.eyebrow}</span>
@@ -103,6 +110,15 @@ export default function Contact({ c, fields, isSuccess, showForm, isError, isSen
               <p className="form-micro">{c.micro}</p>
             </form>
           )}
+        </div>
+
+        {/* Замена формы для браузера без JS: та же сетка карточек, что слева,
+            на месте формы. Скрыт по умолчанию, раскрывается стилем из noscript.
+            {children} — тот же React-элемент, что и в левой колонке: данные
+            карточек остаются в одном месте, дублируется только вызов. */}
+        <div className="contact-fallback">
+          <p className="contact-fallback-note">{c.noscript}</p>
+          {children}
         </div>
       </div>
     </section>
