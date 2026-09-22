@@ -115,7 +115,10 @@ a:hover{color:var(--accent-warm)}
    капсула перекрывает уезжающий под неё контент сама, без backdrop-filter. */
 .site-header{position:sticky;top:var(--header-top);z-index:var(--z-header);padding:0 var(--gutter);pointer-events:none}
 .header-inner{width:fit-content;max-width:100%;margin:0 auto;padding:0 var(--sp-3) 0 var(--sp-5);height:var(--header-h);display:flex;align-items:center;gap:var(--sp-7);pointer-events:auto;border:1px solid var(--hairline);border-radius:var(--radius-pill);background:var(--bg);box-shadow:var(--shadow-header)}
-.wordmark{font-family:var(--font-mono);font-weight:500;font-size:var(--fs-mono-lg);letter-spacing:var(--tracking-wordmark);color:var(--text);text-transform:uppercase;flex:0 0 auto}
+/* Один класс на обе точки — капсулу header и футер. Цвет уже был на
+   максимуме (--text против --text-dim у соседних ссылок), поэтому
+   разрыв добирается весом: 500 -> --wt-bold. */
+.wordmark{font-family:var(--font-mono);font-weight:var(--wt-bold);font-size:var(--fs-mono-lg);letter-spacing:var(--tracking-wordmark);color:var(--text);text-transform:uppercase;flex:0 0 auto}
 .wordmark:hover{color:var(--accent)}
 .site-nav{display:flex;align-items:center;gap:var(--sp-6)}
 /* вес, а не цвет и не подчёркивание: наведённая ссылка тяжелее остальных */
@@ -286,7 +289,7 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
    в дереве доступности остаётся — панель получает заголовок, а иерархия
    страницы не теряет ступень h3 между h2 секции и h4 работы */
 .js-reveal .work-category-title{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;clip-path:inset(50%);overflow:hidden;white-space:nowrap}
-.work-category-blurb{font-weight:var(--wt-light);font-size:var(--fs-sm);color:var(--text-dim);max-width:var(--measure)}
+.work-category-blurb{font-weight:var(--wt-semibold);font-size:var(--fs-blurb);color:var(--text-dim);max-width:var(--measure)}
 
 /* row-gap равен интервалу между строками подписи: subgrid наследует row-gap
    родителя, и прежние --sp-9 разносили мета и описание внутри карточки.

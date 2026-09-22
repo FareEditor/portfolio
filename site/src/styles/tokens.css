@@ -106,6 +106,7 @@
   --wt-light:300;
   --wt-regular:400;
   --wt-medium:500;
+  --wt-semibold:600;
   --wt-bold:700;
   --wt-black:800;
 
@@ -117,6 +118,9 @@
   --fs-lead:clamp(1.0313rem,1.4vw,1.1875rem);
   --fs-body:1rem;
   --fs-sm:.9375rem;
+  /* вводный абзац категории: на 15% крупнее --fs-sm. Выражен от него же,
+     чтобы при правке базовой ступени не отвязаться от шкалы. */
+  --fs-blurb:calc(var(--fs-sm) * 1.15);
   --fs-mono:.6875rem;
   --fs-mono-lg:.8125rem;
 
