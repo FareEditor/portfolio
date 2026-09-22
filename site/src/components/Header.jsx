@@ -23,7 +23,7 @@ function LangSwitch({ langLinks, onLangSwitch }) {
   );
 }
 
-export default function Header({ wordmark, navItems, langLinks, cta, menuLabel, headerRef, onLangSwitch }) {
+export default function Header({ wordmark, navItems, langLinks, cta, menuLabel, onLangSwitch }) {
   // <details> открывается без JS. Эффекты ниже добавляют то, чего нативное
   // поведение не даёт: Escape, возврат фокуса и блокировку прокрутки.
   const [menuOpen, setMenuOpen] = useState(false);
@@ -54,7 +54,7 @@ export default function Header({ wordmark, navItems, langLinks, cta, menuLabel, 
   }, [menuOpen]);
 
   return (
-    <header className="site-header" ref={headerRef}>
+    <header className="site-header">
       <div className="header-inner">
         <a className="wordmark" href="#top">{wordmark}</a>
 

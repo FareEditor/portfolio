@@ -110,13 +110,11 @@ a:hover{color:var(--accent-warm)}
 
 /* ---- header ---- */
 /* Плавающая капсула: не растянута на всю ширину, отступ сверху, своя тень.
-   Состояние «страница прокручена» приходит классом .is-scrolled от
-   IntersectionObserver-сентинела — прямых записей в element.style нет. */
+   Вид один и тот же в любой точке прокрутки — состояния, наблюдателя и
+   сентинела больше нет, поэтому шапка не зависит от JS. Фон непрозрачный:
+   капсула перекрывает уезжающий под неё контент сама, без backdrop-filter. */
 .site-header{position:sticky;top:var(--header-top);z-index:var(--z-header);padding:0 var(--gutter);pointer-events:none}
-.header-inner{width:fit-content;max-width:100%;margin:0 auto;padding:0 var(--sp-3) 0 var(--sp-5);height:var(--header-h);display:flex;align-items:center;gap:var(--sp-7);pointer-events:auto;border:1px solid transparent;border-radius:var(--radius-pill);background:transparent;transition:background var(--dur) var(--ease),border-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease)}
-.site-header.is-scrolled .header-inner{background:var(--bg-blur);border-color:var(--hairline);box-shadow:var(--shadow-capsule);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-/* сентинел высотой в отступ капсулы: пока он в зоне видимости, страница «вверху» */
-.scroll-sentinel{position:absolute;top:0;left:0;width:1px;height:calc(var(--header-h) + var(--header-top));pointer-events:none}
+.header-inner{width:fit-content;max-width:100%;margin:0 auto;padding:0 var(--sp-3) 0 var(--sp-5);height:var(--header-h);display:flex;align-items:center;gap:var(--sp-7);pointer-events:auto;border:1px solid var(--hairline);border-radius:var(--radius-pill);background:var(--bg);box-shadow:var(--shadow-header)}
 .wordmark{font-family:var(--font-mono);font-weight:500;font-size:var(--fs-mono-lg);letter-spacing:var(--tracking-wordmark);color:var(--text);text-transform:uppercase;flex:0 0 auto}
 .wordmark:hover{color:var(--accent)}
 .site-nav{display:flex;align-items:center;gap:var(--sp-6)}

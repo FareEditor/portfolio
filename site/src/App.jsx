@@ -47,9 +47,6 @@ export default function App({ lang }) {
   const [playingId, setPlayingId] = useState(null);
 
   const playheadRef = useRef(null);
-  const headerRef = useRef(null);
-  const sentinelRef = useRef(null);
-  const headerIoRef = useRef(null);
   const ioRef = useRef(null);
   const triggeredRef = useRef(false);
   const safetyRef = useRef(0);
@@ -107,14 +104,6 @@ export default function App({ lang }) {
     window.addEventListener("resize", onScroll, { passive: true });
     onScroll();
     setupReveal();
-    // Состояние «страница прокручена» — пересечение сентинела, а не порог в px.
-    // Высота сентинела задана в CSS, магического числа в JS нет.
-    if (sentinelRef.current && headerRef.current) {
-      headerIoRef.current = new IntersectionObserver(
-        ([entry]) => headerRef.current.classList.toggle("is-scrolled", !entry.isIntersecting)
-      );
-      headerIoRef.current.observe(sentinelRef.current);
-    }
     // страховка: если ни scroll, ни IO не сработали (страница во фрейме) — показываем всё
     safetyRef.current = setTimeout(() => {
       revealInView();
@@ -126,7 +115,6 @@ export default function App({ lang }) {
       clearTimeout(safetyRef.current);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       if (ioRef.current) ioRef.current.disconnect();
-      if (headerIoRef.current) headerIoRef.current.disconnect();
     };
   }, []);
 
@@ -332,8 +320,6 @@ export default function App({ lang }) {
 
   return (
     <>
-      <div className="scroll-sentinel" ref={sentinelRef} aria-hidden="true"></div>
-
       <div className="playhead">
         <div className="playhead-fill" ref={playheadRef}></div>
       </div>
@@ -344,7 +330,6 @@ export default function App({ lang }) {
         langLinks={langLinks}
         cta={c.cta}
         menuLabel={c.menu}
-        headerRef={headerRef}
         onLangSwitch={switchLang}
       />
 
