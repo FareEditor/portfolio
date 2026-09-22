@@ -125,6 +125,19 @@ export default function BeforeAfter({ c, labels }) {
 
   return (
     <section className="section section--ba" aria-labelledby="ba-title">
+      {/* Без JS секция нерабочая по устройству: src у обоих video появляется
+          только после IntersectionObserver, шторка двигается состоянием, кнопка
+          зовёт обработчик. Пустой кадр с застывшей границей читается как
+          поломка, а статичной замены у сравнения двух роликов нет — поэтому
+          секция убирается целиком. Механизм тот же, что в Contact.jsx:
+          <style> внутри <noscript> браузер разбирает только при выключенных
+          скриптах; dangerouslySetInnerHTML нужен, чтобы при включённых не
+          получить рассинхрон гидрации (children у noscript тогда — текст).
+          Отступы соседей править не нужно: .section задаёт только
+          padding-bottom, поэтому пропавшая секция оставляет ровно тот же
+          зазор, что между любыми двумя соседними секциями. */}
+      <noscript dangerouslySetInnerHTML={{ __html: '<style>.section--ba{display:none}</style>' }} />
+
       <div className="section-head" data-reveal="true">
         <span className="eyebrow">{c.eyebrow}</span>
         <h2 className="section-title" id="ba-title">{c.title}</h2>
