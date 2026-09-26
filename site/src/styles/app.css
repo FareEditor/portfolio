@@ -28,7 +28,7 @@ a:hover{color:var(--accent-warm)}
 @keyframes fare-pulse{0%,100%{box-shadow:0 0 0 0 var(--live-halo)}70%{box-shadow:0 0 0 6px var(--live-halo-0)}}
 @keyframes fare-spin{to{transform:rotate(360deg)}}
 @keyframes fare-fade{from{opacity:0}to{opacity:1}}
-@keyframes fare-tab-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes fare-fade-out{from{opacity:1}to{opacity:0}}
 /* «здесь нет действия»: четыре затухающих колебания и красная рамка,
    возвращающаяся к --line на последней пятой длительности */
 @keyframes fare-no-action{
@@ -278,9 +278,16 @@ a:hover{color:var(--accent-warm)}
 .work-tab:focus-visible{border-radius:var(--radius-pill)}
 
 .js-reveal .work-category[data-active="false"]{display:none}
-/* переключение — только CSS-анимация появления; prefers-reduced-motion гасит её
-   общим правилом внизу файла, конечное состояние при этом обычное */
-.js-reveal .work-category[data-active="true"]{animation:fare-tab-in var(--dur) var(--ease)}
+/* Смена категории — cross-fade только по opacity, с перекрытием: новая панель
+   проявляется в потоке, уходящая одновременно гаснет поверх неё, вынутая из
+   потока абсолютным позиционированием, поэтому высоту секции задаёт только
+   новая. --dur-fast — тот же темп, что у смены цвета самой пилюли таба:
+   таб и панель переключаются одним движением. Уходящую панель снимает
+   animationend; prefers-reduced-motion сводит обе анимации к .001ms общим
+   правилом внизу файла, и переключение становится мгновенным. */
+.js-reveal .work-panels{position:relative}
+.js-reveal .work-category[data-active="true"]{animation:fare-fade var(--dur-fast) var(--ease)}
+.js-reveal .work-category[data-leaving="true"]{display:block;position:absolute;inset:0 0 auto 0;pointer-events:none;animation:fare-fade-out var(--dur-fast) var(--ease) forwards}
 /* без JS категории читаются подряд и разделены рейкой */
 html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);border-top:1px solid var(--hairline);padding-top:var(--sp-7)}
 .work-category-head{display:flex;flex-direction:column;gap:var(--sp-2);margin-bottom:var(--sp-7)}

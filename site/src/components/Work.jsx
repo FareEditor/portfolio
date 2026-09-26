@@ -11,7 +11,7 @@ const CAP_FROM = 7;
 const tabId = (slug) => 'work-tab-' + slug;
 const panelId = (slug) => 'work-panel-' + slug;
 
-function CategoryPanel({ category, active, watch, showAllLabel }) {
+function CategoryPanel({ category, active, leaving, onLeft, watch, showAllLabel }) {
   const [showAll, setShowAll] = useState(false);
   const capped = category.works.length >= CAP_FROM && !showAll;
   const visible = capped ? category.works.slice(0, VISIBLE_CAP) : category.works;
@@ -23,6 +23,13 @@ function CategoryPanel({ category, active, watch, showAllLabel }) {
       role="tabpanel"
       aria-labelledby={tabId(category.slug)}
       data-active={String(active)}
+      data-leaving={leaving ? 'true' : undefined}
+      // уходящая панель ещё видна на время fade, но уже не принимает
+      // ни фокус, ни клики, и скринридер её не читает
+      inert={leaving || undefined}
+      // animationend всплывает от вложенных анимаций (пульс, спиннер) —
+      // считается только собственная анимация панели
+      onAnimationEnd={leaving ? (e) => { if (e.target === e.currentTarget) onLeft(); } : undefined}
     >
       {/* Заголовок категории остаётся в разметке: без JS он ведёт свой блок,
           с JS его визуальную роль берёт активный таб, а сам h3 уходит
@@ -50,6 +57,10 @@ function CategoryPanel({ category, active, watch, showAllLabel }) {
 
 export default function Work({ c, categories, tabsLabel }) {
   const [activeSlug, setActiveSlug] = useState(categories[0] ? categories[0].slug : null);
+  // Панель, которая гаснет во время cross-fade. Панели не размонтируются:
+  // все живут в DOM, неактивные скрыты через data-active, поэтому состояние
+  // внутри них («показать все») переживает смену таба.
+  const [leavingSlug, setLeavingSlug] = useState(null);
   const tabRefs = useRef([]);
 
   const found = categories.findIndex((category) => category.slug === activeSlug);
@@ -58,9 +69,16 @@ export default function Work({ c, categories, tabsLabel }) {
   // Automatic activation по паттерну ARIA tabs: стрелка и переносит фокус,
   // и сразу открывает категорию — отдельного подтверждения не требуется.
   // Enter/Space обрабатывать не нужно: это <button>, он сам шлёт click.
+  // Один вход для клика и клавиатуры: оба пути дают одинаковый cross-fade.
+  const select = (slug) => {
+    if (slug === activeSlug) return;
+    setLeavingSlug(categories[current] ? categories[current].slug : null);
+    setActiveSlug(slug);
+  };
+
   const activate = (i) => {
     const next = (i + categories.length) % categories.length;
-    setActiveSlug(categories[next].slug);
+    select(categories[next].slug);
     const el = tabRefs.current[next];
     if (el) el.focus();
   };
@@ -96,7 +114,7 @@ export default function Work({ c, categories, tabsLabel }) {
               aria-selected={i === current ? 'true' : 'false'}
               tabIndex={i === current ? 0 : -1}
               ref={(el) => { tabRefs.current[i] = el; }}
-              onClick={() => setActiveSlug(category.slug)}
+              onClick={() => select(category.slug)}
             >
               {category.title}
             </button>
@@ -104,15 +122,19 @@ export default function Work({ c, categories, tabsLabel }) {
         </div>
       )}
 
-      {categories.map((category, i) => (
-        <CategoryPanel
-          key={category.slug}
-          category={category}
-          active={i === current}
-          watch={c.watch}
-          showAllLabel={c.showAll}
-        />
-      ))}
+      <div className="work-panels">
+        {categories.map((category, i) => (
+          <CategoryPanel
+            key={category.slug}
+            category={category}
+            active={i === current}
+            leaving={category.slug === leavingSlug && i !== current}
+            onLeft={() => setLeavingSlug(null)}
+            watch={c.watch}
+            showAllLabel={c.showAll}
+          />
+        ))}
+      </div>
     </section>
   );
 }
