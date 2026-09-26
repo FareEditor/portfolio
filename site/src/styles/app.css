@@ -404,7 +404,7 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
 }
 /* ---- faq ---- */
 .faq-list{display:flex;flex-direction:column;max-width:840px}
-.faq-item{border-bottom:1px solid var(--hairline)}
+.faq-item{position:relative;border-bottom:1px solid var(--hairline)}
 .faq-heading{margin:0;font-size:inherit;font-weight:inherit}
 .faq-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-5);text-align:left;background:transparent;border:0;padding:var(--sp-5) 0;cursor:pointer;font-family:var(--font-body);font-size:var(--fs-body);font-weight:500;transition:color var(--dur-fast) var(--ease)}
 .faq-trigger:hover{color:var(--accent)}
@@ -416,6 +416,20 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
 .faq-item[data-open="true"] .faq-trigger{color:var(--accent)}
 .faq-item[data-open="true"] .faq-icon{transform:rotate(45deg)}
 .faq-item[data-open="true"] .faq-panel{grid-template-rows:1fr;opacity:1}
+/* Раскрытый пункт обведён целиком — вопрос и ответ одной рамкой. Рамка на
+   ::before, а не border самого пункта: закрытые и раскрытые пункты не меняют
+   ни отступов, ни геометрии текста. Выносится на --sp-3 за колонку, чтобы
+   не прижиматься к тексту, и на 1px вверх и вниз — ложится ровно на
+   разделители соседей, а не рядом с ними. --accent-warm — единственный
+   существующий оранжевый; --dur — тот же темп, что у поворота иконки
+   и раскрытия панели, все три сигнала идут от одного data-open. */
+.faq-item::before{content:"";position:absolute;inset:-1px calc(var(--sp-3) * -1);border:1px solid transparent;border-radius:var(--radius-md);pointer-events:none;transition:border-color var(--dur) var(--ease)}
+.faq-item[data-open="true"]::before{border-color:var(--accent-warm)}
+/* общее правило reduced-motion внизу файла написано через *, а * не выбирает
+   псевдоэлементы — замер показал 240ms у рамки при reduce. Гасится явно. */
+@media (prefers-reduced-motion:reduce){
+  .faq-item::before{transition:none}
+}
 .faq-panel-inner{overflow:hidden;min-height:0}
 .faq-answer{font-size:var(--fs-sm);color:var(--text-dim);padding:0 var(--sp-8) var(--sp-5) 0;max-width:70ch}
 
