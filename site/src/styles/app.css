@@ -54,7 +54,10 @@ a:hover{color:var(--accent-warm)}
 @keyframes fare-spin{to{transform:rotate(360deg)}}
 @keyframes fare-fade{from{opacity:0}to{opacity:1}}
 @keyframes fare-card-in{from{opacity:0;translate:0 var(--card-shift)}to{opacity:1;translate:none}}
-@keyframes fare-fade-out{from{opacity:1}to{opacity:0}}
+@keyframes fare-card-out{to{opacity:0;translate:0 var(--card-exit-shift)}}
+/* состояния вкладки работ: те же значения, что у .work-tab и активного таба */
+@keyframes fare-tab-on{from{background:transparent;border-color:var(--line);color:var(--text-dim)}to{background:var(--accent);border-color:var(--accent);color:var(--bg)}}
+@keyframes fare-tab-off{from{background:var(--accent);border-color:var(--accent);color:var(--bg)}to{background:transparent;border-color:var(--line);color:var(--text-dim)}}
 /* «здесь нет действия»: четыре затухающих колебания и красная рамка,
    возвращающаяся к --line на последней пятой длительности */
 @keyframes fare-no-action{
@@ -311,16 +314,30 @@ a:hover{color:var(--accent-warm)}
 .work-tab:focus-visible{border-radius:var(--radius-pill)}
 
 .js-reveal .work-category[data-active="false"]{display:none}
-/* Смена категории — cross-fade только по opacity, с перекрытием: новая панель
-   проявляется в потоке, уходящая одновременно гаснет поверх неё, вынутая из
-   потока абсолютным позиционированием, поэтому высоту секции задаёт только
-   новая. --dur-fast — тот же темп, что у смены цвета самой пилюли таба:
-   таб и панель переключаются одним движением. Уходящую панель снимает
-   animationend; prefers-reduced-motion сводит обе анимации к .001ms общим
-   правилом внизу файла, и переключение становится мгновенным. */
-.js-reveal .work-panels{position:relative}
-.js-reveal .work-category[data-active="true"]{animation:fare-fade var(--dur-fast) var(--ease)}
-.js-reveal .work-category[data-leaving="true"]{display:block;position:absolute;inset:0 0 auto 0;pointer-events:none;animation:fare-fade-out var(--dur-fast) var(--ease) forwards}
+/* Смена категории: exit → перекраска вкладок → enter (Work.jsx, data-phase).
+   Анимируются заголовок-подпись категории, карточки и «показать все» —
+   всё, что меняется вместе с категорией. Карточки и подпись уходят вверх
+   с ускорением (--ease-in, --dur-card-out), новые приходят снизу той же
+   формой, что при первом появлении (fare-card-in, --dur-card, --ease).
+   exit без from: старт с текущего значения — ещё не проявленная карточка
+   (opacity 0) не вспыхивает перед уходом. forwards держит ушедших
+   невидимыми до смены панели, backwards держит пришедших в начальной точке
+   на время стаггера. Специфичность (0,4,0) выше правила reveal карточки. */
+.js-reveal .work-panels .work-category[data-phase] .work-category-head{--i:0}
+.js-reveal .work-panels .work-category[data-phase] .show-all-wrap{--i:6}
+.js-reveal .work-panels .work-category[data-phase="exit"] :is(.work-category-head,.work-card,.show-all-wrap){animation:fare-card-out var(--dur-card-out) var(--ease-in) forwards;animation-delay:calc(var(--stagger-card) * var(--i, 0))}
+.js-reveal .work-panels .work-category[data-phase="enter"] :is(.work-category-head,.work-card,.show-all-wrap){animation:fare-card-in var(--dur-card) var(--ease) backwards;animation-delay:calc(var(--stagger-card) * var(--i, 0))}
+/* Вкладки перекрашиваются с задержкой --tab-delay и в темпе --dur-tab, пока
+   идёт смена. Keyframes, а не переопределение transition: клик мышью
+   оставляет фокус на вкладке, а inert на уходящей панели в том же коммите
+   заставляет браузер пересчитать стиль раньше, чем применится
+   data-switching, — transition стартовал бы со старыми 140ms без задержки.
+   Анимация перекрывает transition в каскаде и начинается, когда оба условия
+   сошлись, в каком бы порядке их ни применил браузер. Гаснет только вкладка,
+   с которой ушли (data-from), а не все невыбранные. Вне смены у вкладок
+   прежние быстрые hover-переходы. */
+.js-reveal .work-tabs[data-switching="true"] .work-tab[aria-selected="true"]{animation:fare-tab-on var(--dur-tab) var(--ease-tab) var(--tab-delay) backwards}
+.js-reveal .work-tabs[data-switching="true"] .work-tab[aria-selected="false"][data-from="true"]{animation:fare-tab-off var(--dur-tab) var(--ease-tab) var(--tab-delay) backwards}
 /* без JS категории читаются подряд и разделены рейкой */
 html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);border-top:1px solid var(--hairline);padding-top:var(--sp-7)}
 .work-category-head{display:flex;flex-direction:column;gap:var(--sp-2);margin-bottom:var(--sp-7)}

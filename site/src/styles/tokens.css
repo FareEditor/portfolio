@@ -166,8 +166,16 @@
      блок не дёргается на пару пикселей, высокий не улетает на сотню. */
   --reveal-shift:24px;
   --card-shift:clamp(28px,18%,72px);
+  --card-exit-shift:clamp(-72px,-20%,-28px);
   --dur-card:360ms;
+  --dur-card-out:220ms;
   --stagger-card:40ms;
+  /* ease-in для ухода: ускорение, карточка «срывается» вверх */
+  --ease-in:cubic-bezier(.4,0,1,1);
+  /* смена цвета вкладок при переключении категории работ */
+  --dur-tab:360ms;
+  --tab-delay:120ms;
+  --ease-tab:cubic-bezier(.25,.1,.25,1);
   /* лесенка hero: значения прежние, из литералов в токены */
   --hero-delay-1:60ms;
   --hero-delay-2:120ms;
@@ -205,5 +213,5 @@
    но не задержки. Все задержки последовательностей обнуляются здесь, в
    одном месте — иначе элемент висел бы невидимым на время задержки. */
 @media (prefers-reduced-motion:reduce){
-  :root{--reveal-step:0ms;--stagger-card:0ms;--hero-delay-1:0ms;--hero-delay-2:0ms;--hero-delay-3:0ms}
+  :root{--reveal-step:0ms;--stagger-card:0ms;--tab-delay:0ms;--hero-delay-1:0ms;--hero-delay-2:0ms;--hero-delay-3:0ms}
 }

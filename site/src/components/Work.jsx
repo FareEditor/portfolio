@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import WorkCard from './WorkCard.jsx';
 
 // Порог «показать все» применяется внутри активной категории, а не ко всей секции:
@@ -11,7 +11,7 @@ const CAP_FROM = 7;
 const tabId = (slug) => 'work-tab-' + slug;
 const panelId = (slug) => 'work-panel-' + slug;
 
-function CategoryPanel({ category, active, leaving, onLeft, watch, showAllLabel }) {
+function CategoryPanel({ category, active, phase, watch, showAllLabel }) {
   const [showAll, setShowAll] = useState(false);
   const capped = category.works.length >= CAP_FROM && !showAll;
   const visible = capped ? category.works.slice(0, VISIBLE_CAP) : category.works;
@@ -23,13 +23,10 @@ function CategoryPanel({ category, active, leaving, onLeft, watch, showAllLabel 
       role="tabpanel"
       aria-labelledby={tabId(category.slug)}
       data-active={String(active)}
-      data-leaving={leaving ? 'true' : undefined}
-      // уходящая панель ещё видна на время fade, но уже не принимает
+      data-phase={phase}
+      // уходящая панель ещё видна, пока гаснут карточки, но уже не принимает
       // ни фокус, ни клики, и скринридер её не читает
-      inert={leaving || undefined}
-      // animationend всплывает от вложенных анимаций (пульс, спиннер) —
-      // считается только собственная анимация панели
-      onAnimationEnd={leaving ? (e) => { if (e.target === e.currentTarget) onLeft(); } : undefined}
+      inert={phase === 'exit' || undefined}
     >
       {/* Заголовок категории остаётся в разметке: без JS он ведёт свой блок,
           с JS его визуальную роль берёт активный таб, а сам h3 уходит
@@ -55,25 +52,79 @@ function CategoryPanel({ category, active, leaving, onLeft, watch, showAllLabel 
   );
 }
 
+// Смена категории — три этапа по референсу владельца: карточки старой
+// категории уходят вверх (exit), вкладки перекрашиваются, карточки новой
+// приходят снизу (enter). Цвет вкладки идёт от aria-selected сразу по клику,
+// а задержку и темп перекраски даёт CSS (data-switching на tablist).
+// Конец каждой фазы — завершение её keyframes на элементах панели
+// (getAnimations → finished), а не таймер: не зависит от числа карточек,
+// не ловит чужие вложенные анимации и при prefers-reduced-motion (0.001ms)
+// проходит за кадр. Стаггер задаёт CSS через --i.
+// Клик во время exit переназначает цель — панель сменится на последнюю
+// выбранную. Клик во время enter ждёт его конца, затем запускает новый exit:
+// так ни одна карточка не прыгает из середины подъёма обратно в видимость.
+const PHASE_ANIMATION = { exit: 'fare-card-out', enter: 'fare-card-in' };
+
 export default function Work({ c, categories, tabsLabel }) {
-  const [activeSlug, setActiveSlug] = useState(categories[0] ? categories[0].slug : null);
-  // Панель, которая гаснет во время cross-fade. Панели не размонтируются:
-  // все живут в DOM, неактивные скрыты через data-active, поэтому состояние
-  // внутри них («показать все») переживает смену таба.
-  const [leavingSlug, setLeavingSlug] = useState(null);
+  const first = categories[0] ? categories[0].slug : null;
+  // selected — вкладка (aria-selected, фокус, цвет); shown — панель на экране.
+  // Панели не размонтируются: все живут в DOM, неактивные скрыты через
+  // data-active, поэтому состояние внутри них («показать все») сохраняется.
+  const [selected, setSelected] = useState(first);
+  const [shown, setShown] = useState(first);
+  const [phase, setPhase] = useState('idle');
+  // вкладка, с которой началась смена: гаснет только она
+  const [from, setFrom] = useState(null);
+  const selectedRef = useRef(first);
+  selectedRef.current = selected;
+  const shownRef = useRef(first);
+  shownRef.current = shown;
+  const panelsRef = useRef(null);
   const tabRefs = useRef([]);
 
-  const found = categories.findIndex((category) => category.slug === activeSlug);
-  const current = found === -1 ? 0 : found;
+  const indexOf = (slug) => { const i = categories.findIndex((category) => category.slug === slug); return i === -1 ? 0 : i; };
+  const current = indexOf(selected);
+  const shownIndex = indexOf(shown);
+
+  useEffect(() => {
+    if (phase === 'idle') return undefined;
+    const root = panelsRef.current;
+    const panel = root && root.querySelector('.work-category[data-phase]');
+    if (phase === 'enter' && panel) {
+      // карточки новой панели считаются проявленными: иначе после enter они
+      // вернулись бы к скрытому состоянию reveal и проиграли его второй раз
+      panel.querySelectorAll('[data-reveal]').forEach((el) => { el.dataset.revealed = '1'; });
+    }
+    const name = PHASE_ANIMATION[phase];
+    const running = panel ? panel.getAnimations({ subtree: true }).filter((a) => a.animationName === name) : [];
+    let cancelled = false;
+    Promise.all(running.map((a) => a.finished.catch(() => {}))).then(() => {
+      if (cancelled) return;
+      if (phase === 'exit') {
+        // обе группы невидимы: старая догасла (fill forwards), новая стоит
+        // в начальной точке enter (fill backwards) — смена панели и прыжок
+        // высоты секции приходятся на этот кадр
+        setShown(selectedRef.current);
+        setPhase('enter');
+      } else {
+        const again = selectedRef.current !== shownRef.current;
+        setFrom(again ? shownRef.current : null);
+        setPhase(again ? 'exit' : 'idle');
+      }
+    });
+    return () => { cancelled = true; };
+  }, [phase, shown]);
 
   // Automatic activation по паттерну ARIA tabs: стрелка и переносит фокус,
   // и сразу открывает категорию — отдельного подтверждения не требуется.
   // Enter/Space обрабатывать не нужно: это <button>, он сам шлёт click.
-  // Один вход для клика и клавиатуры: оба пути дают одинаковый cross-fade.
+  // Один вход для клика и клавиатуры: оба пути дают одну и ту же смену.
   const select = (slug) => {
-    if (slug === activeSlug) return;
-    setLeavingSlug(categories[current] ? categories[current].slug : null);
-    setActiveSlug(slug);
+    setSelected(slug);
+    // при prefers-reduced-motion — сразу, без фаз: иначе между догасшим exit
+    // и сменой панели оставался бы пустой кадр
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setShown(slug); setPhase('idle'); return; }
+    if (phase === 'idle' && slug !== shown) { setFrom(shown); setPhase('exit'); }
   };
 
   const activate = (i) => {
@@ -102,7 +153,7 @@ export default function Work({ c, categories, tabsLabel }) {
           только при работающем JS (класс .js-reveal на <html>). Без JS строка табов
           скрыта, а все категории идут одна под другой со своими заголовками. */}
       {categories.length > 0 && (
-        <div className="work-tabs" role="tablist" aria-label={tabsLabel} onKeyDown={onKeyDown} data-reveal="true">
+        <div className="work-tabs" role="tablist" aria-label={tabsLabel} onKeyDown={onKeyDown} data-reveal="true" data-switching={phase !== 'idle' ? 'true' : undefined}>
           {categories.map((category, i) => (
             <button
               key={category.slug}
@@ -113,6 +164,7 @@ export default function Work({ c, categories, tabsLabel }) {
               aria-controls={panelId(category.slug)}
               aria-selected={i === current ? 'true' : 'false'}
               tabIndex={i === current ? 0 : -1}
+              data-from={phase !== 'idle' && category.slug === from ? 'true' : undefined}
               ref={(el) => { tabRefs.current[i] = el; }}
               onClick={() => select(category.slug)}
             >
@@ -122,14 +174,13 @@ export default function Work({ c, categories, tabsLabel }) {
         </div>
       )}
 
-      <div className="work-panels">
+      <div className="work-panels" ref={panelsRef}>
         {categories.map((category, i) => (
           <CategoryPanel
             key={category.slug}
             category={category}
-            active={i === current}
-            leaving={category.slug === leavingSlug && i !== current}
-            onLeft={() => setLeavingSlug(null)}
+            active={i === shownIndex}
+            phase={i === shownIndex && phase !== 'idle' ? phase : undefined}
             watch={c.watch}
             showAllLabel={c.showAll}
           />
