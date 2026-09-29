@@ -21,6 +21,7 @@ import Contact from './components/Contact.jsx';
 import ContactCards from './components/ContactCards.jsx';
 import Footer from './components/Footer.jsx';
 import PlayerModal from './components/PlayerModal.jsx';
+import BackToTop from './components/BackToTop.jsx';
 import { useScrollSpy } from './hooks/scrollSpy.js';
 import './styles/tokens.css';
 import './styles/app.css';
@@ -36,6 +37,9 @@ const NAV_IDS = NAV_HREFS.map((href) => href.slice(1));
 // становится активной, когда её заголовок прошёл верхнюю треть экрана, где
 // держится взгляд, а хвост предыдущей ещё занимает низ.
 const SPY_LINE = 0.38;
+// Кнопка «наверх» появляется, когда первый экран ушёл целиком (доля высоты
+// вьюпорта): пока виден hero, верх страницы и так под рукой.
+const TO_TOP_AFTER = 1;
 
 // cap повторяет FIELD_CAPS воркера: клиент режет длину там же, где режет сервер,
 // иначе слишком длинный ввод проходит локальную проверку и падает «сетевой» ошибкой
@@ -57,6 +61,9 @@ export default function App({ lang }) {
   const [selects, setSelects] = useState({ project_type: "", budget: "" });
   const [playingId, setPlayingId] = useState(null);
   const spy = useScrollSpy(NAV_IDS, SPY_LINE);
+  // null — до монтирования: пререндер и режим без JS кнопку не рисуют вовсе,
+  // первый клиентский рендер совпадает с пререндером
+  const [showTop, setShowTop] = useState(null);
 
   const playheadRef = useRef(null);
   const ioRef = useRef(null);
@@ -101,6 +108,7 @@ export default function App({ lang }) {
     if (playheadRef.current) playheadRef.current.style.setProperty("--playhead", p.toFixed(4));
     revealInView();
     spy.update();
+    setShowTop(window.scrollY > window.innerHeight * TO_TOP_AFTER);
   };
 
   const setupReveal = () => {
@@ -244,6 +252,8 @@ export default function App({ lang }) {
       : { slider: "Положение шторки сравнения", play: "Запустить сравнение", pause: "Остановить сравнение", loading: "Загрузка",
           description: "Два немых ролика идут одновременно под перетаскиваемой границей: слева исходный материал с камеры, справа тот же фрагмент после монтажа." })
   };
+  // Служебная подпись кнопки «наверх»: имя для скринридера, на экране — стрелка.
+  const toTopLabel = lang === "en" ? "Back to top" : "Наверх";
   const testimonialNav = lang === "en"
     ? { prev: "Previous testimonial", next: "Next testimonial" }
     : { prev: "Предыдущий отзыв", next: "Следующий отзыв" };
@@ -305,6 +315,17 @@ export default function App({ lang }) {
   const navItems = c.nav.map((label, i) => ({ label: label, href: NAV_HREFS[i], active: spy.activeId === NAV_IDS[i] }));
   // Переход по якорю — нативный; здесь только замок scroll-spy на цель
   const navigateTo = (href) => spy.lockTo(href.slice(1));
+  // Фокус уходит на wordmark в шапке — первую ссылку страницы, она же ведёт
+  // на #top. Иначе он остался бы на кнопке, которая исчезает у верха.
+  // behavior "auto" берёт scroll-behavior у html: smooth, а при
+  // prefers-reduced-motion — auto, то есть мгновенно.
+  const scrollToTop = () => {
+    spy.lockTo(null);
+    const mark = document.querySelector(".site-header .wordmark");
+    if (mark) mark.focus({ preventScroll: true });
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  };
 
   const langLinks = ["ru", "en"].map((code) => ({
     code: code,
@@ -403,6 +424,7 @@ export default function App({ lang }) {
       </main>
 
       <Footer wordmark="FARE" c={c.footer} />
+      {showTop !== null && <BackToTop visible={showTop} label={toTopLabel} onClick={scrollToTop} />}
 
       <PlayerModal youtubeId={modalId} onClose={closePlayer} label={playerLabels.label} closeLabel={playerLabels.close} />
     </>
