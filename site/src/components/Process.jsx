@@ -7,7 +7,7 @@ export default function Process({ c }) {
       </div>
       <ol className="process-list" role="list">
         {c.steps.map((s) => (
-          <li className="process-step" data-reveal="true" key={s.title}>
+          <li className="process-step" data-reveal="card" key={s.title}>
             <span className="step-tc">{s.tc}</span>
             <h3 className="step-title">{s.title}</h3>
             <p className="step-body">{s.body}</p>

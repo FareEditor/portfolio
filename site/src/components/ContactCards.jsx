@@ -35,12 +35,12 @@ function NoActionCard({ card }) {
 
 export default function ContactCards({ cards }) {
   return (
-    // data-reveal на списке, а не на карточках: правило появления
-    // .js-reveal [data-reveal][data-revealed="1"] фиксирует transform:none
-    // со специфичностью (0,3,0) и заглушило бы и hover-масштаб, и shake.
-    <ul className="contact-cards" data-reveal="true">
+    // data-reveal="card" на ячейке, а не на самой карточке: вариант card
+    // двигает свойством translate и animation, но hover-зум и shake живут
+    // на вложенной .card--interactive — ячейка их не касается вовсе.
+    <ul className="contact-cards">
       {cards.map((card) => (
-        <li className="contact-cell" key={card.key}>
+        <li className="contact-cell" key={card.key} data-reveal="card">
           {card.href && (
             <a
               className="contact-card card--interactive"

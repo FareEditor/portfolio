@@ -58,12 +58,12 @@ export default function Testimonials({ c, items, navLabels }) {
         </div>
       </div>
 
-      {/* data-reveal на ленте, а не на карточках: правило появления
-          .js-reveal [data-reveal][data-revealed="1"] фиксирует transform:none
-          со специфичностью (0,3,0) и заглушило бы hover-масштаб карточки. */}
-      <ul className="testimonial-track" id="testimonials-track" ref={trackRef} data-reveal="true">
+      {/* data-reveal="card" на самих карточках: вариант card движет
+          свойством translate и animation, transform и transition hover-зума
+          .card--interactive остаются нетронутыми. */}
+      <ul className="testimonial-track" id="testimonials-track" ref={trackRef}>
         {items.map((t) => (
-          <li className="testimonial card--interactive" key={t.slug}>
+          <li className="testimonial card--interactive" key={t.slug} data-reveal="card">
             <div className="testimonial-head">
               {t.logo && <img className="testimonial-logo" src={t.logo} alt="" loading="lazy" decoding="async" width="88" height="88" />}
               <div className="testimonial-id">

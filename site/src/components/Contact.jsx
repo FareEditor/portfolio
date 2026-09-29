@@ -40,10 +40,14 @@ export default function Contact({ c, fields, isSuccess, showForm, isError, isSen
       <noscript dangerouslySetInnerHTML={{ __html: '<style>.contact-panel{display:none}.contact-fallback{display:flex}.contact-intro .contact-cards{display:none}</style>' }} />
 
       <div className="contact-layout">
-        <div className="contact-intro" data-reveal="true">
-          <span className="eyebrow">{c.eyebrow}</span>
-          <h2 className="section-title" id="contact-title">{c.title}</h2>
-          <p className="contact-text">{c.text}</p>
+        <div className="contact-intro">
+          {/* Текст и карточки — соседние reveal-блоки, а не вложенные:
+              fade внутри fade перемножал прозрачности. */}
+          <div className="contact-head" data-reveal="true">
+            <span className="eyebrow">{c.eyebrow}</span>
+            <h2 className="section-title" id="contact-title">{c.title}</h2>
+            <p className="contact-text">{c.text}</p>
+          </div>
 
           {/* Карточки каналов связи — параллельный форме путь, не её замена.
               Стоят в левой колонке под текстом: срок ответа и прямую ссылку

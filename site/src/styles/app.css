@@ -14,16 +14,31 @@ a:hover{color:var(--accent-warm)}
 
 /* ---- progressive enhancement: контент виден без JS ---- */
 [data-reveal]{opacity:1;transform:none}
-.js-reveal [data-reveal]{
-  opacity:0;
-  transform:translateY(14px);
-  transition:opacity var(--dur-slow) var(--ease),transform var(--dur-slow) var(--ease);
-}
-.js-reveal [data-reveal][data-revealed="1"]{opacity:1;transform:none}
-.js-reveal .hero-title{transition-delay:60ms}
-.js-reveal .hero-sub{transition-delay:120ms}
-.js-reveal .hero-actions{transition-delay:180ms}
-.js-reveal .hero-meta{transition-delay:240ms}
+.js-reveal [data-reveal]{opacity:0}
+.js-reveal [data-reveal][data-revealed="1"]{opacity:1}
+/* Текстовые блоки: transform + transition. :where() не добавляет
+   специфичности — правила задержек ниже (0,2,0) по-прежнему перебивают
+   transition-delay из этого шортхенда. */
+.js-reveal [data-reveal]:where(:not([data-reveal="card"])){transform:translateY(var(--reveal-shift));transition:opacity var(--dur-slow) var(--ease),transform var(--dur-slow) var(--ease)}
+.js-reveal [data-reveal][data-revealed="1"]:where(:not([data-reveal="card"])){transform:none}
+.js-reveal .hero-title{transition-delay:var(--hero-delay-1)}
+.js-reveal .hero-sub{transition-delay:var(--hero-delay-2)}
+.js-reveal .hero-actions{transition-delay:var(--hero-delay-3)}
+/* Карточки: отдельное свойство translate и CSS-animation вместо transform
+   и transition. Так reveal не трогает ни transform (hover-зум
+   .card--interactive), ни transition (его быстрые hover-переходы) — прежняя
+   ловушка «revealed-правило (0,3,0) глушит hover» здесь не возникает.
+   fill backwards держит карточку в начальной точке на время задержки. */
+.js-reveal [data-reveal="card"]{translate:0 var(--card-shift)}
+.js-reveal [data-reveal="card"][data-revealed="1"]{translate:none;animation:fare-card-in var(--dur-card) var(--ease) backwards;animation-delay:calc(var(--stagger-card) * var(--i, 0))}
+/* Лесенка по индексу в группе; с седьмой карточки задержка не растёт —
+   группа укладывается в 6 × --stagger-card = 240ms. */
+[data-reveal="card"]:nth-child(2){--i:1}
+[data-reveal="card"]:nth-child(3){--i:2}
+[data-reveal="card"]:nth-child(4){--i:3}
+[data-reveal="card"]:nth-child(5){--i:4}
+[data-reveal="card"]:nth-child(6){--i:5}
+[data-reveal="card"]:nth-child(n+7){--i:6}
 /* Второй шаг последовательности: элемент проявляется тем же reveal, но
    с задержкой --reveal-step после первого. Наблюдатель и триггер общие,
    поэтому шаг 2 не стартует раньше собственного пересечения — задержка
@@ -38,6 +53,7 @@ a:hover{color:var(--accent-warm)}
 @keyframes fare-pulse{0%,100%{box-shadow:0 0 0 0 var(--live-halo)}70%{box-shadow:0 0 0 6px var(--live-halo-0)}}
 @keyframes fare-spin{to{transform:rotate(360deg)}}
 @keyframes fare-fade{from{opacity:0}to{opacity:1}}
+@keyframes fare-card-in{from{opacity:0;translate:0 var(--card-shift)}to{opacity:1;translate:none}}
 @keyframes fare-fade-out{from{opacity:1}to{opacity:0}}
 /* «здесь нет действия»: четыре затухающих колебания и красная рамка,
    возвращающаяся к --line на последней пятой длительности */
@@ -448,6 +464,9 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
 /* ---- contact ---- */
 .contact-layout{border-top:1px solid var(--hairline);padding-top:var(--sp-7);display:grid;gap:var(--sp-8);align-items:start;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
 .contact-intro{display:flex;flex-direction:column;gap:var(--sp-4)}
+/* текстовая часть колонки — отдельный reveal-блок, соседний карточкам:
+   тот же шаг, что у .contact-intro, раскладка не меняется */
+.contact-head{display:flex;flex-direction:column;gap:var(--sp-4)}
 .contact-text{font-size:var(--fs-lead);color:var(--text-dim);max-width:44ch}
 
 /* Карточки каналов живут в левой колонке .contact-layout, под текстом.

@@ -37,6 +37,17 @@ const NAV_IDS = NAV_HREFS.map((href) => href.slice(1));
 // становится активной, когда её заголовок прошёл верхнюю треть экрана, где
 // держится взгляд, а хвост предыдущей ещё занимает низ.
 const SPY_LINE = 0.38;
+// Линия появления при прокрутке — 85% высоты вьюпорта. На 94% анимация шла
+// на самом краю: элемент был виден на 2–30% своей высоты, и подъём почти
+// целиком проходил за нижней кромкой. На 85% карточка стартует, когда её
+// уже видно, а до верха экрана остаётся запас на весь подъём. rootMargin
+// наблюдателя — та же линия (threshold 0: срабатывает, как только верх её
+// пересёк), revealInView и IO не расходятся.
+const REVEAL_LINE = 0.85;
+const REVEAL_ROOT_MARGIN = "0px 0px -15% 0px";
+// Окно, в течение которого scrollend считается концом пользовательской
+// прокрутки: плавная прокрутка колесом докатывается за 150–400ms.
+const USER_SCROLL_MS = 800;
 // Кнопка «наверх» появляется, когда первый экран ушёл целиком (доля высоты
 // вьюпорта): пока виден hero, верх страницы и так под рукой.
 const TO_TOP_AFTER = 1;
@@ -76,17 +87,17 @@ export default function App({ lang }) {
 
   const reveal = (el) => { el.dataset.revealed = "1"; };
 
-  // Проявляет всё, чей верх уже поднялся выше линии 94% вьюпорта — та же
-  // граница, что rootMargin -6% у наблюдателя. Нижней границы нет намеренно:
+  // Проявляет всё, чей верх уже поднялся выше линии REVEAL_LINE вьюпорта —
+  // та же граница, что rootMargin у наблюдателя. Нижней границы нет намеренно:
   // элемент, который проскочили целиком (End, якорь, восстановленный скролл),
   // IO не увидит ни в одном кадре, и без этого он остался бы невидимым над
   // экраном. Его переход отыгрывает вне вьюпорта, глазу не заметен.
   // У самого низа страницы линия 94% может так и не дойти до последних
   // блоков — там проявляется весь остаток. Когда страница стоит (первый
   // проход и scrollend: загрузка, якорь, восстановленная позиция, конец
-  // любой прокрутки), линия — весь вьюпорт: край элемента в нижних 6%
+  // любой прокрутки), линия — весь вьюпорт: край элемента в нижней полосе
   // иначе остался бы пустым до следующего скролла.
-  const revealInView = (line = 0.94) => {
+  const revealInView = (line = REVEAL_LINE) => {
     const vh = window.innerHeight || 0;
     const d = document.documentElement;
     const atBottom = window.scrollY + vh >= d.scrollHeight - 2;
@@ -122,7 +133,7 @@ export default function App({ lang }) {
     ioRef.current = new IntersectionObserver((entries) => {
       ioAliveRef.current = true;
       entries.forEach((e) => { if (e.isIntersecting) { reveal(e.target); ioRef.current.unobserve(e.target); } });
-    }, { rootMargin: "0px 0px -6% 0px", threshold: 0.08 });
+    }, { rootMargin: REVEAL_ROOT_MARGIN, threshold: 0 });
     els.forEach((el) => { if (el.dataset.revealed !== "1") ioRef.current.observe(el); });
   };
 
@@ -140,9 +151,19 @@ export default function App({ lang }) {
       if (rafRef.current) return;
       rafRef.current = requestAnimationFrame(() => { rafRef.current = 0; onScroll(); });
     };
-    const onScrollEnd = () => revealInView(1);
+    // Проход «в покое» по всему вьюпорту нужен после прокрутки без участия
+    // пользователя: якорь при загрузке, восстановленная позиция, scrollTo,
+    // прыжок по ссылке меню. После колеса, касания или клавиш scrollend
+    // приходит между «щелчками» — там полный проход проявлял бы всё у самой
+    // нижней кромки, и работала бы не линия REVEAL_LINE, а край экрана.
+    let lastUserScroll = -Infinity;
+    const onUserScroll = () => { lastUserScroll = performance.now(); };
+    const onScrollEnd = () => revealInView(performance.now() - lastUserScroll < USER_SCROLL_MS ? REVEAL_LINE : 1);
     window.addEventListener("scroll", onScrollEvent, { passive: true });
     window.addEventListener("scrollend", onScrollEnd, { passive: true });
+    window.addEventListener("wheel", onUserScroll, { passive: true });
+    window.addEventListener("touchmove", onUserScroll, { passive: true });
+    window.addEventListener("keydown", onUserScroll, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
     onScroll();
     setupReveal();
@@ -155,6 +176,9 @@ export default function App({ lang }) {
     return () => {
       window.removeEventListener("scroll", onScrollEvent);
       window.removeEventListener("scrollend", onScrollEnd);
+      window.removeEventListener("wheel", onUserScroll);
+      window.removeEventListener("touchmove", onUserScroll);
+      window.removeEventListener("keydown", onUserScroll);
       window.removeEventListener("resize", onScroll);
       clearTimeout(safetyRef.current);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);

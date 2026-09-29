@@ -7,7 +7,7 @@ export default function Why({ c }) {
       </div>
       <div className="why-grid">
         {c.items.map((it) => (
-          <div className="why-item" data-reveal="true" key={it.title}>
+          <div className="why-item" data-reveal="card" key={it.title}>
             <h3 className="why-title">{it.title}</h3>
             <p className="why-body">{it.body}</p>
           </div>

@@ -29,7 +29,7 @@ export default function WorkCard({ w, watch, aspect }) {
   const thumbClass = 'work-thumb ' + (ASPECT_CLASS[aspect] || ASPECT_CLASS[DEFAULT_ASPECT]);
 
   return (
-    <article className={'work-card' + (w.featured ? ' work-card--featured' : '')}>
+    <article className={'work-card' + (w.featured ? ' work-card--featured' : '')} data-reveal="card">
       {/* Плеер-фасад: iframe (youtube-nocookie, без трекинг-куки до согласия)
           монтируется только по клику — до этого лишь статичное превью */}
       {w.playing ? (
