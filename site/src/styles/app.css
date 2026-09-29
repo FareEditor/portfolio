@@ -425,11 +425,6 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
    и раскрытия панели, все три сигнала идут от одного data-open. */
 .faq-item::before{content:"";position:absolute;inset:-1px calc(var(--sp-3) * -1);border:1px solid transparent;border-radius:var(--radius-md);pointer-events:none;transition:border-color var(--dur) var(--ease)}
 .faq-item[data-open="true"]::before{border-color:var(--accent-warm)}
-/* общее правило reduced-motion внизу файла написано через *, а * не выбирает
-   псевдоэлементы — замер показал 240ms у рамки при reduce. Гасится явно. */
-@media (prefers-reduced-motion:reduce){
-  .faq-item::before{transition:none}
-}
 .faq-panel-inner{overflow:hidden;min-height:0}
 .faq-answer{font-size:var(--fs-sm);color:var(--text-dim);padding:0 var(--sp-8) var(--sp-5) 0;max-width:70ch}
 
@@ -530,4 +525,8 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
   .work-grid{gap:var(--sp-4) var(--sp-5)}
   .section--work{--work-card-gap:var(--sp-8)}
 }
-@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}html{scroll-behavior:auto}}
+/* *, *::before, *::after: сам * псевдоэлементы не выбирает, без них у рамки FAQ
+   и бургера оставались полные 240ms. Длительность сокращается, а не снимается
+   через animation:none — снятие уходящей панели табов и конец тряски
+   карточек ждут animationend, который при none не придёт. */
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}html{scroll-behavior:auto}}
