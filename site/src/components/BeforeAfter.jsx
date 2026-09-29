@@ -53,7 +53,8 @@ export default function BeforeAfter({ c, labels }) {
   // тот же, что у reveal-наблюдателя в App.jsx, отдельного числа не вводится.
   useEffect(() => {
     const root = rootRef.current;
-    if (!root) return;
+    // Без API наблюдателя ролики не грузятся сами — только по кнопке (toggle).
+    if (!root || !('IntersectionObserver' in window)) return;
     const io = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) {
         // Зацикленное видео вне экрана жжёт декодер и трафик впустую
@@ -86,6 +87,9 @@ export default function BeforeAfter({ c, labels }) {
   const toggle = () => {
     if (playing) { userPausedRef.current = true; stopPlayback(); return; }
     userPausedRef.current = false;
+    // src ещё не проставлен (нет IntersectionObserver) — клик и есть сигнал
+    // к загрузке; дальше запуск идёт через эффект armed, как обычно.
+    if (!armedRef.current) { armedRef.current = true; setArmed(true); return; }
     startPlayback();
   };
 

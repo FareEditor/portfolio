@@ -48,18 +48,35 @@ export default function App({ lang }) {
 
   const playheadRef = useRef(null);
   const ioRef = useRef(null);
-  const triggeredRef = useRef(false);
+  // IO подал хоть один callback — значит, работает. Первый callback приходит
+  // на observe() для каждого элемента, в том числе с isIntersecting:false,
+  // поэтому это не «пользователь долистал», а «наблюдатель жив».
+  const ioAliveRef = useRef(false);
   const safetyRef = useRef(0);
   const rafRef = useRef(0);
 
   const reveal = (el) => { el.dataset.revealed = "1"; };
 
-  const revealInView = () => {
+  // Проявляет всё, чей верх уже поднялся выше линии 94% вьюпорта — та же
+  // граница, что rootMargin -6% у наблюдателя. Нижней границы нет намеренно:
+  // элемент, который проскочили целиком (End, якорь, восстановленный скролл),
+  // IO не увидит ни в одном кадре, и без этого он остался бы невидимым над
+  // экраном. Его переход отыгрывает вне вьюпорта, глазу не заметен.
+  // У самого низа страницы линия 94% может так и не дойти до последних
+  // блоков — там проявляется весь остаток. Когда страница стоит (первый
+  // проход и scrollend: загрузка, якорь, восстановленная позиция, конец
+  // любой прокрутки), линия — весь вьюпорт: край элемента в нижних 6%
+  // иначе остался бы пустым до следующего скролла.
+  const revealInView = (line = 0.94) => {
     const vh = window.innerHeight || 0;
+    const d = document.documentElement;
+    const atBottom = window.scrollY + vh >= d.scrollHeight - 2;
     document.querySelectorAll("[data-reveal]").forEach((el) => {
       if (el.dataset.revealed === "1") return;
-      const r = el.getBoundingClientRect();
-      if (r.top < vh * 0.94 && r.bottom > 0) reveal(el);
+      if (atBottom || el.getBoundingClientRect().top < vh * line) {
+        reveal(el);
+        if (ioRef.current) ioRef.current.unobserve(el);
+      }
     });
   };
 
@@ -78,9 +95,12 @@ export default function App({ lang }) {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (ioRef.current) ioRef.current.disconnect();
     if (reduce) { els.forEach(reveal); return; }
-    revealInView();
+    revealInView(1);
+    // Без API наблюдателя остаётся проявление по scroll и страховка ниже.
+    if (!("IntersectionObserver" in window)) return;
     ioRef.current = new IntersectionObserver((entries) => {
-      entries.forEach((e) => { if (e.isIntersecting) { triggeredRef.current = true; reveal(e.target); ioRef.current.unobserve(e.target); } });
+      ioAliveRef.current = true;
+      entries.forEach((e) => { if (e.isIntersecting) { reveal(e.target); ioRef.current.unobserve(e.target); } });
     }, { rootMargin: "0px 0px -6% 0px", threshold: 0.08 });
     els.forEach((el) => { if (el.dataset.revealed !== "1") ioRef.current.observe(el); });
   };
@@ -96,21 +116,24 @@ export default function App({ lang }) {
     // а не к произвольному интервалу; это throttle, не debounce: reveal
     // продолжает срабатывать во время прокрутки, а не после её конца.
     const onScrollEvent = () => {
-      triggeredRef.current = true;
       if (rafRef.current) return;
       rafRef.current = requestAnimationFrame(() => { rafRef.current = 0; onScroll(); });
     };
+    const onScrollEnd = () => revealInView(1);
     window.addEventListener("scroll", onScrollEvent, { passive: true });
+    window.addEventListener("scrollend", onScrollEnd, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
     onScroll();
     setupReveal();
-    // страховка: если ни scroll, ни IO не сработали (страница во фрейме) — показываем всё
+    // Страховка только на случай, когда наблюдатель не работает вовсе: API нет
+    // или за 500ms не пришло ни одного callback. Пока IO жив, всё ниже экрана
+    // ждёт, пока до него долистают, — раньше таймер проявлял страницу целиком.
     safetyRef.current = setTimeout(() => {
-      revealInView();
-      if (!triggeredRef.current) document.querySelectorAll("[data-reveal]").forEach(reveal);
+      if (!ioAliveRef.current) document.querySelectorAll("[data-reveal]").forEach(reveal);
     }, 500);
     return () => {
       window.removeEventListener("scroll", onScrollEvent);
+      window.removeEventListener("scrollend", onScrollEnd);
       window.removeEventListener("resize", onScroll);
       clearTimeout(safetyRef.current);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
