@@ -20,7 +20,7 @@
     ],
     "success": "Request sent. Please expect a reply within 24 hours.",
     "micro": "I use your details only to respond to your enquiry. I retain them for 90 days, then delete them.",
-    "noscript": "[SLOT: message shown instead of the form when JavaScript is off, EN, 1–2 sentences, role — explain why the form is missing and point to the cards below]",
+    "noscript": "JavaScript is disabled or unavailable in your browser, so the form cannot function properly. If you have disabled JavaScript manually, please enable it, or use a browser that supports it, such as Chrome or Firefox. Alternatively, you can contact me directly by clicking one of the cards below.",
     "budget": [
       {
         "value": "200_500",
