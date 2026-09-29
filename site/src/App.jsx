@@ -21,10 +21,21 @@ import Contact from './components/Contact.jsx';
 import ContactCards from './components/ContactCards.jsx';
 import Footer from './components/Footer.jsx';
 import PlayerModal from './components/PlayerModal.jsx';
+import { useScrollSpy } from './hooks/scrollSpy.js';
 import './styles/tokens.css';
 import './styles/app.css';
 
 const CONTENT = { ru, en };
+
+// Якоря навигации — единственный источник и для ссылок, и для scroll-spy.
+const NAV_HREFS = ["#work", "#process", "#about", "#contact"];
+const NAV_IDS = NAV_HREFS.map((href) => href.slice(1));
+// Линия активации scroll-spy — 38% высоты вьюпорта. Переход по якорю ставит
+// верх секции под шапку (~10–12% высоты), то есть заведомо выше линии —
+// кликнутый пункт остаётся активным и после прокрутки. При чтении секция
+// становится активной, когда её заголовок прошёл верхнюю треть экрана, где
+// держится взгляд, а хвост предыдущей ещё занимает низ.
+const SPY_LINE = 0.38;
 
 // cap повторяет FIELD_CAPS воркера: клиент режет длину там же, где режет сервер,
 // иначе слишком длинный ввод проходит локальную проверку и падает «сетевой» ошибкой
@@ -45,6 +56,7 @@ export default function App({ lang }) {
   const [invalid, setInvalid] = useState({});
   const [selects, setSelects] = useState({ project_type: "", budget: "" });
   const [playingId, setPlayingId] = useState(null);
+  const spy = useScrollSpy(NAV_IDS, SPY_LINE);
 
   const playheadRef = useRef(null);
   const ioRef = useRef(null);
@@ -88,6 +100,7 @@ export default function App({ lang }) {
     // это доля прокрутки, а не оформление
     if (playheadRef.current) playheadRef.current.style.setProperty("--playhead", p.toFixed(4));
     revealInView();
+    spy.update();
   };
 
   const setupReveal = () => {
@@ -289,7 +302,9 @@ export default function App({ lang }) {
 
   const sending = form === "sending";
 
-  const navItems = c.nav.map((label, i) => ({ label: label, href: ["#work", "#process", "#about", "#contact"][i] }));
+  const navItems = c.nav.map((label, i) => ({ label: label, href: NAV_HREFS[i], active: spy.activeId === NAV_IDS[i] }));
+  // Переход по якорю — нативный; здесь только замок scroll-spy на цель
+  const navigateTo = (href) => spy.lockTo(href.slice(1));
 
   const langLinks = ["ru", "en"].map((code) => ({
     code: code,
@@ -354,6 +369,7 @@ export default function App({ lang }) {
         cta={c.cta}
         menuLabel={c.menu}
         onLangSwitch={switchLang}
+        onNavigate={navigateTo}
       />
 
       <main id="top">

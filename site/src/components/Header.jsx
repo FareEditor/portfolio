@@ -23,7 +23,10 @@ function LangSwitch({ langLinks, onLangSwitch }) {
   );
 }
 
-export default function Header({ wordmark, navItems, langLinks, cta, menuLabel, onLangSwitch }) {
+// aria-current="location": текущее место внутри одной страницы (in-page
+// навигация), а не текущая страница из набора ("page") и не безымянное
+// "true", которым помечен активный язык.
+export default function Header({ wordmark, navItems, langLinks, cta, menuLabel, onLangSwitch, onNavigate }) {
   // <details> открывается без JS. Эффекты ниже добавляют то, чего нативное
   // поведение не даёт: Escape, возврат фокуса и блокировку прокрутки.
   const [menuOpen, setMenuOpen] = useState(false);
@@ -60,13 +63,13 @@ export default function Header({ wordmark, navItems, langLinks, cta, menuLabel, 
 
         <nav className="site-nav">
           {navItems.map((item) => (
-            <a key={item.href} className="nav-link" href={item.href}>{item.label}</a>
+            <a key={item.href} className="nav-link" href={item.href} aria-current={item.active ? "location" : undefined} onClick={() => onNavigate(item.href)}>{item.label}</a>
           ))}
         </nav>
 
         <div className="header-actions">
           <LangSwitch langLinks={langLinks} onLangSwitch={onLangSwitch} />
-          <a className="btn-primary header-cta" href="#contact">{cta}</a>
+          <a className="btn-primary header-cta" href="#contact" onClick={() => onNavigate("#contact")}>{cta}</a>
         </div>
 
         <details
@@ -80,12 +83,12 @@ export default function Header({ wordmark, navItems, langLinks, cta, menuLabel, 
           <div className="nav-panel" id="nav-panel" role="region" aria-label={menuLabel}>
             <nav className="nav-panel-links">
               {navItems.map((item) => (
-                <a key={item.href} className="nav-panel-link" href={item.href} onClick={close}>{item.label}</a>
+                <a key={item.href} className="nav-panel-link" href={item.href} aria-current={item.active ? "location" : undefined} onClick={() => { close(); onNavigate(item.href); }}>{item.label}</a>
               ))}
             </nav>
             <div className="nav-panel-foot">
               <LangSwitch langLinks={langLinks} onLangSwitch={onLangSwitch} />
-              <a className="btn-primary" href="#contact" onClick={close}>{cta}</a>
+              <a className="btn-primary" href="#contact" onClick={() => { close(); onNavigate("#contact"); }}>{cta}</a>
             </div>
           </div>
         </details>

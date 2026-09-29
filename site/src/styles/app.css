@@ -134,6 +134,13 @@ a:hover{color:var(--accent-warm)}
 /* вес, а не цвет и не подчёркивание: наведённая ссылка тяжелее остальных */
 .nav-link{font-size:var(--fs-sm);font-weight:var(--wt-regular);color:var(--text-dim);transition:color var(--dur-fast) var(--ease),font-weight var(--dur-fast) var(--ease)}
 .nav-link:hover{color:var(--text);font-weight:var(--wt-medium)}
+/* Активный пункт scroll-spy: цвет наведения плюс линия акцентом — не только
+   цветом. Линия — подчёркивание текста, а не вес: вес сдвигал бы соседей
+   в центрованной строке при каждом переключении секции. Подчёркивание есть
+   всегда, но прозрачное — меняется только цвет, геометрия стоит. */
+.nav-link,.nav-panel-link{text-decoration-line:underline;text-decoration-thickness:2px;text-underline-offset:.35em;text-decoration-color:transparent;transition:color var(--dur-fast) var(--ease),font-weight var(--dur-fast) var(--ease),text-decoration-color var(--dur-fast) var(--ease)}
+.nav-link[aria-current="location"]{color:var(--text)}
+.nav-link[aria-current="location"],.nav-panel-link[aria-current="location"]{text-decoration-color:var(--accent)}
 .header-actions{display:flex;align-items:center;gap:var(--sp-4);flex:0 0 auto}
 .lang-switch{display:flex;align-items:center;gap:var(--sp-2)}
 /* переключатель локали без капсулы: состояние несёт цвет, не фон */
