@@ -150,8 +150,11 @@ export default function BeforeAfter({ c, labels }) {
       <p className="sr-only">{labels.description}</p>
 
       {/* Шторка — сам контейнер: тянуть можно за любую его точку, ручка лишь
-          показывает границу и держит фокус. */}
-      <div className="ba" ref={rootRef} data-armed={String(armed)} onPointerDown={onPointerDown} onPointerMove={onPointerMove}>
+          показывает границу и держит фокус. Появляется вторым шагом после
+          заголовка секции (data-reveal-step="2"): тот же reveal, что у
+          section-head, со сдвигом --reveal-step. Сдвиг идёт только по Y —
+          fromClientX читает лишь left и width, подъём их не меняет. */}
+      <div className="ba" ref={rootRef} data-armed={String(armed)} data-reveal="true" data-reveal-step="2" onPointerDown={onPointerDown} onPointerMove={onPointerMove}>
         {/* Слои: .ba-clip обрезает inset справа, то есть оставляет видимой
             ЛЕВУЮ полосу до позиции шторки — значит обрезанный слой это «до»,
             а нижний слой проступает справа и это «после». Менять местами

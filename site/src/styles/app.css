@@ -24,6 +24,16 @@ a:hover{color:var(--accent-warm)}
 .js-reveal .hero-sub{transition-delay:120ms}
 .js-reveal .hero-actions{transition-delay:180ms}
 .js-reveal .hero-meta{transition-delay:240ms}
+/* Второй шаг последовательности: элемент проявляется тем же reveal, но
+   с задержкой --reveal-step после первого. Наблюдатель и триггер общие,
+   поэтому шаг 2 не стартует раньше собственного пересечения — задержка
+   лишь гарантирует порядок, когда оба входят во вьюпорт одновременно.
+   При reduce общее правило сокращает длительность, но не задержку, —
+   она снимается здесь явно, иначе элемент висел бы невидимым 160ms. */
+.js-reveal [data-reveal-step="2"]{transition-delay:var(--reveal-step)}
+@media (prefers-reduced-motion:reduce){
+  .js-reveal [data-reveal-step="2"]{transition-delay:0s}
+}
 
 @keyframes fare-pulse{0%,100%{box-shadow:0 0 0 0 var(--live-halo)}70%{box-shadow:0 0 0 6px var(--live-halo-0)}}
 @keyframes fare-spin{to{transform:rotate(360deg)}}
