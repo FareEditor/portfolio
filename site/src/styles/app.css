@@ -794,6 +794,12 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
      невидимый слой вокруг неё, пиксели кнопки те же. */
   .nav-toggle > summary{position:relative}
   .nav-toggle > summary::before{content:"";position:absolute;inset:calc((100% - var(--tap-min)) / 2)}
+  /* RU/EN в панели меню: те же невидимые слои. По вертикали — до
+     --tap-min, по горизонтали — на --tap-lang-x в каждую сторону: между
+     ссылками 15px (зазор --sp-2 плюс «/»), шире нельзя без перекрытия
+     областей соседей. Итог — 31.5×44 вместо 17.5×22, пиксели те же. */
+  .nav-panel .lang-btn{position:relative}
+  .nav-panel .lang-btn::before{content:"";position:absolute;inset:calc((100% - var(--tap-min)) / 2) calc(var(--tap-lang-x) * -1)}
   /* компенсирующий translateY убран: композиция hero держится строками грида */
   .hero{gap:var(--sp-6);padding-bottom:var(--sp-8)}
   .hero-foot{gap:var(--sp-5)}
