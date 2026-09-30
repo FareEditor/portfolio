@@ -400,8 +400,23 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
 .testimonial-nav svg{width:calc(var(--play-sm) * .45);height:calc(var(--play-sm) * .45)}
 
 /* Лента: один слой, снап по началу карточки. overflow-x оставлен открытым
-   ради тач-жеста, но полосу прокрутки прячем — заявленный интерфейс кнопки. */
-.testimonial-track{display:flex;gap:var(--sp-5);overflow-x:auto;scroll-snap-type:x mandatory;list-style:none;margin:0;padding:var(--sp-2) 0;scrollbar-width:none;-ms-overflow-style:none}
+   ради тач-жеста, но полосу прокрутки прячем — заявленный интерфейс кнопки.
+   overflow-x:auto делает и overflow-y:auto: лента обрезает содержимое по
+   своей padding-box со всех сторон. Раньше эта граница стояла вплотную к
+   карточке (0 по бокам, 8px сверху и снизу) и резала тень, hover-зум с
+   левой гранью обводки и низ карточки в начале reveal. Поля ленты
+   расширены до запаса эффектов и погашены отрицательным margin — видимая
+   раскладка и выравнивание по рейке прежние, область обрезки шире:
+   — по бокам --track-bleed-x: тень hover (32 − 10 = 22px) + зум 1.05
+     карточки 462px (11.55px) ≈ 34px; не шире --gutter, чтобы лента не
+     выходила за экран (на узком экране край обрезки — край экрана);
+   — сверху --sp-6 (32px): зум по высоте — половина 5% от высоты карточки
+     (≈22px у нынешних ~900px) плюс тень hover вверх 6px;
+   — снизу --sp-9 (96px): reveal стартует со сдвигом до 72px плюс тень
+     в покое 20px; тень hover вниз 38px плюс зум ≈22px.
+   scroll-padding-inline с тем же значением держит точку снапа на рейке,
+   а не на расширенном краю. */
+.testimonial-track{--track-bleed-x:min(36px,var(--gutter));display:flex;gap:var(--sp-5);overflow-x:auto;scroll-snap-type:x mandatory;list-style:none;padding:var(--sp-6) var(--track-bleed-x) var(--sp-9);margin:calc(var(--sp-2) - var(--sp-6)) calc(var(--track-bleed-x) * -1) calc(var(--sp-2) - var(--sp-9));scroll-padding-inline:var(--track-bleed-x);scrollbar-width:none;-ms-overflow-style:none}
 .testimonial-track::-webkit-scrollbar{display:none}
 /* flex-basis фиксирует ширину карточки: шаг кнопки считается от неё.
    462px = 420 + 10%: владелец попросил больше воздуха. Содержимое не
