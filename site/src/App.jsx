@@ -240,7 +240,14 @@ export default function App({ lang }) {
     const fd = new FormData(e.target);
     const inv = {};
     FIELD_ORDER.forEach((f) => { if (!String(fd.get(f.name) || "").trim()) inv[f.name] = true; });
-    if (Object.keys(inv).length) { setInvalid(inv); setForm("idle"); return; }
+    if (Object.keys(inv).length) {
+      setInvalid(inv); setForm("idle");
+      // фокус на первое невалидное поле в порядке формы: пользователь сразу
+      // там, где нужно исправить, и скринридер читает поле с его ошибкой
+      const first = FIELD_ORDER.find((f) => inv[f.name]);
+      if (first && e.target.elements[first.name]) e.target.elements[first.name].focus();
+      return;
+    }
     setInvalid({});
     setForm("sending");
     // INTEGRATION: endpoint формы — POST /api/contact (Cloudflare Worker)

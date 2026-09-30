@@ -3,9 +3,15 @@ import { useEffect, useRef } from 'react';
 // Публичный site key; без него (локальная сборка) остаётся заглушка слота
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
+// Поле ссылается на свою подсказку и, пока ошибка показана, на её текст:
+// скринридер зачитывает причину вместе с полем, а не только при появлении.
+const describedBy = (fd) => [fd.showHint && fd.id + '-hint', fd.showError && fd.id + '-error'].filter(Boolean).join(' ') || undefined;
+
 export default function Contact({ c, fields, isSuccess, showForm, isError, isSending, submitLabel, onSubmit, children }) {
   const slotRef = useRef(null);
   const widgetIdRef = useRef(null);
+  const statusRef = useRef(null);
+  const submitRef = useRef(null);
 
   useEffect(() => {
     if (!TURNSTILE_SITE_KEY || !slotRef.current) return;
@@ -28,7 +34,18 @@ export default function Contact({ c, fields, isSuccess, showForm, isError, isSen
     if (isError && window.turnstile && widgetIdRef.current !== null) {
       window.turnstile.reset(widgetIdRef.current);
     }
+    // Фокус возвращается на кнопку отправки: на время отправки она disabled,
+    // и фокус терялся на body. Текст ошибки озвучивает role="alert" — фокус
+    // на самом сообщении прочитал бы его второй раз; кнопка — то, что нужно
+    // дальше, «повторить».
+    if (isError && submitRef.current) submitRef.current.focus();
   }, [isError]);
+
+  useEffect(() => {
+    // Форма после успеха размонтируется вместе с фокусом — переносим его на
+    // статус, иначе он падает на body и скринридер теряет место на странице.
+    if (isSuccess && statusRef.current) statusRef.current.focus();
+  }, [isSuccess]);
 
   return (
     <section className="section" id="contact" aria-labelledby="contact-title">
@@ -59,7 +76,7 @@ export default function Contact({ c, fields, isSuccess, showForm, isError, isSen
 
         <div className="contact-panel">
           {isSuccess && (
-            <div className="form-success" role="status">
+            <div className="form-success" role="status" tabIndex="-1" ref={statusRef}>
               <span className="success-mark" aria-hidden="true">✓</span>
               <p className="success-text">{c.success}</p>
             </div>
@@ -71,10 +88,10 @@ export default function Contact({ c, fields, isSuccess, showForm, isError, isSen
                 <div className="field" key={fd.key}>
                   <label className="field-label" htmlFor={fd.id}>{fd.label}</label>
                   {fd.isText && (
-                    <input className="field-input" id={fd.id} name={fd.name} type="text" required maxLength={fd.maxLength} disabled={fd.disabled} aria-invalid={fd.invalid} autoComplete={fd.autoComplete} />
+                    <input className="field-input" aria-describedby={describedBy(fd)} id={fd.id} name={fd.name} type="text" required maxLength={fd.maxLength} disabled={fd.disabled} aria-invalid={fd.invalid} autoComplete={fd.autoComplete} />
                   )}
                   {fd.isSelect && (
-                    <select className="field-select" id={fd.id} name={fd.name} required disabled={fd.disabled} aria-invalid={fd.invalid} value={fd.value} onChange={fd.onChange}>
+                    <select className="field-select" aria-describedby={describedBy(fd)} id={fd.id} name={fd.name} required disabled={fd.disabled} aria-invalid={fd.invalid} value={fd.value} onChange={fd.onChange}>
                       <option value="" disabled>{c.choose}</option>
                       {fd.options.map((op) => (
                         <option value={op.value} key={op.value}>{op.label}</option>
@@ -82,10 +99,10 @@ export default function Contact({ c, fields, isSuccess, showForm, isError, isSen
                     </select>
                   )}
                   {fd.isTextarea && (
-                    <textarea className="field-textarea" id={fd.id} name={fd.name} rows="5" required maxLength={fd.maxLength} disabled={fd.disabled} aria-invalid={fd.invalid}></textarea>
+                    <textarea className="field-textarea" aria-describedby={describedBy(fd)} id={fd.id} name={fd.name} rows="5" required maxLength={fd.maxLength} disabled={fd.disabled} aria-invalid={fd.invalid}></textarea>
                   )}
-                  {fd.showHint && <span className="field-hint">{c.hint}</span>}
-                  {fd.showError && <span className="field-error" role="alert">{c.required}</span>}
+                  {fd.showHint && <span className="field-hint" id={fd.id + "-hint"}>{c.hint}</span>}
+                  {fd.showError && <span className="field-error" id={fd.id + "-error"} role="alert">{c.required}</span>}
                 </div>
               ))}
 
@@ -107,7 +124,7 @@ export default function Contact({ c, fields, isSuccess, showForm, isError, isSen
 
               {isError && <p className="form-error" role="alert">{c.error}</p>}
 
-              <button className="btn-primary btn-submit" type="submit" disabled={isSending}>
+              <button className="btn-primary btn-submit" type="submit" disabled={isSending} ref={submitRef}>
                 {isSending && <span className="spinner" aria-hidden="true"></span>}
                 {submitLabel}
               </button>
