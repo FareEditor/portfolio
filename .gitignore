@@ -10,3 +10,6 @@ dist/
 worker/.dev.vars
 worker/.dev.vars.*
 site/.env.*
+
+# локальные настройки Claude Code владельца — не для репозитория
+.claude/settings.local.json
