@@ -26,9 +26,10 @@ function LangSwitch({ langLinks, onLangSwitch }) {
 // aria-current="location": текущее место внутри одной страницы (in-page
 // навигация), а не текущая страница из набора ("page") и не безымянное
 // "true", которым помечен активный язык.
-// Закрытие ждёт конца этих keyframes: сначала гаснут пункты, потом
-// поверхность схлопывается в капсулу, и только затем снимается open.
-const MENU_OUT = 'fare-menu-close';
+// Закрытие ждёт конца этих keyframes: гаснут пункты и панель, поверхность
+// схлопывается в капсулу, и только затем снимается open. Поверхность и
+// обводка — псевдоэлементы капсулы, поэтому поиск идёт по поддереву.
+const MENU_OUT = ['fare-menu-surface-out', 'fare-menu-stroke-out', 'fare-menu-panel-out'];
 const DESKTOP = '(min-width: 821px)';
 
 export default function Header({ wordmark, navItems, langLinks, cta, menuLabel, onLangSwitch, onNavigate }) {
@@ -42,17 +43,18 @@ export default function Header({ wordmark, navItems, langLinks, cta, menuLabel, 
 
   const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Форма капсулы для clip-path раскрытия — вычисленная величина, а не
+  // Форма капсулы для роста поверхности — вычисленная величина, а не
   // оформление: уходит в CSS-переменные тем же приёмом, что --playhead.
+  // Переменные лежат на самой капсуле: их читают её псевдоэлементы и панель.
+  const capsuleOf = () => detailsRef.current && detailsRef.current.closest('.header-inner');
   const measureCapsule = () => {
-    const d = detailsRef.current;
-    const capsule = d && d.closest('.header-inner');
+    const capsule = capsuleOf();
     if (!capsule) return;
     const r = capsule.getBoundingClientRect();
-    d.style.setProperty('--cap-t', r.top + 'px');
-    d.style.setProperty('--cap-l', r.left + 'px');
-    d.style.setProperty('--cap-r', (document.documentElement.clientWidth - r.right) + 'px');
-    d.style.setProperty('--cap-h', r.height + 'px');
+    capsule.style.setProperty('--cap-t', r.top + 'px');
+    capsule.style.setProperty('--cap-l', r.left + 'px');
+    capsule.style.setProperty('--cap-r', (document.documentElement.clientWidth - r.right) + 'px');
+    capsule.style.setProperty('--cap-h', r.height + 'px');
   };
 
   // Мгновенное закрытие — и цель анимированного, и запасной путь: если
@@ -82,8 +84,8 @@ export default function Header({ wordmark, navItems, langLinks, cta, menuLabel, 
 
   useEffect(() => {
     if (!closing) return undefined;
-    const panel = detailsRef.current && detailsRef.current.querySelector('.nav-panel');
-    const running = panel ? panel.getAnimations().filter((a) => a.animationName === MENU_OUT) : [];
+    const capsule = capsuleOf();
+    const running = capsule ? capsule.getAnimations({ subtree: true }).filter((a) => MENU_OUT.includes(a.animationName)) : [];
     let cancelled = false;
     Promise.all(running.map((a) => a.finished.catch(() => {}))).then(() => { if (!cancelled) closeNow(); });
     return () => { cancelled = true; };
@@ -113,9 +115,14 @@ export default function Header({ wordmark, navItems, langLinks, cta, menuLabel, 
     const onDesktop = () => { if (desktop.matches) closeNow(); };
     desktop.addEventListener('change', onDesktop);
 
+    // Поворот и resize при открытом меню: полоса шапки и верх панели
+    // считаются от свежей геометрии капсулы.
+    window.addEventListener('resize', measureCapsule);
+
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       desktop.removeEventListener('change', onDesktop);
+      window.removeEventListener('resize', measureCapsule);
       background.forEach((el) => { el.inert = false; });
       document.body.style.overflow = previousOverflow;
     };

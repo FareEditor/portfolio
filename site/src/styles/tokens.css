@@ -204,26 +204,33 @@
   --play-sm:44px;
   --z-playhead:100;
   --z-header:90;
-  /* кнопка «наверх» ниже шапки и открытой панели меню: панель её накрывает */
+  /* кнопка «наверх» ниже шапки и меню; при открытом меню она, как и вся
+     страница под компактной панелью, видна, но inert */
   --z-totop:80;
-  /* мобильное меню: верх поверхности под капсулой — там же, где раньше
-     начиналась панель */
-  --menu-top:calc(var(--header-h) + var(--header-top) * 2);
-  /* раскрытие «таблетка → панель»: поверхность, затем пункты сверху вниз */
-  --dur-menu:380ms;
+  /* мобильное меню: капсула растёт в полосу шапки во всю ширину (400ms,
+     референс владельца — 10 кадров при 25fps), под ней проявляется панель */
+  --dur-menu:400ms;
+  --dur-menu-panel:280ms;
+  --menu-panel-delay:120ms;
+  /* панель «садится» сверху на несколько процентов собственной высоты */
+  --menu-panel-shift:-4%;
   --dur-menu-item:300ms;
   --menu-item-delay:140ms;
   --stagger-menu:40ms;
   --menu-item-shift:-14px;
-  /* закрытие короче: пункты гаснут, через --menu-close-delay схлопывается поверхность */
+  /* закрытие короче: пункты и панель гаснут, через --menu-close-delay
+     поверхность схлопывается в капсулу */
   --dur-menu-item-out:140ms;
+  --dur-menu-panel-out:180ms;
   --dur-menu-out:260ms;
   --menu-close-delay:60ms;
+  /* затемнение страницы под раскрытым меню; по умолчанию его нет */
+  --menu-scrim:transparent;
 }
 
 /* prefers-reduced-motion: общее правило в app.css сокращает длительности,
    но не задержки. Все задержки последовательностей обнуляются здесь, в
    одном месте — иначе элемент висел бы невидимым на время задержки. */
 @media (prefers-reduced-motion:reduce){
-  :root{--reveal-step:0ms;--stagger-card:0ms;--tab-delay:0ms;--menu-item-delay:0ms;--stagger-menu:0ms;--menu-close-delay:0ms;--hero-delay-1:0ms;--hero-delay-2:0ms;--hero-delay-3:0ms}
+  :root{--reveal-step:0ms;--stagger-card:0ms;--tab-delay:0ms;--menu-item-delay:0ms;--stagger-menu:0ms;--menu-panel-delay:0ms;--menu-close-delay:0ms;--hero-delay-1:0ms;--hero-delay-2:0ms;--hero-delay-3:0ms}
 }

@@ -54,8 +54,16 @@ a:hover{color:var(--accent-warm)}
 @keyframes fare-spin{to{transform:rotate(360deg)}}
 @keyframes fare-fade{from{opacity:0}to{opacity:1}}
 @keyframes fare-card-in{from{opacity:0;translate:0 var(--card-shift)}to{opacity:1;translate:none}}
-@keyframes fare-menu-open{from{clip-path:inset(var(--cap-t) var(--cap-r) calc(100% - var(--cap-t) - var(--cap-h)) var(--cap-l) round var(--radius-pill))}to{clip-path:inset(0 round 0)}}
-@keyframes fare-menu-close{from{clip-path:inset(0 round 0)}to{clip-path:inset(var(--cap-t) var(--cap-r) calc(100% - var(--cap-t) - var(--cap-h)) var(--cap-l) round var(--radius-pill))}}
+/* Мобильное меню: у раскрытых состояний keyframes задают только сторону
+   капсулы, вторая сторона — статичный стиль раскрытого меню. Скругление
+   идёт от реального радиуса капсулы (половина высоты), а не от 999px:
+   иначе оно держалось бы «таблеткой» почти до конца анимации. */
+@keyframes fare-menu-surface-in{from{inset:-1px;border-radius:calc(var(--cap-h) / 2)}}
+@keyframes fare-menu-surface-out{to{inset:-1px;border-radius:calc(var(--cap-h) / 2)}}
+@keyframes fare-menu-stroke-in{from{inset:-1px;border-radius:calc(var(--cap-h) / 2);opacity:1}}
+@keyframes fare-menu-stroke-out{to{inset:-1px;border-radius:calc(var(--cap-h) / 2);opacity:1}}
+@keyframes fare-menu-panel-in{from{opacity:0;transform:translateY(var(--menu-panel-shift))}}
+@keyframes fare-menu-panel-out{to{opacity:0;transform:translateY(var(--menu-panel-shift))}}
 @keyframes fare-menu-item-in{from{opacity:0;transform:translateY(var(--menu-item-shift))}to{opacity:1;transform:none}}
 @keyframes fare-menu-item-out{to{opacity:0;transform:translateY(var(--menu-item-shift))}}
 @keyframes fare-card-out{to{opacity:0;translate:0 var(--card-exit-shift)}}
@@ -192,27 +200,44 @@ a:hover{color:var(--accent-warm)}
    механизмом <details> — в закрытом состоянии она оставалась видимой
    полосой. Скрываем явно, не полагаясь на UA-поведение. */
 .nav-toggle:not([open]) .nav-panel{display:none}
-/* Раскрытая панель — непрозрачная поверхность на весь экран, в том числе
-   вокруг и позади капсулы: раньше она начиналась под капсулой, и по бокам
-   и сверху от неё просвечивал контент страницы. Лежит внутри капсулы на
-   z-index -1 (капсула — свой контекст наложения, isolation ниже): рисуется
-   поверх фона, обводки и тени капсулы, но под её содержимым — FARE, RU/EN
-   и крестик остаются на месте, а сама «таблетка» становится частью панели.
-   Волосяная линия под капсулой — фоном на прежней высоте, без рамки.
+/* Одна поверхность «шапка + панель». Капсула рисует себя не своим фоном,
+   а двумя слоями (ниже, в @media): ::after — сама капсула целиком (фон,
+   обводка, тень — один бокс, как раньше: в закрытом состоянии пиксели те
+   же), ::before — заливка поверхности, видна только в раскрытом меню.
+   При открытии оба слоя растут из капсулы до полосы шапки во всю ширину
+   экрана: края к краям экрана, верх к 0, низ симметрично вниз от
+   неподвижного центра. Логотип, RU/EN и кнопка остаются в потоке капсулы
+   и не двигаются — растут только слои под ними. ::after гаснет
+   прозрачностью синхронно с ростом: обводка и тень уходят вместе с ним,
+   его фон растворяется в той же заливке ::before. При закрытии
+   возвращаются так же синхронно со сжатием.
+   Геометрию капсулы Header.jsx меряет перед открытием и закрытием и кладёт
+   в --cap-* (вычисленная величина, как --playhead). Без JS — значения по
+   умолчанию: верх и высота из токенов, бока с запасом, лишнее срезает
+   overflow-x:clip шапки. */
+.header-inner{--cap-t:var(--header-top);--cap-l:50vw;--cap-r:50vw;--cap-h:var(--header-h)}
+/* Панель — продолжение поверхности вниз, сразу под полосой шапки, тем же
+   цветом, без шва и без волосяной линии. Высота по содержимому, потолок —
+   остаток экрана под шапкой, дальше прокрутка внутри панели. Лежит в
+   контексте капсулы ниже слоёв поверхности (z-index -2 против -1): при
+   появлении панель «садится» сверху вниз, и её верхний край всё это время
+   скрыт под полосой шапки. Тень-заливка вокруг панели — затемнение
+   страницы под меню (--menu-scrim), по умолчанию прозрачное.
    Работает и без JS: <details> открывается нативно. */
-.nav-panel{position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;z-index:-1;background:linear-gradient(var(--hairline),var(--hairline)) 0 var(--menu-top) / 100% 1px no-repeat,var(--bg);padding:calc(var(--menu-top) + var(--sp-7)) var(--gutter) var(--sp-8);display:flex;flex-direction:column;gap:var(--sp-6);overflow-y:auto;overscroll-behavior:contain}
-/* Анимация — только с JS (.js-reveal). Поверхность раскрывается из формы
-   капсулы: clip-path от прямоугольника капсулы со скруглением-таблеткой до
-   всего экрана. Геометрию капсулы Header.jsx меряет перед открытием и кладёт
-   в --cap-* (вычисленная величина, как --playhead); без неё — рейка сетки.
-   Пункты, RU/EN и CTA проявляются сверху вниз со stagger, стартуя, когда
-   поверхность уже заметно раскрылась. Закрытие зеркально и короче: пункты
-   гаснут, следом поверхность схлопывается в капсулу; Header.jsx ждёт конца
-   fare-menu-close и только тогда снимает open. */
-.nav-toggle{--cap-t:var(--header-top);--cap-l:var(--gutter);--cap-r:var(--gutter);--cap-h:var(--header-h)}
-.js-reveal .nav-toggle[open]:not([data-closing]) .nav-panel{animation:fare-menu-open var(--dur-menu) var(--ease) backwards}
+.nav-panel{--menu-band:calc(var(--cap-t) * 2 + var(--cap-h));position:fixed;top:var(--menu-band);left:0;right:0;max-height:calc(100vh - var(--menu-band));max-height:calc(100dvh - var(--menu-band));z-index:-2;background:var(--bg);box-shadow:0 0 0 100vmax var(--menu-scrim);padding:var(--sp-5) var(--gutter) var(--sp-7);display:flex;flex-direction:column;gap:var(--sp-6);overflow-y:auto;overscroll-behavior:contain}
+/* Анимация — только с JS (.js-reveal). Поверхность растёт --dur-menu,
+   панель проявляется и садится на место за --dur-menu-panel после
+   --menu-panel-delay, пункты — сверху вниз со stagger. Закрытие зеркально
+   и короче: пункты и панель гаснут, через --menu-close-delay поверхность
+   схлопывается в капсулу; Header.jsx ждёт конца fare-menu-surface-out,
+   fare-menu-stroke-out и fare-menu-panel-out и только тогда снимает open. */
+.js-reveal .header-inner:has(> .nav-toggle[open]:not([data-closing]))::before{animation:fare-menu-surface-in var(--dur-menu) var(--ease)}
+.js-reveal .header-inner:has(> .nav-toggle[open]:not([data-closing]))::after{animation:fare-menu-stroke-in var(--dur-menu) var(--ease)}
+.js-reveal .header-inner:has(> .nav-toggle[data-closing])::before{animation:fare-menu-surface-out var(--dur-menu-out) var(--ease-in) var(--menu-close-delay) forwards}
+.js-reveal .header-inner:has(> .nav-toggle[data-closing])::after{animation:fare-menu-stroke-out var(--dur-menu-out) var(--ease-in) var(--menu-close-delay) forwards}
+.js-reveal .nav-toggle[open]:not([data-closing]) .nav-panel{animation:fare-menu-panel-in var(--dur-menu-panel) var(--ease) var(--menu-panel-delay) backwards}
 .js-reveal .nav-toggle[open]:not([data-closing]) :is(.nav-panel-links > *, .nav-panel-foot > *){animation:fare-menu-item-in var(--dur-menu-item) var(--ease) backwards;animation-delay:calc(var(--menu-item-delay) + var(--stagger-menu) * var(--i, 0))}
-.js-reveal .nav-toggle[data-closing] .nav-panel{animation:fare-menu-close var(--dur-menu-out) var(--ease-in) var(--menu-close-delay) forwards}
+.js-reveal .nav-toggle[data-closing] .nav-panel{animation:fare-menu-panel-out var(--dur-menu-panel-out) var(--ease-in) forwards}
 .js-reveal .nav-toggle[data-closing] :is(.nav-panel-links > *, .nav-panel-foot > *){animation:fare-menu-item-out var(--dur-menu-item-out) var(--ease-in) forwards}
 .nav-panel-links > :nth-child(2){--i:1}
 .nav-panel-links > :nth-child(3){--i:2}
@@ -223,7 +248,21 @@ a:hover{color:var(--accent-warm)}
 .nav-panel-links{display:flex;flex-direction:column;gap:var(--sp-5)}
 .nav-panel-link{font-family:var(--font-display);font-weight:var(--wt-bold);font-size:var(--fs-h3);letter-spacing:-.015em;color:var(--text)}
 .nav-panel-link:hover{color:var(--accent)}
-.nav-panel-foot{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-5);border-top:1px solid var(--hairline);padding-top:var(--sp-6);margin-top:auto}
+/* RU/EN и CTA идут в потоке сразу за пунктами, не прижаты ко дну экрана */
+.nav-panel-foot{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-5);border-top:1px solid var(--hairline);padding-top:var(--sp-6)}
+/* Слои поверхности — только там, где есть бургер. Десктопная капсула
+   рисуется собственным фоном, рамкой и тенью, как раньше. Рамка капсулы
+   остаётся 1px, но прозрачной: геометрия потока не меняется. */
+@media (max-width:820px){
+  .site-header{overflow-x:clip}
+  .header-inner{position:relative;background:transparent;border-color:transparent;box-shadow:none}
+  .header-inner::before,.header-inner::after{content:"";position:absolute;inset:-1px;z-index:-1;border-radius:var(--radius-pill)}
+  .header-inner::before{background:var(--bg);visibility:hidden}
+  .header-inner::after{background:var(--bg);border:1px solid var(--hairline);box-shadow:var(--shadow-header)}
+  .header-inner:has(> .nav-toggle[open])::before,.header-inner:has(> .nav-toggle[open])::after{inset:calc(-1px - var(--cap-t)) calc(-1px - var(--cap-r)) calc(-1px - var(--cap-t)) calc(-1px - var(--cap-l));border-radius:0}
+  .header-inner:has(> .nav-toggle[open])::before{visibility:visible}
+  .header-inner:has(> .nav-toggle[open])::after{opacity:0}
+}
 
 /* ---- hero ---- */
 /* Композиция строится строками грида, а не центрированием: верхняя строка —
