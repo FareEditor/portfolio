@@ -392,6 +392,14 @@ a:hover{color:var(--accent-warm)}
 /* рамку, радиус, отступ и свечение даёт .card--interactive; здесь — только
    внутренняя раскладка числа и подписи */
 .stat{display:flex;flex-direction:column;gap:var(--sp-2)}
+/* Колонки 1fr не уже самого длинного слова подписи: «выполненных» в моно
+   с разрядкой — 99px, плюс отступы карточки 2×--sp-5 и рамка. Ниже 360px
+   две такие колонки с зазором шире рейки (на 320 — 304px против 280), и
+   сетка вылезала за край экрана. Здесь боковой отступ карточки уже —
+   слово помещается, переносить его посередине не нужно. */
+@media (max-width:359px){
+  .stat{padding-inline:var(--sp-3)}
+}
 /* число берёт верх оси Onest, как заголовок hero: вес несёт иерархию */
 .stat-value{font-family:var(--font-display);font-weight:var(--wt-black);font-size:var(--fs-stat);line-height:1.05;letter-spacing:-.03em}
 /* подпись — тихая моноширинная строка, подача взята у прежней .proof-industries */
