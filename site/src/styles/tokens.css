@@ -204,14 +204,26 @@
   --play-sm:44px;
   --z-playhead:100;
   --z-header:90;
-  --z-menu:95;
   /* кнопка «наверх» ниже шапки и открытой панели меню: панель её накрывает */
   --z-totop:80;
+  /* мобильное меню: верх поверхности под капсулой — там же, где раньше
+     начиналась панель */
+  --menu-top:calc(var(--header-h) + var(--header-top) * 2);
+  /* раскрытие «таблетка → панель»: поверхность, затем пункты сверху вниз */
+  --dur-menu:380ms;
+  --dur-menu-item:300ms;
+  --menu-item-delay:140ms;
+  --stagger-menu:40ms;
+  --menu-item-shift:-14px;
+  /* закрытие короче: пункты гаснут, через --menu-close-delay схлопывается поверхность */
+  --dur-menu-item-out:140ms;
+  --dur-menu-out:260ms;
+  --menu-close-delay:60ms;
 }
 
 /* prefers-reduced-motion: общее правило в app.css сокращает длительности,
    но не задержки. Все задержки последовательностей обнуляются здесь, в
    одном месте — иначе элемент висел бы невидимым на время задержки. */
 @media (prefers-reduced-motion:reduce){
-  :root{--reveal-step:0ms;--stagger-card:0ms;--tab-delay:0ms;--hero-delay-1:0ms;--hero-delay-2:0ms;--hero-delay-3:0ms}
+  :root{--reveal-step:0ms;--stagger-card:0ms;--tab-delay:0ms;--menu-item-delay:0ms;--stagger-menu:0ms;--menu-close-delay:0ms;--hero-delay-1:0ms;--hero-delay-2:0ms;--hero-delay-3:0ms}
 }

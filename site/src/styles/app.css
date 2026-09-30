@@ -54,6 +54,10 @@ a:hover{color:var(--accent-warm)}
 @keyframes fare-spin{to{transform:rotate(360deg)}}
 @keyframes fare-fade{from{opacity:0}to{opacity:1}}
 @keyframes fare-card-in{from{opacity:0;translate:0 var(--card-shift)}to{opacity:1;translate:none}}
+@keyframes fare-menu-open{from{clip-path:inset(var(--cap-t) var(--cap-r) calc(100% - var(--cap-t) - var(--cap-h)) var(--cap-l) round var(--radius-pill))}to{clip-path:inset(0 round 0)}}
+@keyframes fare-menu-close{from{clip-path:inset(0 round 0)}to{clip-path:inset(var(--cap-t) var(--cap-r) calc(100% - var(--cap-t) - var(--cap-h)) var(--cap-l) round var(--radius-pill))}}
+@keyframes fare-menu-item-in{from{opacity:0;transform:translateY(var(--menu-item-shift))}to{opacity:1;transform:none}}
+@keyframes fare-menu-item-out{to{opacity:0;transform:translateY(var(--menu-item-shift))}}
 @keyframes fare-card-out{to{opacity:0;translate:0 var(--card-exit-shift)}}
 /* состояния вкладки работ: те же значения, что у .work-tab и активного таба */
 @keyframes fare-tab-on{from{background:transparent;border-color:var(--line);color:var(--text-dim)}to{background:var(--accent);border-color:var(--accent);color:var(--bg)}}
@@ -143,7 +147,7 @@ a:hover{color:var(--accent-warm)}
    сентинела больше нет, поэтому шапка не зависит от JS. Фон непрозрачный:
    капсула перекрывает уезжающий под неё контент сама, без backdrop-filter. */
 .site-header{position:sticky;top:var(--header-top);z-index:var(--z-header);padding:0 var(--gutter);pointer-events:none}
-.header-inner{width:fit-content;max-width:100%;margin:0 auto;padding:0 var(--sp-3) 0 var(--sp-5);height:var(--header-h);display:flex;align-items:center;gap:var(--sp-7);pointer-events:auto;border:1px solid var(--hairline);border-radius:var(--radius-pill);background:var(--bg);box-shadow:var(--shadow-header)}
+.header-inner{isolation:isolate;width:fit-content;max-width:100%;margin:0 auto;padding:0 var(--sp-3) 0 var(--sp-5);height:var(--header-h);display:flex;align-items:center;gap:var(--sp-7);pointer-events:auto;border:1px solid var(--hairline);border-radius:var(--radius-pill);background:var(--bg);box-shadow:var(--shadow-header)}
 /* Один класс на обе точки — капсулу header и футер. Цвет уже был на
    максимуме (--text против --text-dim у соседних ссылок), поэтому
    разрыв добирается весом: 500 -> --wt-bold. */
@@ -188,7 +192,34 @@ a:hover{color:var(--accent-warm)}
    механизмом <details> — в закрытом состоянии она оставалась видимой
    полосой. Скрываем явно, не полагаясь на UA-поведение. */
 .nav-toggle:not([open]) .nav-panel{display:none}
-.nav-panel{position:fixed;inset:calc(var(--header-h) + var(--header-top) * 2) 0 0 0;z-index:var(--z-menu);background:var(--bg);border-top:1px solid var(--hairline);padding:var(--sp-7) var(--gutter) var(--sp-8);display:flex;flex-direction:column;gap:var(--sp-6);overflow-y:auto}
+/* Раскрытая панель — непрозрачная поверхность на весь экран, в том числе
+   вокруг и позади капсулы: раньше она начиналась под капсулой, и по бокам
+   и сверху от неё просвечивал контент страницы. Лежит внутри капсулы на
+   z-index -1 (капсула — свой контекст наложения, isolation ниже): рисуется
+   поверх фона, обводки и тени капсулы, но под её содержимым — FARE, RU/EN
+   и крестик остаются на месте, а сама «таблетка» становится частью панели.
+   Волосяная линия под капсулой — фоном на прежней высоте, без рамки.
+   Работает и без JS: <details> открывается нативно. */
+.nav-panel{position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;z-index:-1;background:linear-gradient(var(--hairline),var(--hairline)) 0 var(--menu-top) / 100% 1px no-repeat,var(--bg);padding:calc(var(--menu-top) + var(--sp-7)) var(--gutter) var(--sp-8);display:flex;flex-direction:column;gap:var(--sp-6);overflow-y:auto;overscroll-behavior:contain}
+/* Анимация — только с JS (.js-reveal). Поверхность раскрывается из формы
+   капсулы: clip-path от прямоугольника капсулы со скруглением-таблеткой до
+   всего экрана. Геометрию капсулы Header.jsx меряет перед открытием и кладёт
+   в --cap-* (вычисленная величина, как --playhead); без неё — рейка сетки.
+   Пункты, RU/EN и CTA проявляются сверху вниз со stagger, стартуя, когда
+   поверхность уже заметно раскрылась. Закрытие зеркально и короче: пункты
+   гаснут, следом поверхность схлопывается в капсулу; Header.jsx ждёт конца
+   fare-menu-close и только тогда снимает open. */
+.nav-toggle{--cap-t:var(--header-top);--cap-l:var(--gutter);--cap-r:var(--gutter);--cap-h:var(--header-h)}
+.js-reveal .nav-toggle[open]:not([data-closing]) .nav-panel{animation:fare-menu-open var(--dur-menu) var(--ease) backwards}
+.js-reveal .nav-toggle[open]:not([data-closing]) :is(.nav-panel-links > *, .nav-panel-foot > *){animation:fare-menu-item-in var(--dur-menu-item) var(--ease) backwards;animation-delay:calc(var(--menu-item-delay) + var(--stagger-menu) * var(--i, 0))}
+.js-reveal .nav-toggle[data-closing] .nav-panel{animation:fare-menu-close var(--dur-menu-out) var(--ease-in) var(--menu-close-delay) forwards}
+.js-reveal .nav-toggle[data-closing] :is(.nav-panel-links > *, .nav-panel-foot > *){animation:fare-menu-item-out var(--dur-menu-item-out) var(--ease-in) forwards}
+.nav-panel-links > :nth-child(2){--i:1}
+.nav-panel-links > :nth-child(3){--i:2}
+.nav-panel-links > :nth-child(4){--i:3}
+.nav-panel-links > :nth-child(n+5){--i:4}
+.nav-panel-foot > :nth-child(1){--i:5}
+.nav-panel-foot > :nth-child(2){--i:6}
 .nav-panel-links{display:flex;flex-direction:column;gap:var(--sp-5)}
 .nav-panel-link{font-family:var(--font-display);font-weight:var(--wt-bold);font-size:var(--fs-h3);letter-spacing:-.015em;color:var(--text)}
 .nav-panel-link:hover{color:var(--accent)}
