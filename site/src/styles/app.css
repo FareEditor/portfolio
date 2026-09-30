@@ -160,16 +160,25 @@ a:hover{color:var(--accent-warm)}
    Каждый ореол — radial-gradient в несколько ступеней от --ambient-color
    к прозрачному, без blur и blend-режимов. Места, размеры и доли яркости —
    на элементах через nth-child: разметка постоянная, пререндер совпадает.
-   x, y задают центр ореола: обёртка центрируется на них через translate. */
+   x, y задают центр ореола: тело центрируется на них через translate. */
 #root{position:relative}
 .ambient{position:absolute;inset:0;z-index:-1;overflow:clip;pointer-events:none}
 .ambient-glow{--size:var(--d);--ga:calc(var(--ambient-alpha) * var(--k));--reach-x:calc(var(--ax) * var(--ambient-drift) * var(--ambient-range, 1));--reach-y:calc(var(--ay) * var(--ambient-drift) * var(--ambient-range, 1));
-  /* Обёртка шире ореола на размах дрейфа: content-visibility:auto даёт
+  /* Место ореола задаётся не top/left в процентах, а translate элемента
+     размером со весь слой: проценты translate берутся от собственного
+     размера, то есть от размеров документа. Раскладка элемента при этом
+     стоит в 0,0 — когда высота документа меняется (подмена шрифта,
+     переключение Work), ореол переезжает трансформацией, а не layout,
+     и не попадает в CLS. С top в процентах каждый такой сдвиг засчитывался
+     layout shift'ом площадью в весь ореол. */
+  position:absolute;top:0;left:0;width:100%;height:100%;translate:var(--x) var(--y)}
+.ambient-glow-body{
+  /* Тело шире ореола на размах дрейфа: content-visibility:auto даёт
      paint containment, и ореол не должен упираться в её край. Вне экрана
-     браузер пропускает содержимое обёртки — дрейф невидимых ореолов не
-     тикает и не добавляет пересчёт стилей в кадры прокрутки. */
-  position:absolute;left:var(--x);top:var(--y);width:calc(var(--size) + var(--reach-x) * 2);height:calc(var(--size) + var(--reach-y) * 2);translate:-50% -50%;content-visibility:auto}
-.ambient-glow::before{content:"";position:absolute;left:var(--reach-x);top:var(--reach-y);width:var(--size);height:var(--size);background:radial-gradient(closest-side,
+     браузер пропускает содержимое — дрейф невидимых ореолов не тикает и
+     не добавляет пересчёт стилей в кадры прокрутки. */
+  position:absolute;top:0;left:0;width:calc(var(--size) + var(--reach-x) * 2);height:calc(var(--size) + var(--reach-y) * 2);translate:-50% -50%;content-visibility:auto}
+.ambient-glow-body::before{content:"";position:absolute;left:var(--reach-x);top:var(--reach-y);width:var(--size);height:var(--size);background:radial-gradient(closest-side,
   color-mix(in srgb,var(--ambient-color) calc(var(--ga) * 100%),transparent) 0%,
   color-mix(in srgb,var(--ambient-color) calc(var(--ga) * 86%),transparent) 20%,
   color-mix(in srgb,var(--ambient-color) calc(var(--ga) * 60%),transparent) 40%,
@@ -203,7 +212,7 @@ a:hover{color:var(--accent-warm)}
 @media (max-width:820px){
   .ambient{--ambient-range:0}
   .ambient-glow{--size:min(var(--d),70vw)}
-  .ambient-glow::before{animation:none}
+  .ambient-glow-body::before{animation:none}
   .ambient-glow:nth-child(n+8){display:none}
   .ambient-glow:nth-child(1){--y:3.5%}
   .ambient-glow:nth-child(2){--y:17.5%}
@@ -218,7 +227,7 @@ a:hover{color:var(--accent-warm)}
    на эти keyframes не завязан, ждать их конца некому. Ореолы стоят в
    начальной точке и остаются видимыми. */
 @media (prefers-reduced-motion:reduce){
-  .ambient-glow::before{animation:none}
+  .ambient-glow-body::before{animation:none}
 }
 /* --ambient-alpha:0 снимает слой целиком, а не рисует прозрачные ореолы:
    анимированные слои под текстом сами по себе меняют композитинг (текст
