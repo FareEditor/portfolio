@@ -228,6 +228,15 @@
   --menu-close-delay:60ms;
   /* затемнение страницы под раскрытым меню; по умолчанию его нет */
   --menu-scrim:transparent;
+
+  /* Фоновые ореолы (.ambient). Три ручки на весь слой:
+     --ambient-alpha — непрозрачность центра самого яркого ореола
+     (остальные — доля от неё); ровно 0 снимает слой целиком (app.css).
+     --ambient-drift — множитель амплитуды дрейфа; 0 — ореолы стоят.
+     --ambient-color — цвет, по умолчанию акцент. */
+  --ambient-alpha:.05;
+  --ambient-drift:1;
+  --ambient-color:var(--accent);
 }
 
 /* prefers-reduced-motion: общее правило в app.css сокращает длительности,

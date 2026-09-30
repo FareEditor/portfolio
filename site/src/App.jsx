@@ -22,6 +22,7 @@ import ContactCards from './components/ContactCards.jsx';
 import Footer from './components/Footer.jsx';
 import PlayerModal from './components/PlayerModal.jsx';
 import BackToTop from './components/BackToTop.jsx';
+import Ambient from './components/Ambient.jsx';
 import { useScrollSpy } from './hooks/scrollSpy.js';
 import './styles/tokens.css';
 import './styles/app.css';
@@ -419,6 +420,7 @@ export default function App({ lang }) {
 
   return (
     <>
+      <Ambient />
       <div className="playhead">
         <div className="playhead-fill" ref={playheadRef}></div>
       </div>

@@ -147,6 +147,92 @@ a:hover{color:var(--accent-warm)}
 .btn-glyph svg{width:calc(var(--play-sm) * .4);height:calc(var(--play-sm) * .4)}
 .header-cta{font-size:var(--fs-sm);padding:var(--sp-2) var(--sp-5)}
 
+/* ---- ambient glow ---- */
+/* Фоновые ореолы: слой на всю высоту документа позади контента (z-index -1
+   в корневом контексте наложения — над фоном страницы, под любым блоком).
+   #root — позиционированный предок: слой растягивается на него через
+   inset:0 и прокручивается вместе со страницей. Абсолютные элементы без
+   своих смещений (.sr-only и скрытые заголовки категорий) от смены
+   containing block не сдвигаются — у них статическая позиция.
+   Обрезка — overflow:clip на самом слое: ореолы, вылезшие за края
+   документа, не создают прокрутки, а обрезка не задевает ни одного
+   предка шапки, так что sticky и fixed работают как прежде.
+   Каждый ореол — radial-gradient в несколько ступеней от --ambient-color
+   к прозрачному, без blur и blend-режимов. Места, размеры и доли яркости —
+   на элементах через nth-child: разметка постоянная, пререндер совпадает.
+   x, y задают центр ореола: обёртка центрируется на них через translate. */
+#root{position:relative}
+.ambient{position:absolute;inset:0;z-index:-1;overflow:clip;pointer-events:none}
+.ambient-glow{--size:var(--d);--ga:calc(var(--ambient-alpha) * var(--k));--reach-x:calc(var(--ax) * var(--ambient-drift) * var(--ambient-range, 1));--reach-y:calc(var(--ay) * var(--ambient-drift) * var(--ambient-range, 1));
+  /* Обёртка шире ореола на размах дрейфа: content-visibility:auto даёт
+     paint containment, и ореол не должен упираться в её край. Вне экрана
+     браузер пропускает содержимое обёртки — дрейф невидимых ореолов не
+     тикает и не добавляет пересчёт стилей в кадры прокрутки. */
+  position:absolute;left:var(--x);top:var(--y);width:calc(var(--size) + var(--reach-x) * 2);height:calc(var(--size) + var(--reach-y) * 2);translate:-50% -50%;content-visibility:auto}
+.ambient-glow::before{content:"";position:absolute;left:var(--reach-x);top:var(--reach-y);width:var(--size);height:var(--size);background:radial-gradient(closest-side,
+  color-mix(in srgb,var(--ambient-color) calc(var(--ga) * 100%),transparent) 0%,
+  color-mix(in srgb,var(--ambient-color) calc(var(--ga) * 86%),transparent) 20%,
+  color-mix(in srgb,var(--ambient-color) calc(var(--ga) * 60%),transparent) 40%,
+  color-mix(in srgb,var(--ambient-color) calc(var(--ga) * 32%),transparent) 60%,
+  color-mix(in srgb,var(--ambient-color) calc(var(--ga) * 11%),transparent) 80%,
+  transparent 100%);
+  /* Две оси — два независимых цикла разной длины: X двигает свойство
+     translate, Y — transform. Оба композитные, перерисовки нет.
+     alternate + ease-in-out: на развороте скорость нулевая, рывка нет;
+     отрицательные задержки ставят каждый ореол в свою фазу. */
+  animation:fare-ambient-x var(--tx) ease-in-out var(--dx) infinite alternate,fare-ambient-y var(--ty) ease-in-out var(--dy) infinite alternate}
+/* x, y — центр ореола в долях ширины и высоты документа; d — диаметр;
+   k — доля от --ambient-alpha; ax/ay — полуамплитуда; tx/ty — полупериод */
+.ambient-glow:nth-child(1){--x:22%;--y:6%;--d:900px;--k:1;--ax:140px;--ay:70px;--tx:37s;--ty:29s;--dx:-11s;--dy:-23s}
+.ambient-glow:nth-child(2){--x:84%;--y:13%;--d:560px;--k:.7;--ax:90px;--ay:110px;--tx:53s;--ty:41s;--dx:-31s;--dy:-7s}
+.ambient-glow:nth-child(3){--x:10%;--y:24%;--d:720px;--k:.8;--ax:170px;--ay:60px;--tx:71s;--ty:47s;--dx:-5s;--dy:-38s}
+.ambient-glow:nth-child(4){--x:80%;--y:35%;--d:820px;--k:.85;--ax:110px;--ay:130px;--tx:43s;--ty:59s;--dx:-27s;--dy:-17s}
+.ambient-glow:nth-child(5){--x:28%;--y:48%;--d:620px;--k:.75;--ax:60px;--ay:90px;--tx:61s;--ty:34s;--dx:-49s;--dy:-3s}
+.ambient-glow:nth-child(6){--x:86%;--y:61%;--d:760px;--k:.8;--ax:150px;--ay:50px;--tx:83s;--ty:73s;--dx:-19s;--dy:-61s}
+.ambient-glow:nth-child(7){--x:14%;--y:74%;--d:680px;--k:.7;--ax:80px;--ay:120px;--tx:47s;--ty:38s;--dx:-41s;--dy:-29s}
+.ambient-glow:nth-child(8){--x:70%;--y:88%;--d:880px;--k:.9;--ax:130px;--ay:80px;--tx:67s;--ty:55s;--dx:-13s;--dy:-47s}
+@keyframes fare-ambient-x{from{translate:calc(var(--reach-x) * -1) 0}to{translate:var(--reach-x) 0}}
+@keyframes fare-ambient-y{from{transform:translateY(calc(var(--reach-y) * -1))}to{transform:translateY(var(--reach-y))}}
+/* Мобильная раскладка: семь ореолов вместо восьми, диаметр не больше 70%
+   ширины экрана, и они стоят. Дрейф, хоть и без перерисовки, добавляет
+   работу главному потоку в каждом кадре прокрутки: при CPU ×4 доля
+   сброшенных кадров росла почти вдвое, без дрейфа — как без слоя. Решение
+   владельца — движение только на десктопной раскладке. Страница здесь
+   длиннее, а ореолы меньше, поэтому высоты перераспределены с шагом 14%:
+   между соседними ореолами пусто не больше ~1.4 экрана. */
+@media (max-width:820px){
+  .ambient{--ambient-range:0}
+  .ambient-glow{--size:min(var(--d),70vw)}
+  .ambient-glow::before{animation:none}
+  .ambient-glow:nth-child(n+8){display:none}
+  .ambient-glow:nth-child(1){--y:3.5%}
+  .ambient-glow:nth-child(2){--y:17.5%}
+  .ambient-glow:nth-child(3){--y:31.5%}
+  .ambient-glow:nth-child(4){--y:45.5%}
+  .ambient-glow:nth-child(5){--y:59.5%}
+  .ambient-glow:nth-child(6){--y:73.5%}
+  .ambient-glow:nth-child(7){--y:87.5%}
+}
+/* reduce: общее правило ниже лишь сжимает длительность до .001ms, и ореол
+   прыгнул бы в конечную точку цикла. Здесь анимация снимается совсем — JS
+   на эти keyframes не завязан, ждать их конца некому. Ореолы стоят в
+   начальной точке и остаются видимыми. */
+@media (prefers-reduced-motion:reduce){
+  .ambient-glow::before{animation:none}
+}
+/* --ambient-alpha:0 снимает слой целиком, а не рисует прозрачные ореолы:
+   анимированные слои под текстом сами по себе меняют композитинг (текст
+   над ними уходит в отдельный слой и теряет LCD-сглаживание на Windows и
+   Linux). Style query сравнивает значение токена буквально — выключатель
+   срабатывает на «0». Без поддержки style queries ореолы остаются, но
+   с нулевой альфой невидимы. */
+@container style(--ambient-alpha: 0){
+  .ambient-glow{display:none}
+}
+@media print{
+  .ambient{display:none}
+}
+
 /* ---- playhead ---- */
 .playhead{position:fixed;top:0;left:0;right:0;height:2px;z-index:var(--z-playhead);pointer-events:none;background:var(--hairline)}
 /* доля прокрутки приходит переменной --playhead (0..1) из App.jsx;
