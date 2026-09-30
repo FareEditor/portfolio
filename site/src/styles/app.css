@@ -737,6 +737,12 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
 .field-error{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--accent-warm)}
 .honeypot{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .turnstile-slot{height:64px;border:1px dashed var(--line);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-dim)}
+/* Живой виджет: высота слота резервируется под выбранный размер до загрузки
+   скрипта Turnstile. Условие совпадает с выбором size в Contact.jsx
+   (TURNSTILE_NORMAL_MIN_WIDTH = 300 — внутренняя ширина слота): обёртка
+   шире слота на рамку 2×1px, отсюда 302px. Меняется одно — меняй оба. */
+.turnstile-box{container:turnstile / inline-size}
+@container turnstile (width < 302px){.turnstile-slot{height:calc(var(--turnstile-compact-h) + 2px)}}
 .form-error{font-size:var(--fs-sm);color:var(--accent-warm);border-left:2px solid var(--accent-warm);padding-left:var(--sp-4)}
 .btn-submit{padding:var(--sp-4) var(--sp-6);gap:var(--sp-3)}
 /* Отправка в процессе: disabled уже выставлен, отдельного флага не нужно */

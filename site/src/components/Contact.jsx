@@ -3,6 +3,21 @@ import { useEffect, useRef } from 'react';
 // Публичный site key; без него (локальная сборка) остаётся заглушка слота
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
+// Внутренняя ширина слота (px), с которой помещается Turnstile размера normal
+// (300×65); в более узкий слот рендерится compact (150×140). Тот же порог
+// в CSS — @container turnstile (width < 302px) в app.css: там меряется
+// обёртка, она шире слота на его рамку 2×1px.
+// Размер выбирается один раз при render: после поворота экрана или resize
+// он не пересчитывается до перезагрузки (принято владельцем) — remove()/render()
+// на resize намеренно нет.
+const TURNSTILE_NORMAL_MIN_WIDTH = 300;
+
+// Ширина, реально доступная виджету: content box слота (box-sizing: border-box)
+const contentWidth = (el) => {
+  const cs = getComputedStyle(el);
+  return parseFloat(cs.width) - parseFloat(cs.borderLeftWidth) - parseFloat(cs.borderRightWidth) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+};
+
 // Поле ссылается на свою подсказку и, пока ошибка показана, на её текст:
 // скринридер зачитывает причину вместе с полем, а не только при появлении.
 const describedBy = (fd) => [fd.showHint && fd.id + '-hint', fd.showError && fd.id + '-error'].filter(Boolean).join(' ') || undefined;
@@ -18,7 +33,9 @@ export default function Contact({ c, fields, isSuccess, showForm, isError, isSen
     // Явный рендер: Turnstile сам добавляет в форму hidden-input cf-turnstile-response
     const render = () => {
       if (slotRef.current && widgetIdRef.current === null) {
-        widgetIdRef.current = window.turnstile.render(slotRef.current, { sitekey: TURNSTILE_SITE_KEY });
+        const options = { sitekey: TURNSTILE_SITE_KEY };
+        if (contentWidth(slotRef.current) < TURNSTILE_NORMAL_MIN_WIDTH) options.size = 'compact';
+        widgetIdRef.current = window.turnstile.render(slotRef.current, options);
       }
     };
     if (window.turnstile) { render(); return; }
@@ -114,7 +131,10 @@ export default function Contact({ c, fields, isSuccess, showForm, isError, isSen
 
               {/* INTEGRATION: Cloudflare Turnstile widget */}
               {TURNSTILE_SITE_KEY ? (
-                <div className="turnstile-slot" ref={slotRef}></div>
+                /* Обёртка — контейнер для резерва высоты под compact в CSS */
+                <div className="turnstile-box">
+                  <div className="turnstile-slot" ref={slotRef}></div>
+                </div>
               ) : (
                 /* Ключа нет (локальная сборка): честно показываем, что форма
                    не отправится. Пустой hidden-input хуже, чем ничего —
