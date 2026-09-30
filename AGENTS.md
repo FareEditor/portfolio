@@ -68,6 +68,21 @@ Standing rules that survived the redesign:
   it breaks indexing and Cloudflare caches the wrong variant for everyone.
 - The language switcher writes the choice to localStorage and navigates.
 
+## Committed media and owner data
+
+- The before/after clips are real files tracked in git:
+  `site/public/media/before-after/before.mp4` and `after.mp4`. The section
+  exists only while both are present (`vite.config.js` checks for them at build
+  time), so deleting or replacing either one changes what ships.
+- Owner data is tracked too: `site/src/data/content/*.json`,
+  `site/src/data/testimonials/sample-*.json` (including their `published`
+  flags), `site/src/data/works/*.json`, `site/public/media/works/*`.
+- Never overwrite a committed file with test data. Before writing to any path,
+  run `git ls-files <path>`; if it prints the path, the file is tracked — do not
+  write test data into it. Test fixtures go into new files outside the
+  repository, or into untracked files that are deleted before committing.
+- Stage files by explicit path. Never `git add -A` / `git add .`.
+
 ## Never do
 
 - Do not commit secrets. Tokens live in `.dev.vars` locally and in
