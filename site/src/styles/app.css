@@ -39,6 +39,10 @@ a:hover{color:var(--accent-warm)}
 [data-reveal="card"]:nth-child(5){--i:4}
 [data-reveal="card"]:nth-child(6){--i:5}
 [data-reveal="card"]:nth-child(n+7){--i:6}
+/* Лесенка — только в многоколоночной раскладке. Карточки одной колонки
+   входят в кадр поодиночке; App.jsx меряет раскладку при появлении и
+   помечает такие data-reveal-column="single". */
+.js-reveal [data-reveal="card"][data-revealed="1"][data-reveal-column="single"]{animation-delay:0s}
 /* Второй шаг последовательности: элемент проявляется тем же reveal, но
    с задержкой --reveal-step после первого. Наблюдатель и триггер общие,
    поэтому шаг 2 не стартует раньше собственного пересечения — задержка

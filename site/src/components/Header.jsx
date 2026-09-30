@@ -85,7 +85,9 @@ export default function Header({ wordmark, navItems, langLinks, cta, menuLabel, 
   useEffect(() => {
     if (!closing) return undefined;
     const capsule = capsuleOf();
-    const running = capsule ? capsule.getAnimations({ subtree: true }).filter((a) => MENU_OUT.includes(a.animationName)) : [];
+    // Без Web Animations API (getAnimations) ждать нечего: меню закрывается
+    // сразу, без исключения.
+    const running = capsule && typeof capsule.getAnimations === 'function' ? capsule.getAnimations({ subtree: true }).filter((a) => MENU_OUT.includes(a.animationName)) : [];
     let cancelled = false;
     Promise.all(running.map((a) => a.finished.catch(() => {}))).then(() => { if (!cancelled) closeNow(); });
     return () => { cancelled = true; };

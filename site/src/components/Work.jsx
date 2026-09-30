@@ -96,7 +96,9 @@ export default function Work({ c, categories, tabsLabel }) {
       panel.querySelectorAll('[data-reveal]').forEach((el) => { el.dataset.revealed = '1'; });
     }
     const name = PHASE_ANIMATION[phase];
-    const running = panel ? panel.getAnimations({ subtree: true }).filter((a) => a.animationName === name) : [];
+    // Без Web Animations API (getAnimations) ждать нечего: фаза завершается
+    // сразу, без исключения — смена категории остаётся мгновенной.
+    const running = panel && typeof panel.getAnimations === 'function' ? panel.getAnimations({ subtree: true }).filter((a) => a.animationName === name) : [];
     let cancelled = false;
     Promise.all(running.map((a) => a.finished.catch(() => {}))).then(() => {
       if (cancelled) return;

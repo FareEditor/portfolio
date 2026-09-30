@@ -13,12 +13,13 @@ export default function Stats({ items, industries }) {
     <section className="section section--stats">
       {/* ul/li, а не div: четыре показателя — однородный перечень,
           скринридер объявляет его длину. Маркеры сняты в .stats-grid.
-          data-reveal висит на сетке, а не на карточках: правило появления
-          .js-reveal [data-reveal][data-revealed="1"] фиксирует transform:none
-          со специфичностью (0,3,0) и глушило бы hover-масштаб карточки. */}
-      <ul className="stats-grid" data-reveal="true" ref={gridRef}>
+          Появление — карточный вариант на каждом показателе, как у прочих
+          сеток: он двигает translate и играет animation, transform и
+          transition остаются hover-масштабу .card--interactive. Сетка
+          остаётся целью счётчика (gridRef): набег чисел не зависит от reveal. */}
+      <ul className="stats-grid" ref={gridRef}>
         {items.map((s, i) => (
-          <li className="stat card--interactive" key={s.key}>
+          <li className="stat card--interactive" data-reveal="card" key={s.key}>
             {/* Набегающее число скрыто от скринридера: промежуточные «0+», «37+»
                 он мог бы зачитать как данные. Итоговое значение читается из
                 sr-only — одно и то же до, во время и после анимации. */}
