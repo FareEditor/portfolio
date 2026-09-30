@@ -758,6 +758,23 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
 .footer-nav{display:flex;flex-wrap:wrap;gap:var(--sp-5)}
 .footer-link{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-dim)}
 .footer-link:hover{color:var(--accent-warm)}
+/* Невидимые области нажатия (WCAG 2.5.8): видимый размер, раскладка и
+   фокус-кольцо не меняются — растёт только ::before внутри ссылки. По
+   вертикали до --tap-min, по горизонтали — не дальше половины зазора до
+   соседа, чтобы области не перекрывались:
+   ссылки футера — gap --sp-5 (24px) → по 11px в стороны;
+   wordmark в капсуле — до кнопки меню 17px → по --sp-2 (8px);
+   «Смотреть на YouTube» и пункты панели меню — во всю ширину колонки уже,
+   растут только по высоте (соседи сверху и снизу дальше 24px). */
+a.wordmark,.footer-link,.work-link,.nav-panel-link{position:relative}
+a.wordmark::before,.footer-link::before,.work-link::before,.nav-panel-link::before{content:"";position:absolute;inset:calc((100% - var(--tap-min)) / 2) 0}
+.footer-link::before{inset-inline:calc(var(--tap-footer-x) * -1)}
+a.wordmark::before{inset-inline:calc(var(--sp-2) * -1)}
+/* RU/EN — и в панели меню, и в шапке десктопа: между ссылками 15px
+   (зазор --sp-2 плюс «/»), в стороны не дальше --tap-lang-x. До CTA в
+   шапке 16px, до навигации 48px — перекрытий нет. Итог 31.5×44. */
+.lang-btn{position:relative}
+.lang-btn::before{content:"";position:absolute;inset:calc((100% - var(--tap-min)) / 2) calc(var(--tap-lang-x) * -1)}
 .footer-copy{font-family:var(--font-mono);font-size:var(--fs-mono);letter-spacing:var(--tracking-mono);text-transform:uppercase;color:var(--text-dim)}
 
 /* ---- player modal ---- */
@@ -803,12 +820,6 @@ html:not(.js-reveal) .work-category + .work-category{margin-top:var(--sp-10);bor
      невидимый слой вокруг неё, пиксели кнопки те же. */
   .nav-toggle > summary{position:relative}
   .nav-toggle > summary::before{content:"";position:absolute;inset:calc((100% - var(--tap-min)) / 2)}
-  /* RU/EN в панели меню: те же невидимые слои. По вертикали — до
-     --tap-min, по горизонтали — на --tap-lang-x в каждую сторону: между
-     ссылками 15px (зазор --sp-2 плюс «/»), шире нельзя без перекрытия
-     областей соседей. Итог — 31.5×44 вместо 17.5×22, пиксели те же. */
-  .nav-panel .lang-btn{position:relative}
-  .nav-panel .lang-btn::before{content:"";position:absolute;inset:calc((100% - var(--tap-min)) / 2) calc(var(--tap-lang-x) * -1)}
   /* компенсирующий translateY убран: композиция hero держится строками грида */
   .hero{gap:var(--sp-6);padding-bottom:var(--sp-8)}
   .hero-foot{gap:var(--sp-5)}
