@@ -8,16 +8,16 @@
   "top_metric_value": "2",
   "top_metric_label_ru": "закрытых проекта",
   "top_metric_label_en": "Projects completed",
-  "quote_ru": "Создал приятные графики, выделил акценты и хорошо постарался над полноэкранными вставками. Отдельно порадовала сдача проектов в установленный срок. Рекомендую к работе",
-  "quote_en": "The editing made the content more engaging and visually polished, with clear emphasis on key points and well-executed full-screen graphics. Everything was delivered on schedule, which made the whole process smooth and reliable. I would definitely recommend working with him.",
-  "metric_1_type": "runtime-before-after",
-  "metric_1_value_ru": "1 час -> 30 минут",
-  "metric_1_value_en": "1 hr → 30 min",
+  "quote_ru": "С Евгением удобно работать: уже на следующий день получаю черновой вариант монтажа, а с учётом доработок ролик продолжительностью 15-20 минут обычно готов в течение двух дней. Отдельно отмечу высокий уровень графических элементов, работу со звуком, быструю реакцию на замечания и постоянную обратную связь в процессе работы.",
+  "quote_en": "Evgeny is easy to work with: I get a first cut the very next day, and, including revisions, a 15–20 minute video is usually ready within two days. I would also highlight the high quality of the graphics, the sound work, the quick response to feedback, and the constant communication throughout the process.",
+  "metric_1_type": "graphics-elements",
+  "metric_1_value_ru": "20+",
+  "metric_1_value_en": "20+",
   "metric_2_type": "turnaround-time",
   "metric_2_value_ru": "2 дня",
   "metric_2_value_en": "2 days",
   "metric_3_type": "on-time-delivery",
   "metric_3_value_ru": "100% работ",
   "metric_3_value_en": "Yes",
-  "logo": "/media/works/fomin.jpg"
+  "logo": "/media/works/fomin.webp"
 }
