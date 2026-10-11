@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 // INTEGRATION: site copy is managed in Decap CMS via data/content/*.json.
 import ru from './data/content/ru.json';
 import en from './data/content/en.json';
@@ -89,6 +89,9 @@ export default function App({ lang, shape = DEFAULT_SHAPE }) {
   const ioAliveRef = useRef(false);
   const safetyRef = useRef(0);
   const rafRef = useRef(0);
+  // Пользователь уже прокручивал сам (колесо, касание, клавиши) — после этого
+  // позицию за него не поправляем.
+  const userScrolledRef = useRef(false);
 
   // Лесенка --stagger-card нужна, когда карточки одного ряда входят в кадр
   // вместе. В одну колонку каждая пересекает линию сама по себе, и задержка
@@ -178,7 +181,7 @@ export default function App({ lang, shape = DEFAULT_SHAPE }) {
     // приходит между «щелчками» — там полный проход проявлял бы всё у самой
     // нижней кромки, и работала бы не линия REVEAL_LINE, а край экрана.
     let lastUserScroll = -Infinity;
-    const onUserScroll = () => { lastUserScroll = performance.now(); };
+    const onUserScroll = () => { lastUserScroll = performance.now(); userScrolledRef.current = true; };
     const onScrollEnd = () => revealInView(performance.now() - lastUserScroll < USER_SCROLL_MS ? REVEAL_LINE : 1);
     window.addEventListener("scroll", onScrollEvent, { passive: true });
     window.addEventListener("scrollend", onScrollEnd, { passive: true });
@@ -206,6 +209,34 @@ export default function App({ lang, shape = DEFAULT_SHAPE }) {
       if (ioRef.current) ioRef.current.disconnect();
     };
   }, []);
+
+  // Горячие данные пришли (или не пришли вовсе) уже после монтирования: skeleton
+  // сменился настоящими секциями либо секции исчезли. Layout-эффект — до отрисовки:
+  // – высота секций изменилась, и якорь из адреса (/#contact, /ru/#work) указывает
+  //   мимо. Пока пользователь не прокручивал сам, позиция один раз возвращается к
+  //   якорю — мгновенно, без плавной прокрутки от scroll-behavior у html;
+  // – новые [data-reveal] (карточки работ и отзывов, вкладки) проходят тот же путь,
+  //   что при загрузке: setupReveal проявляет всё выше нижней кромки экрана, включая
+  //   то, что уже проскочили, а остальное отдаёт наблюдателю;
+  // – onScroll пересчитывает индикатор прокрутки и scroll-spy под новую высоту.
+  // Данные могут прийти посреди плавной прокрутки к якорю, которую браузер начал при
+  // загрузке, и одновременно со scroll anchoring, который сам сдвигает позицию под
+  // выросший контент, — тогда первая поправка промахивается. Поэтому она повторяется
+  // через два кадра, когда браузер закончил свои; оба вызова ведут в одну точку.
+  useLayoutEffect(() => {
+    if (hot.status === 'loading') return undefined;
+    const toAnchor = () => {
+      if (userScrolledRef.current || location.hash.length <= 1) return;
+      let target = null;
+      try { target = document.getElementById(decodeURIComponent(location.hash.slice(1))); } catch { /* битый hash */ }
+      if (target) target.scrollIntoView({ behavior: 'instant', block: 'start' });
+    };
+    toAnchor();
+    setupReveal();
+    onScroll();
+    let raf = requestAnimationFrame(() => { raf = requestAnimationFrame(() => { toAnchor(); onScroll(); }); });
+    return () => cancelAnimationFrame(raf);
+  }, [hot.status]);
 
   // Плеер-фасад: до клика — статичное превью. Работы играют инлайн в своих
   // карточках (WorkCard); в модалке PlayerModal остаётся только шоурил.
