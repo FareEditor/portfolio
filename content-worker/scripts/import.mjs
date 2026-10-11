@@ -154,6 +154,22 @@ export const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 export const readFolder = (dir) =>
   readdirSync(dir).filter((f) => f.endsWith('.json')).sort().map((f) => [f, readJson(join(dir, f))]);
 
+// Строгое сравнение: типы, порядок в списках; порядок ключей объекта не значим.
+export function diff(actual, expected, path = '') {
+  if (Array.isArray(expected) || Array.isArray(actual)) {
+    if (!Array.isArray(expected) || !Array.isArray(actual)) return [`${path}: список против не-списка`];
+    if (actual.length !== expected.length) return [`${path}: длина ${actual.length} ≠ ${expected.length}`];
+    return expected.flatMap((item, i) => diff(actual[i], item, `${path}[${i}]`));
+  }
+  if (expected && actual && typeof expected === 'object' && typeof actual === 'object') {
+    return [...new Set([...Object.keys(expected), ...Object.keys(actual)])].flatMap((key) =>
+      key in expected && key in actual
+        ? diff(actual[key], expected[key], `${path}.${key}`)
+        : [`${path}.${key}: есть только в ${key in expected ? 'JSON' : 'D1'}`]);
+  }
+  return Object.is(actual, expected) ? [] : [`${path}: D1 ${JSON.stringify(actual)} (${typeof actual}) ≠ JSON ${JSON.stringify(expected)} (${typeof expected})`];
+}
+
 export function dropPaths(doc, paths = DROPPED) {
   const copy = structuredClone(doc);
   for (const path of paths) {

@@ -1,8 +1,8 @@
 # content-worker
 
-Контент сайта в Cloudflare D1: схема, импорт из JSON и сверка. Отдельно от `worker/`
-(контакт-форма). Сам Worker пока заглушка (`src/index.js` отвечает 404), routes нет,
-**не деплоится**.
+Контент сайта в Cloudflare D1: схема, импорт из JSON, сверка и публичный read-only API.
+Отдельно от `worker/` (контакт-форма): тот живёт на `fareeditor.com/api/*`, этот — на
+`fareeditor.com/data/*`.
 
 - База: `fareeditor-content`, binding `DB`, id — в `wrangler.jsonc`.
 - Медиа лежат в R2 (`media.fareeditor.com`), в базе — только таблица `media` со ссылками.
@@ -47,3 +47,35 @@ node scripts/verify.mjs --negative --seed ~/Documents/git/portfolio-audit/import
 
 `migrations/0001_init.sql`. Локализуемые поля — `*_ru` / `*_en`; `order` из JSON → `sort_order`.
 Внешние ключи в D1 включены (`PRAGMA foreign_keys` = 1).
+
+## API
+
+Только `GET` и `HEAD`; остальные методы — `405`, неизвестный путь — `404`, сбой D1 — `503`.
+Same-origin, CORS-заголовков нет. Query-параметры игнорируются.
+
+- `/data/hot.json` — `stats`, `categories` (с вложенными `works`), `testimonials`, `metricTypes`.
+  Только опубликованное, категории без работ отброшены — как `site/src/data/works.js`.
+- `/data/static.json` — `content` (`ru`, `en`), `settings` (плюс `before_after_enabled`,
+  `beforeAfter`), `contacts`.
+
+Имена полей — как в исходных JSON; маппинг столбцов D1 — `src/mapping.js`, общий со сверкой.
+`thumbnail`, `logo` — абсолютные URL медиа. `version` — хеш содержимого, он же `ETag`
+(`If-None-Match` → `304`). Браузеру `max-age=0, must-revalidate`; на edge ответ лежит в
+Cache API `EDGE_TTL_SECONDS` секунд (`wrangler.jsonc`), заголовок `X-Content-Cache: HIT|MISS`.
+
+```sh
+# Локально против production D1 (только SELECT)
+npx wrangler dev --remote --port 8799
+
+# Сверка API ↔ site/src/data и HTTP-контракт
+node scripts/check-api.mjs --base http://127.0.0.1:8799 \
+  --manifest ~/Documents/git/portfolio-audit/r2-manifest.json
+node scripts/check-api.mjs --base https://fareeditor.com \
+  --manifest ~/Documents/git/portfolio-audit/r2-manifest.json
+
+npx wrangler deploy
+npx wrangler rollback            # предыдущая версия кода
+```
+
+Снять API с сайта целиком — убрать `routes` из `wrangler.jsonc` и задеплоить: `/data/*`
+снова уйдёт в GitLab Pages (404).

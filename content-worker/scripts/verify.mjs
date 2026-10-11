@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Сверка D1 ↔ JSON. Обратный маппинг написан здесь отдельно от import.mjs намеренно:
-// общая таблица соответствий скрыла бы перепутанные столбцы.
+// Сверка D1 ↔ JSON. Обратный маппинг — src/mapping.js, общий с Worker и отдельный от
+// import.mjs намеренно: общая с импортом таблица соответствий скрыла бы перепутанные столбцы.
 //
 //   node scripts/verify.mjs --manifest <r2-manifest.json> [--data <dir>] [--db fareeditor-content]
 //   node scripts/verify.mjs --negative --seed <import.sql>
@@ -13,7 +13,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { DEFAULT_DATA_DIR, DROPPED, dropPaths, lit, readFolder, readJson } from './import.mjs';
+import * as map from '../src/mapping.js';
+import { DEFAULT_DATA_DIR, DROPPED, diff, dropPaths, lit, readFolder, readJson } from './import.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MEDIA_BASE = 'https://media.fareeditor.com/';
@@ -85,22 +86,6 @@ function digest(tables) {
   return createHash('sha256').update(JSON.stringify(stripped)).digest('hex');
 }
 
-// Строгое сравнение: типы, порядок в списках; порядок ключей объекта не значим.
-function diff(actual, expected, path = '') {
-  if (Array.isArray(expected) || Array.isArray(actual)) {
-    if (!Array.isArray(expected) || !Array.isArray(actual)) return [`${path}: список против не-списка`];
-    if (actual.length !== expected.length) return [`${path}: длина ${actual.length} ≠ ${expected.length}`];
-    return expected.flatMap((item, i) => diff(actual[i], item, `${path}[${i}]`));
-  }
-  if (expected && actual && typeof expected === 'object' && typeof actual === 'object') {
-    return [...new Set([...Object.keys(expected), ...Object.keys(actual)])].flatMap((key) =>
-      key in expected && key in actual
-        ? diff(actual[key], expected[key], `${path}.${key}`)
-        : [`${path}.${key}: есть только в ${key in expected ? 'JSON' : 'D1'}`]);
-  }
-  return Object.is(actual, expected) ? [] : [`${path}: D1 ${JSON.stringify(actual)} (${typeof actual}) ≠ JSON ${JSON.stringify(expected)} (${typeof expected})`];
-}
-
 let failed = 0;
 function report(name, problems, detail = '') {
   if (problems.length === 0) {
@@ -111,9 +96,6 @@ function report(name, problems, detail = '') {
     for (const problem of problems.slice(0, 20)) console.log(`     ${problem}`);
   }
 }
-
-// 0/1 → boolean; любое другое значение останется как есть и даст расхождение.
-const bool = (v) => (v === 1 ? true : v === 0 ? false : v);
 
 function verify() {
   if (!args.manifest) {
@@ -142,42 +124,15 @@ function verify() {
     report(name, problems, `${actual.size} записей`);
   };
 
-  bySlug('categories', db.categories, 'categories', (r) => ({
-    slug: r.slug, published: bool(r.published), order: r.sort_order,
-    title_ru: r.title_ru, title_en: r.title_en,
-    blurb_ru: r.blurb_ru ?? '', blurb_en: r.blurb_en ?? '', aspect: r.aspect,
-  }), (record) => optional(record, ['blurb_ru', 'blurb_en']));
+  bySlug('categories', db.categories, 'categories', map.category, (record) => optional(record, ['blurb_ru', 'blurb_en']));
 
-  bySlug('metric_types', db.metric_types, 'metric-types', (r) => ({
-    slug: r.slug, order: r.sort_order, label_ru: r.label_ru, label_en: r.label_en,
-  }));
+  bySlug('metric_types', db.metric_types, 'metric-types', map.metricType);
 
-  bySlug('works', db.works, 'works', (r) => ({
-    slug: r.slug, published: bool(r.published), category: r.category_slug, featured: bool(r.featured),
-    order: r.sort_order,
-    client: r.client_ru, client_en: r.client_en,
-    format: r.format_ru, format_en: r.format_en,
-    duration: r.duration_ru, duration_en: r.duration_en,
-    title_ru: r.title_ru, title_en: r.title_en, body_ru: r.body_ru, body_en: r.body_en,
-    youtube_id: r.youtube_id, thumbnail: mediaPath(r.thumbnail_media_id),
-  }));
+  bySlug('works', db.works, 'works', (r) => map.work(r, mediaPath(r.thumbnail_media_id)));
 
-  bySlug('testimonials + testimonial_metrics', db.testimonials, 'testimonials', (r) => {
-    const record = {
-      slug: r.slug, published: bool(r.published), order: r.sort_order, channel_name: r.channel_name,
-      quote_ru: r.quote_ru, quote_en: r.quote_en,
-      channel_topic_ru: r.channel_topic_ru, channel_topic_en: r.channel_topic_en,
-      top_metric_value: r.top_metric_value,
-      top_metric_label_ru: r.top_metric_label_ru, top_metric_label_en: r.top_metric_label_en,
-    };
-    if (r.logo_media_id !== null) record.logo = mediaPath(r.logo_media_id);
-    for (const m of db.testimonial_metrics.filter((m) => m.testimonial_slug === r.slug)) {
-      record[`metric_${m.position}_type`] = m.metric_type_slug;
-      record[`metric_${m.position}_value_ru`] = m.value_ru;
-      record[`metric_${m.position}_value_en`] = m.value_en;
-    }
-    return record;
-  }, (record) => {
+  bySlug('testimonials + testimonial_metrics', db.testimonials, 'testimonials', (r) => map.testimonial(r,
+    db.testimonial_metrics.filter((m) => m.testimonial_slug === r.slug),
+    r.logo_media_id === null ? null : mediaPath(r.logo_media_id)), (record) => {
     const { logo, ...rest } = record;
     return logo ? record : rest;
   });
@@ -188,22 +143,16 @@ function verify() {
   const positions = (rows) => rows.flatMap((row, i) => (row.position === i + 1 ? [] : [`position ${row.position} на месте ${i + 1}`]));
 
   report('stats', [...positions(db.stats), ...diff({
-    items: db.stats.map((r) => ({ value: r.value_ru, value_en: r.value_en, label_ru: r.label_ru, label_en: r.label_en })),
+    items: db.stats.map(map.stat),
   }, readJson(src('stats.json')))], `${db.stats.length} строк`);
 
   const contacts = readJson(src('contacts.json'));
   report('contacts', [...positions(db.contacts), ...diff({
-    items: db.contacts.map((r) => ({
-      kind: r.kind, label_ru: r.label_ru, label_en: r.label_en, value: r.value_ru, value_en: r.value_en,
-      subject_ru: r.subject_ru ?? '', subject_en: r.subject_en ?? '',
-    })),
+    items: db.contacts.map(map.contact),
   }, { items: contacts.items.map((item) => optional(item, ['subject_ru', 'subject_en'])) })], `${db.contacts.length} строк`);
 
   const s = db.settings[0] ?? {};
-  report('settings', db.settings.length !== 1 ? [`строк: ${db.settings.length}`] : diff({
-    status: s.status_ru, status_en: s.status_en, showreel_enabled: bool(s.showreel_enabled),
-    showreel_id: s.showreel_id, contact_url: s.contact_url_ru, contact_url_en: s.contact_url_en,
-  }, readJson(src('settings.json'))));
+  report('settings', db.settings.length !== 1 ? [`строк: ${db.settings.length}`] : diff(map.settings(s), readJson(src('settings.json'))));
 
   const beforeId = db.media.find((m) => m.kind === 'before')?.id;
   const afterId = db.media.find((m) => m.kind === 'after')?.id;
