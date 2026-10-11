@@ -18,6 +18,10 @@ const BEFORE_AFTER_DIR = 'public/media/before-after';
 const hasBeforeAfter = ['before.mp4', 'after.mp4']
   .every((f) => existsSync(resolve(import.meta.dirname, BEFORE_AFTER_DIR, f)));
 
+// Горячие данные отдаёт Content Worker на проде; локально /data проксируется туда.
+// Только dev и preview — в production-сборку прокси не попадает.
+const HOT_PROXY = { target: 'https://fareeditor.com', changeOrigin: true };
+
 const robotsGuard = () => ({
   name: 'robots-guard',
   transformIndexHtml() {
@@ -59,8 +63,10 @@ export default defineConfig(({ isSsrBuild, mode }) => {
     plugins: [react(), ...(isSsrBuild ? [] : [robotsGuard()])],
     server: {
       // Локально /api уходит в `wrangler dev` (worker/), форма работает без CORS
-      proxy: { '/api': 'http://localhost:8787' },
+      proxy: { '/api': 'http://localhost:8787', '/data': HOT_PROXY },
     },
+    // vite preview отдаёт dist без воркера: /data берётся с прода так же, как в dev
+    preview: { proxy: { '/data': HOT_PROXY } },
     build: isSsrBuild
       ? // SSR-сборка для пререндера; prerender.js удаляет dist-ssr после вклейки
         { outDir: 'dist-ssr' }
