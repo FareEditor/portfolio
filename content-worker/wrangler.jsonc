@@ -1,0 +1,16 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "fareeditor-content",
+	// Заглушка: отвечает 404. Воркер пока не деплоится, routes нет намеренно.
+	"main": "src/index.js",
+	"compatibility_date": "2026-08-01",
+	"workers_dev": false,
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "fareeditor-content",
+			"database_id": "f8a1d6a2-c190-49db-8df5-72d4801abe8b",
+			"migrations_dir": "migrations"
+		}
+	]
+}
