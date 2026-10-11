@@ -2,9 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // INTEGRATION: site copy is managed in Decap CMS via data/content/*.json.
 import ru from './data/content/ru.json';
 import en from './data/content/en.json';
-import { CATEGORIES, TESTIMONIALS, METRIC_TYPES } from './data/works.js';
-// INTEGRATION: показатели секции статистики — файл stats.json в Decap CMS
-import stats from './data/stats.json';
 // INTEGRATION: карточки каналов связи — файл contacts.json в Decap CMS
 import contacts from './data/contacts.json';
 import settings from './data/settings.json';
@@ -24,7 +21,8 @@ import PlayerModal from './components/PlayerModal.jsx';
 import BackToTop from './components/BackToTop.jsx';
 import Ambient from './components/Ambient.jsx';
 import { useScrollSpy } from './hooks/scrollSpy.js';
-import { DEFAULT_SHAPE } from './hot.js';
+// INTEGRATION: stats, categories+works, testimonials, metricTypes — /data/hot.json (Content Worker, D1)
+import { DEFAULT_SHAPE, useHot } from './hot.js';
 import './styles/tokens.css';
 import './styles/app.css';
 
@@ -74,6 +72,11 @@ export default function App({ lang, shape = DEFAULT_SHAPE }) {
   const [selects, setSelects] = useState({ project_type: "", budget: "" });
   const [playingId, setPlayingId] = useState(null);
   const spy = useScrollSpy(NAV_IDS, SPY_LINE);
+  // Горячие секции: "loading" — skeleton по форме сборки, "ready" — данные,
+  // "error" — секций нет вовсе. Пустые списки вместо данных держат код ниже единым.
+  const hot = useHot();
+  const hotLoading = hot.status === 'loading';
+  const hotData = hot.data || { stats: { items: [] }, categories: [], testimonials: [], metricTypes: [] };
   // null — до монтирования: пререндер и режим без JS кнопку не рисуют вовсе,
   // первый клиентский рендер совпадает с пререндером
   const [showTop, setShowTop] = useState(null);
@@ -265,16 +268,16 @@ export default function App({ lang, shape = DEFAULT_SHAPE }) {
       .catch(() => setForm("error"));
   };
 
-  // Порядок показателей — позиция в массиве stats.json: список фиксированной длины,
-  // переупорядочивается перетаскиванием в CMS. Отдельного поля order нет намеренно.
-  const statItems = stats.items.map((s, i) => ({
+  // Порядок показателей — позиция в списке stats: он фиксированной длины, отдельного
+  // поля order нет намеренно. Пока данных нет — четыре пустые плашки под skeleton.
+  const statItems = (hotLoading ? [{}, {}, {}, {}] : hotData.stats.items).map((s, i) => ({
     key: i,
     value: lang === "en" ? s.value_en : s.value,
     label: lang === "en" ? s.label_en : s.label_ru
   }));
 
-  // Фильтрация и сортировка уже выполнены в data/works.js — здесь только локализация.
-  const categories = CATEGORIES.map((category) => ({
+  // Фильтрация и сортировка уже выполнены на стороне API — здесь только локализация.
+  const categories = hotData.categories.map((category) => ({
     slug: category.slug,
     aspect: category.aspect,
     title: lang === "en" ? category.title_en : category.title_ru,
@@ -283,7 +286,7 @@ export default function App({ lang, shape = DEFAULT_SHAPE }) {
   }));
 
   // Все карточки играют инлайн, поэтому модалка остаётся только за шоурилом
-  const inlineIds = CATEGORIES.flatMap((category) => category.works.map((w) => w.youtube_id));
+  const inlineIds = hotData.categories.flatMap((category) => category.works.map((w) => w.youtube_id));
   const modalId = playingId && !inlineIds.includes(playingId) ? playingId : null;
   const playerLabels = lang === "en"
     ? { label: "Video player", close: "Close" }
@@ -309,12 +312,12 @@ export default function App({ lang, shape = DEFAULT_SHAPE }) {
   // Справочник типов метрик по slug: подпись нижней ячейки приходит оттуда,
   // в самой записи отзыва лежит только ссылка и значение.
   const metricLabels = Object.fromEntries(
-    METRIC_TYPES.map((m) => [m.slug, lang === "en" ? m.label_en : m.label_ru])
+    hotData.metricTypes.map((m) => [m.slug, lang === "en" ? m.label_en : m.label_ru])
   );
   // Имя канала — identity, одно на обе локали; тематика, текст и значения
   // метрик локализуются. Слот с неизвестным типом молча выпадает, а не ломает
   // карточку — тот же принцип белого списка, что у aspect в WorkCard.
-  const testimonials = TESTIMONIALS.map((t) => ({
+  const testimonials = hotData.testimonials.map((t) => ({
     slug: t.slug,
     channel_name: t.channel_name,
     logo: t.logo,
@@ -450,12 +453,16 @@ export default function App({ lang, shape = DEFAULT_SHAPE }) {
           showreelEnabled={settings.showreel_enabled}
           openPlayer={openPlayer}
         />
-        <Stats items={statItems} industries={c.stats.industries} />
+        {hot.status !== 'error' && <Stats items={statItems} industries={c.stats.industries} loading={hotLoading} />}
         {/* Секции нет, пока оба ролика не лежат в public/media/before-after —
             флаг считает vite.config при чтении конфига. */}
         {__HAS_BEFORE_AFTER__ && <BeforeAfter c={c.beforeAfter} labels={baLabels} />}
-        <Work c={c.work} categories={categories} tabsLabel={workTabsLabel} />
-        <Testimonials c={c.testimonials} items={testimonials} navLabels={testimonialNav} />
+        {hot.status !== 'error' && <Work c={c.work} categories={categories} tabsLabel={workTabsLabel} loading={hotLoading} shape={shape} />}
+        {/* Форма сборки сказала «отзывов нет» — секции нет и места под неё не держим;
+            сказала «есть», а пришло ноль — Testimonials сам вернёт null. */}
+        {hot.status !== 'error' && shape.testimonials && (
+          <Testimonials c={c.testimonials} items={testimonials} navLabels={testimonialNav} loading={hotLoading} />
+        )}
         <Process c={c.process} />
         <Why c={c.why} />
         <Faq c={c.faq} faqItems={faqItems} />

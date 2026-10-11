@@ -37,6 +37,8 @@ export default function useCountUp(ref, values) {
   useEffect(() => {
     const el = ref.current;
     setShown(values);
+    // Пустой список — данных ещё нет (skeleton): наблюдать нечего, нулей не показываем.
+    if (!values.length) return;
     if (!el || !('IntersectionObserver' in window)) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const duration = toMs(getComputedStyle(el).getPropertyValue('--dur-count'));

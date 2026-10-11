@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import WorkCard from './WorkCard.jsx';
+import WorkCard, { ASPECT_CLASS, DEFAULT_ASPECT } from './WorkCard.jsx';
 
 // Порог «показать все» применяется внутри активной категории, а не ко всей секции:
 // длинная категория сворачивается, соседние короткие остаются целыми.
@@ -65,7 +65,61 @@ function CategoryPanel({ category, active, phase, watch, showAllLabel }) {
 // так ни одна карточка не прыгает из середины подъёма обратно в видимость.
 const PHASE_ANIMATION = { exit: 'fare-card-out', enter: 'fare-card-in' };
 
-export default function Work({ c, categories, tabsLabel }) {
+const BLANK = '\u00a0';
+
+// Заглушка до прихода /data/hot.json. Форму запекает сборка (prerender.js): число
+// вкладок, пропорция превью и число карточек первой категории. Текста нет; строки
+// держат высоту неразрывным пробелом в элементах с теми же классами, что у карточки.
+// Число строк текста — оценка: длину заголовков и описаний форма не знает, поэтому
+// высота секции совпадает с настоящей приблизительно, а не точно.
+// Пять детей .work-card — те же пять строк subgrid, что у WorkCard.
+function WorkSkeleton({ shape }) {
+  const thumbClass = 'work-thumb skel ' + (ASPECT_CLASS[shape.categories[0]] || ASPECT_CLASS[DEFAULT_ASPECT]);
+  return (
+    <>
+      <div className="work-tabs" data-reveal="true" aria-hidden="true">
+        {shape.categories.map((_, i) => <span className="work-tab skel" key={i}>{BLANK}</span>)}
+      </div>
+      <div className="work-panels" aria-hidden="true">
+        <div className="work-category">
+          <div className="work-category-head">
+            <p className="work-category-blurb skel">{BLANK}<br />{BLANK}</p>
+          </div>
+          <div className="work-grid">
+            {Array.from({ length: shape.works }, (_, i) => (
+              <div className="work-card" data-reveal="card" key={i}>
+                <div className={thumbClass}></div>
+                <div className="work-title skel">{BLANK}<br />{BLANK}</div>
+                <div className="work-meta skel">{BLANK}</div>
+                <div className="work-text skel">{BLANK}<br />{BLANK}<br />{BLANK}<br />{BLANK}</div>
+                <div className="work-link skel">{BLANK}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// Секция целиком: заголовок из статичных текстов есть всегда, под ним — заглушка
+// или вкладки с панелями. WorkTabs монтируется уже с данными, поэтому начальная
+// категория выставляется его useState без фаз exit/enter.
+export default function Work({ c, categories, tabsLabel, loading, shape }) {
+  return (
+    <section className="section section--work" id="work" aria-labelledby="work-title" data-hot={loading ? 'loading' : 'ready'} aria-busy={loading || undefined}>
+      <div className="section-head section-head--plain" data-reveal="true">
+        <span className="eyebrow">{c.eyebrow}</span>
+        <h2 className="section-title" id="work-title">{c.title}</h2>
+      </div>
+      {loading
+        ? <WorkSkeleton shape={shape} />
+        : <WorkTabs c={c} categories={categories} tabsLabel={tabsLabel} />}
+    </section>
+  );
+}
+
+function WorkTabs({ c, categories, tabsLabel }) {
   const first = categories[0] ? categories[0].slug : null;
   // selected — вкладка (aria-selected, фокус, цвет); shown — панель на экране.
   // Панели не размонтируются: все живут в DOM, неактивные скрыты через
@@ -144,13 +198,8 @@ export default function Work({ c, categories, tabsLabel }) {
   };
 
   return (
-    <section className="section section--work" id="work" aria-labelledby="work-title">
-      <div className="section-head section-head--plain" data-reveal="true">
-        <span className="eyebrow">{c.eyebrow}</span>
-        <h2 className="section-title" id="work-title">{c.title}</h2>
-      </div>
-
-      {/* INTEGRATION: источник данных для работ — коллекции categories и works в Decap CMS */}
+    <>
+      {/* INTEGRATION: источник данных для работ — categories в /data/hot.json (Content Worker) */}
       {/* Табы — прогрессивное усиление: в разметке они есть всегда, но показываются
           только при работающем JS (класс .js-reveal на <html>). Без JS строка табов
           скрыта, а все категории идут одна под другой со своими заголовками. */}
@@ -188,6 +237,6 @@ export default function Work({ c, categories, tabsLabel }) {
           />
         ))}
       </div>
-    </section>
+    </>
   );
 }

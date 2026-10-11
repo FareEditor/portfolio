@@ -2,7 +2,10 @@ import { useRef, useState } from 'react';
 
 // Лента прокручивается нативным scroll-snap; кнопки только двигают scrollLeft.
 // Библиотека карусели не нужна — состояние ленты живёт в самом элементе.
-export default function Testimonials({ c, items, navLabels }) {
+const BLANK = '\u00a0';
+
+// loading — данные ещё не пришли: шапка секции и лента те же, в ленте одна карточка-заглушка.
+export default function Testimonials({ c, items, navLabels, loading }) {
   const trackRef = useRef(null);
   // 0 — покой, -1/1 — какая кнопка сейчас отказывает
   const [shake, setShake] = useState(0);
@@ -30,10 +33,10 @@ export default function Testimonials({ c, items, navLabels }) {
 
   // Ранний выход после хуков: порядок вызовов обязан быть одинаковым в каждом
   // рендере. Нет опубликованных отзывов — нет и секции, ни заголовка, ни ленты.
-  if (!items.length) return null;
+  if (!loading && !items.length) return null;
 
   return (
-    <section className="section section--testimonials" aria-labelledby="testimonials-title">
+    <section className="section section--testimonials" aria-labelledby="testimonials-title" data-hot={loading ? 'loading' : 'ready'} aria-busy={loading || undefined}>
       <div className="section-head testimonials-head" data-reveal="true">
         <div className="testimonials-title-group">
           <span className="eyebrow">{c.eyebrow}</span>
@@ -62,6 +65,28 @@ export default function Testimonials({ c, items, navLabels }) {
           свойством translate и animation, transform и transition hover-зума
           .card--interactive остаются нетронутыми. */}
       <ul className="testimonial-track" id="testimonials-track" ref={trackRef}>
+        {loading && (
+          <li className="testimonial card--interactive" data-reveal="card" aria-hidden="true">
+            <div className="testimonial-head">
+              <span className="testimonial-logo skel"></span>
+              <div className="testimonial-id">
+                <p className="testimonial-name skel">{BLANK}</p>
+                <p className="testimonial-topic skel">{BLANK}</p>
+              </div>
+            </div>
+            <p className="testimonial-top-value skel">{BLANK}</p>
+            <p className="testimonial-top-label skel">{BLANK}</p>
+            <p className="testimonial-quote skel">{BLANK}<br />{BLANK}<br />{BLANK}<br />{BLANK}<br />{BLANK}<br />{BLANK}<br />{BLANK}</p>
+            <ul className="testimonial-metrics">
+              {[0, 1, 2].map((i) => (
+                <li className="testimonial-metric" key={i}>
+                  <p className="testimonial-metric-value skel">{BLANK}</p>
+                  <p className="testimonial-metric-label skel">{BLANK}</p>
+                </li>
+              ))}
+            </ul>
+          </li>
+        )}
         {items.map((t) => (
           <li className="testimonial card--interactive" key={t.slug} data-reveal="card">
             <div className="testimonial-head">

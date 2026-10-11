@@ -3,13 +3,13 @@ import PlayIcon from './PlayIcon.jsx';
 
 // Пропорция превью — свойство категории. Белый список: значение из CMS не попадает
 // в разметку напрямую, неизвестный aspect молча откатывается на 16:9.
-const ASPECT_CLASS = {
+export const ASPECT_CLASS = {
   '16:9': 'work-thumb--16x9',
   '9:12': 'work-thumb--9x12',
   '1:1': 'work-thumb--1x1',
   '4:5': 'work-thumb--4x5',
 };
-const DEFAULT_ASPECT = '16:9';
+export const DEFAULT_ASPECT = '16:9';
 
 // Отношение сторон для width/height на <img>: резервирует место до загрузки картинки.
 const ASPECT_BOX = {
