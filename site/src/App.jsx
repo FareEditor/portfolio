@@ -24,6 +24,7 @@ import PlayerModal from './components/PlayerModal.jsx';
 import BackToTop from './components/BackToTop.jsx';
 import Ambient from './components/Ambient.jsx';
 import { useScrollSpy } from './hooks/scrollSpy.js';
+import { DEFAULT_SHAPE } from './hot.js';
 import './styles/tokens.css';
 import './styles/app.css';
 
@@ -64,7 +65,7 @@ const FIELD_ORDER = [
   { name: "message", kind: "textarea", cap: 5000 }
 ];
 
-export default function App({ lang }) {
+export default function App({ lang, shape = DEFAULT_SHAPE }) {
   const c = CONTENT[lang];
 
   const [openFaq, setOpenFaq] = useState(-1);

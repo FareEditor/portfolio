@@ -837,3 +837,33 @@ a.wordmark::before{inset-inline:calc(var(--sp-2) * -1)}
    через animation:none — снятие уходящей панели табов и конец тряски
    карточек ждут animationend, который при none не придёт. */
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}html{scroll-behavior:auto}}
+
+/* ---- skeleton горячих секций ----
+   Пока /data/hot.json не пришёл, stats, work и testimonials держат место
+   заглушками. Заглушка — тот же элемент с тем же классом, внутри неразрывный
+   пробел: высоту строки даёт настоящая типографика элемента на любом
+   брейкпоинте, .skel только красит. Ширины — чтобы полоса не тянулась на всю
+   колонку. Анимации нет намеренно: тихий фон, которому нечего выключать при
+   prefers-reduced-motion. Без JS данных не будет никогда — <noscript> в <head>
+   обоих документов убирает эти секции целиком ([data-hot]). */
+.skel{color:transparent;background:var(--hairline);border-radius:var(--radius-sm);user-select:none}
+.stat-value.skel{max-width:4ch}
+.stat-label.skel{max-width:14ch}
+/* Подпись показателя переносится на вторую строку там, где колонка узкая: в 2×2
+   на телефоне и в первых сотнях пикселей четырёх колонок. Заглушка держит те же
+   две строки, иначе сетка под числами подрастала бы при загрузке данных. Границы
+   сняты с текущих подписей обеих локалей; более длинная подпись сдвинет их. */
+@media (max-width:499px),(min-width:900px) and (max-width:1049px){
+  .stat-label.skel{min-height:2lh}
+}
+.work-tab.skel,.work-tab.skel:hover{min-width:11ch;background:var(--hairline);border-color:transparent;border-radius:var(--radius-pill);cursor:default}
+.work-thumb.skel,.work-thumb.skel:hover{border-color:transparent;cursor:default}
+.work-category-blurb.skel{max-width:36ch}
+.work-title.skel{max-width:22ch}
+.work-meta.skel{max-width:26ch}
+.work-link.skel{max-width:9ch}
+.testimonial-logo.skel,.testimonial-topic.skel{border-radius:var(--radius-pill)}
+.testimonial-name.skel{min-width:10ch}
+.testimonial-topic.skel{min-width:8ch;background:var(--hairline)}
+.testimonial-top-value.skel{max-width:3ch}
+.testimonial-top-label.skel{max-width:16ch}

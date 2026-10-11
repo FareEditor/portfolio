@@ -3,6 +3,7 @@ import App from './App.jsx';
 
 // Пререндер на этапе сборки: prerender.js вызывает render() для обеих
 // локалей и вклеивает разметку в готовые документы. Контент виден без JS.
-export function render(lang) {
-  return renderToString(<App lang={lang} />);
+// shape — форма skeleton горячих секций, её получает prerender.js.
+export function render(lang, shape) {
+  return renderToString(<App lang={lang} shape={shape} />);
 }
