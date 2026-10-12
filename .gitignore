@@ -15,3 +15,6 @@ site/.snapshot/
 
 # локальные настройки Claude Code владельца — не для репозитория
 .claude/settings.local.json
+
+# интерфейс админки: собирается из admin-worker/ui перед dev и deploy
+admin-worker/public/

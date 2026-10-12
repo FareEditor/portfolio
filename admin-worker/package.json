@@ -4,10 +4,16 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "build:ui": "vite build --config ui/vite.config.js",
+    "dev:ui": "vite --config ui/vite.config.js",
     "test": "node --test test/*.test.mjs",
     "test:remote": "ADMIN_REMOTE=1 node --test test/api.test.mjs"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^4.5.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "vite": "^7.0.0",
     "wrangler": "^4.0.0"
   }
 }

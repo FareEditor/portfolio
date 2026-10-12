@@ -11,6 +11,10 @@
 			"custom_domain": true
 		}
 	],
+	// Интерфейс (ui/) собирается в public/ перед dev и deploy; public/ в репозитории нет.
+	"build": {
+		"command": "npm run build:ui"
+	},
 	// Корень — статика из public/ (UI). Всё под /api/ сначала идёт в Worker.
 	"assets": {
 		"directory": "./public",
