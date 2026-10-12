@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "migrate": "wrangler d1 migrations apply fareeditor-content --remote",
-    "import": "node scripts/import.mjs",
     "verify": "node scripts/verify.mjs"
   },
   "devDependencies": {

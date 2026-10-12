@@ -6,10 +6,9 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { after, before, test } from 'node:test';
-import { CFG, ORIGIN, REPO, ROOT, installRuntime, localEnv, makeKey, sign } from './helpers.mjs';
+import { media } from './fixture.mjs';
+import { CFG, ORIGIN, ROOT, installRuntime, localEnv, makeKey, sign } from './helpers.mjs';
 
 const REMOTE = process.env.ADMIN_REMOTE === '1';
 const PORT = 8798;
@@ -340,7 +339,6 @@ const send = async (bytes, name, kind, meta = {}, headers = {}) => {
   const text = await response.text();
   return { status: response.status, body: text ? JSON.parse(text) : null };
 };
-const media = (name) => readFileSync(join(REPO, 'site/public/media', name));
 // Минимальные валидные заголовки PNG и JPEG с заданным размером кадра.
 const png = (w, h, pad = 0) => {
   const b = Buffer.alloc(33 + pad);

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Сверка D1 ↔ JSON. Обратный маппинг — src/mapping.js, общий с Worker и отдельный от
-// import.mjs намеренно: общая с импортом таблица соответствий скрыла бы перепутанные столбцы.
+// Сверка D1 с бэкапом (файл `wrangler d1 export`) и проверка целостности данных.
+// Расхождение с бэкапом — не обязательно ошибка: так видно, что изменилось с момента бэкапа.
 //
-//   node scripts/verify.mjs --manifest <r2-manifest.json> [--data <dir>] [--db fareeditor-content]
-//   node scripts/verify.mjs --negative --seed <import.sql>
+//   node scripts/verify.mjs --backup <d1-….sql> [--db fareeditor-content]
+//   node scripts/verify.mjs --negative --seed <d1-….sql>
 //
-// --negative создаёт временную базу, проверяет на ней ограничения схемы и удаляет её.
+// --negative создаёт временную базу из бэкапа, проверяет на ней ограничения схемы и удаляет её.
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -13,32 +13,16 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import * as map from '../src/mapping.js';
-import { DEFAULT_DATA_DIR, DROPPED, diff, dropPaths, lit, readFolder, readJson } from './import.mjs';
+import { TABLES, loadBackup, selectAll } from './backup.mjs';
+import { diff, lit } from './import.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MEDIA_BASE = 'https://media.fareeditor.com/';
 const TMP_DB = 'fareeditor-content-verify-tmp';
 
-// Таблица → сортировка для детерминированного чтения.
-const TABLES = {
-  media: 'id',
-  categories: 'slug',
-  metric_types: 'slug',
-  works: 'slug',
-  testimonials: 'slug',
-  testimonial_metrics: 'testimonial_slug, position',
-  stats: 'position',
-  contacts: 'position',
-  settings: 'id',
-  content: 'locale',
-  revisions: 'id',
-};
-
 const { values: args } = parseArgs({
   options: {
-    data: { type: 'string', default: DEFAULT_DATA_DIR },
-    manifest: { type: 'string' },
+    backup: { type: 'string' },
     db: { type: 'string', default: 'fareeditor-content' },
     negative: { type: 'boolean', default: false },
     seed: { type: 'string' },
@@ -74,7 +58,7 @@ const execFile = (db, file) => wrangler(['d1', 'execute', db, '--remote', '--yes
 
 function readAll(db) {
   const names = Object.keys(TABLES);
-  const { sets, error } = query(db, names.map((t) => `SELECT * FROM ${t} ORDER BY ${TABLES[t]}`).join('; '));
+  const { sets, error } = query(db, selectAll().join('; '));
   if (error) throw new Error(error);
   return Object.fromEntries(names.map((t, i) => [t, sets[i]]));
 }
@@ -98,101 +82,46 @@ function report(name, problems, detail = '') {
 }
 
 function verify() {
-  if (!args.manifest) {
-    console.error('usage: verify.mjs --manifest <r2-manifest.json> [--data <dir>] [--db <name>]');
+  if (!args.backup) {
+    console.error('usage: verify.mjs --backup <d1-….sql> [--db <name>]');
     process.exit(2);
   }
-  const manifest = readJson(args.manifest);
+  const expected = loadBackup(args.backup);
   const db = readAll(args.db);
-  const src = (...parts) => join(args.data, ...parts);
 
-  // media.id → исходный путь в данных (/media/…), через ключ манифеста.
-  const sourceByKey = new Map(manifest.map((m) => [m.key, m.source.replace(/^site\/public/, '')]));
-  const mediaById = new Map(db.media.map((m) => [m.id, m]));
-  const mediaPath = (id) => (mediaById.has(id) ? sourceByKey.get(mediaById.get(id).r2_key) : `<нет media ${id}>`);
+  // Строка в строку, включая created_at / updated_at и ревизии.
+  for (const table of Object.keys(TABLES)) {
+    report(`${table} = бэкап`, diff(db[table], expected[table], table), `${db[table].length} строк`);
+  }
 
-  // Необязательные строки: в D1 NULL, в JSON пустая строка или поля нет.
-  const optional = (record, keys) => ({ ...Object.fromEntries(keys.map((k) => [k, ''])), ...record });
-
-  const bySlug = (name, rows, dir, restore, normalize = (r) => r) => {
-    const expected = new Map(readFolder(src(dir)).map(([, record]) => [record.slug, normalize(record)]));
-    const actual = new Map(rows.map((row) => [row.slug, restore(row)]));
-    const problems = [...new Set([...expected.keys(), ...actual.keys()])].sort().flatMap((slug) =>
-      expected.has(slug) && actual.has(slug)
-        ? diff(actual.get(slug), expected.get(slug), slug)
-        : [`${slug}: есть только в ${expected.has(slug) ? 'JSON' : 'D1'}`]);
-    report(name, problems, `${actual.size} записей`);
-  };
-
-  bySlug('categories', db.categories, 'categories', map.category, (record) => optional(record, ['blurb_ru', 'blurb_en']));
-
-  bySlug('metric_types', db.metric_types, 'metric-types', map.metricType);
-
-  bySlug('works', db.works, 'works', (r) => map.work(r, mediaPath(r.thumbnail_media_id)));
-
-  bySlug('testimonials + testimonial_metrics', db.testimonials, 'testimonials', (r) => map.testimonial(r,
-    db.testimonial_metrics.filter((m) => m.testimonial_slug === r.slug),
-    r.logo_media_id === null ? null : mediaPath(r.logo_media_id)), (record) => {
-    const { logo, ...rest } = record;
-    return logo ? record : rest;
-  });
-  report('testimonial_metrics без отзыва-владельца',
-    db.testimonial_metrics.filter((m) => !db.testimonials.some((t) => t.slug === m.testimonial_slug))
-      .map((m) => `${m.testimonial_slug}#${m.position}`));
-
-  const positions = (rows) => rows.flatMap((row, i) => (row.position === i + 1 ? [] : [`position ${row.position} на месте ${i + 1}`]));
-
-  report('stats', [...positions(db.stats), ...diff({
-    items: db.stats.map(map.stat),
-  }, readJson(src('stats.json')))], `${db.stats.length} строк`);
-
-  const contacts = readJson(src('contacts.json'));
-  report('contacts', [...positions(db.contacts), ...diff({
-    items: db.contacts.map(map.contact),
-  }, { items: contacts.items.map((item) => optional(item, ['subject_ru', 'subject_en'])) })], `${db.contacts.length} строк`);
-
-  const s = db.settings[0] ?? {};
-  report('settings', db.settings.length !== 1 ? [`строк: ${db.settings.length}`] : diff(map.settings(s), readJson(src('settings.json'))));
-
-  const beforeId = db.media.find((m) => m.kind === 'before')?.id;
-  const afterId = db.media.find((m) => m.kind === 'after')?.id;
-  report('settings.before_after', diff(
-    { before_after_enabled: s.before_after_enabled, before_media_id: s.before_media_id, after_media_id: s.after_media_id },
-    { before_after_enabled: 1, before_media_id: beforeId, after_media_id: afterId }));
-
-  // content.doc: байты в базе = компактная сериализация исходника без DROPPED, порядок ключей сохранён.
   for (const locale of ['ru', 'en']) {
-    const source = readJson(src('content', `${locale}.json`));
-    const expected = JSON.stringify(dropPaths(source));
     const row = db.content.find((r) => r.locale === locale);
-    const problems = [];
-    if (!row) problems.push('строки нет');
-    else if (row.doc !== expected) problems.push(...diff(JSON.parse(row.doc), JSON.parse(expected), locale), 'байты doc отличаются от канонической сериализации');
-    // Отброшено ровно то, что перечислено в DROPPED, и ничего больше.
-    if (row) problems.push(...diff({ ...JSON.parse(row.doc), work: { ...JSON.parse(row.doc).work, motionTitle: source.work.motionTitle } }, source, `${locale}+dropped`));
-    report(`content.${locale}`, problems, `${Buffer.byteLength(expected)} байт, sha256 ${createHash('sha256').update(expected).digest('hex').slice(0, 12)}, без ${DROPPED.join(', ')}`);
+    report(`content.${locale}`, row ? [] : ['строки нет'],
+      row && `${Buffer.byteLength(row.doc)} байт, sha256 ${createHash('sha256').update(row.doc).digest('hex').slice(0, 12)}`);
   }
   report('content: только ru и en', db.content.length === 2 ? [] : [`строк: ${db.content.length}`]);
 
-  report('media ↔ manifest', [
-    ...diff(db.media.map(({ id, kind, created_at, duration_ms, ...rest }) => rest),
-      manifest.map((m) => ({ r2_key: m.key, url: m.url, sha256: m.sha256, bytes: m.bytes, content_type: m.content_type, width: m.width, height: m.height })), 'media'),
-    ...db.media.flatMap((m, i) => {
-      const entry = manifest[i] ?? {};
-      const kind = { 'works/': 'work', 'clients/': 'client' }[m.r2_key.replace(/[^/]*$/, '')] ?? m.r2_key.match(/^before-after\/(before|after)\./)?.[1];
-      return [
-        m.url === MEDIA_BASE + m.r2_key ? null : `${m.r2_key}: url ${m.url}`,
-        m.kind === kind ? null : `${m.r2_key}: kind ${m.kind} ≠ ${kind}`,
-        Object.is(m.duration_ms, entry.duration === null ? null : Math.round(entry.duration * 1000)) ? null : `${m.r2_key}: duration_ms ${m.duration_ms}`,
-      ].filter(Boolean);
-    }),
-  ], `${db.media.length} записей`);
+  const positions = (rows) => rows.flatMap((row, i) => (row.position === i + 1 ? [] : [`position ${row.position} на месте ${i + 1}`]));
+  report('stats и contacts: ровно четыре позиции подряд', [
+    ...positions(db.stats), ...positions(db.contacts),
+    ...(db.stats.length === 4 ? [] : [`stats: ${db.stats.length}`]), ...(db.contacts.length === 4 ? [] : [`contacts: ${db.contacts.length}`]),
+  ]);
+  report('testimonial_metrics: по три на отзыв', db.testimonials.flatMap((t) => {
+    const n = db.testimonial_metrics.filter((m) => m.testimonial_slug === t.slug).length;
+    return n === 3 ? [] : [`${t.slug}: ${n}`];
+  }));
+  report('media: url и kind соответствуют ключу', db.media.flatMap((m) => {
+    const kind = { 'works/': 'work', 'clients/': 'client' }[m.r2_key.replace(/[^/]*$/, '')] ?? m.r2_key.match(/^before-after\/(before|after)\./)?.[1];
+    return [m.url === MEDIA_BASE + m.r2_key ? null : `${m.r2_key}: url ${m.url}`, m.kind === kind ? null : `${m.r2_key}: kind ${m.kind} ≠ ${kind}`].filter(Boolean);
+  }), `${db.media.length} записей`);
 
+  const s = db.settings[0] ?? {};
+  const mediaById = new Map(db.media.map((m) => [m.id, m]));
   const refs = [
     ...db.works.map((r) => ['works.thumbnail_media_id', r.slug, r.thumbnail_media_id, 'work']),
     ...db.testimonials.filter((r) => r.logo_media_id !== null).map((r) => ['testimonials.logo_media_id', r.slug, r.logo_media_id, 'client']),
-    ['settings.before_media_id', 1, s.before_media_id, 'before'],
-    ['settings.after_media_id', 1, s.after_media_id, 'after'],
+    ...[['before_media_id', 'before'], ['after_media_id', 'after']].filter(([column]) => s[column] !== null && s[column] !== undefined)
+      .map(([column, kind]) => [`settings.${column}`, 1, s[column], kind]),
   ];
   report('FK → media', refs.flatMap(([column, key, id, kind]) =>
     mediaById.get(id)?.kind === kind ? [] : [`${column} (${key}) → ${id}: ${mediaById.has(id) ? `kind ${mediaById.get(id).kind}, ожидался ${kind}` : 'записи нет'}`]),
@@ -252,7 +181,7 @@ const NEGATIVE = [
 
 function negative() {
   if (!args.seed) {
-    console.error('usage: verify.mjs --negative --seed <import.sql>');
+    console.error('usage: verify.mjs --negative --seed <d1-….sql>');
     process.exit(2);
   }
   const listed = () => JSON.parse(wrangler(['d1', 'list', '--json']).out).some((d) => d.name === TMP_DB);
@@ -269,10 +198,9 @@ function negative() {
   console.log(`INFO временная база ${TMP_DB} создана`);
 
   try {
-    for (const file of [join(ROOT, 'migrations/0001_init.sql'), args.seed]) {
-      const applied = execFile(TMP_DB, file);
-      if (!applied.ok) throw new Error(`${file}: ${applied.out}`);
-    }
+    // Бэкап несёт и схему, и данные: миграции отдельно не применяются.
+    const applied = execFile(TMP_DB, args.seed);
+    if (!applied.ok) throw new Error(`${args.seed}: ${applied.out}`);
     const before = digest(readAll(TMP_DB));
 
     for (const [name, sql, expected] of NEGATIVE) {
@@ -285,7 +213,7 @@ function negative() {
     // Экранирование тем же lit(), что в импорте, и тем же путём — через --file.
     const tricky = `'одинарные' "двойные" \\обратный слэш; -- комментарий\nвторая строка\r\n\tтабуляция 🎬👨‍👩‍👧 Ёё /* */ '' %_`;
     const escaped = execFile(TMP_DB, sqlFile('escape.sql', `INSERT INTO revisions (table_name, row_key, snapshot) VALUES (${lit(tricky)}, 'k', ${lit(JSON.stringify({ tricky }))});\n`));
-    const back = escaped.ok ? query(TMP_DB, 'SELECT table_name, snapshot FROM revisions') : { error: escaped.out };
+    const back = escaped.ok ? query(TMP_DB, "SELECT table_name, snapshot FROM revisions WHERE row_key = 'k' ORDER BY id DESC LIMIT 1") : { error: escaped.out };
     report('экранирование: кавычки, апострофы, переводы строк, эмодзи, кириллица', back.error ? [back.error] : diff(
       { table_name: back.sets[0][0]?.table_name, tricky: JSON.parse(back.sets[0][0]?.snapshot ?? '{}').tricky }, { table_name: tricky, tricky }));
 

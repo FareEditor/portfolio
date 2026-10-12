@@ -78,16 +78,18 @@ npm run build:ui    # сборка интерфейса в public/
 npm run dev:ui      # интерфейс на Vite; /api проксируется на wrangler dev (порт 8798)
 ```
 
-Нужен манифест R2 (`MANIFEST`, по умолчанию `~/Documents/git/portfolio-audit/r2-manifest.json`):
-тестовая база наполняется теми же данными, что `content-worker/scripts/import.mjs`.
+Тестовые данные — `test/fixture.mjs`: собственный набор записей и файлов с настоящими
+сигнатурами, не связанный с контентом сайта.
 
 Интеграционный прогон идёт в Cloudflare на временных ресурсах, production не затрагивает:
 
 ```sh
 npx wrangler d1 create fareeditor-content-test      # id → env.test в wrangler.jsonc
 npx wrangler r2 bucket create fareeditor-media-test
-# миграции content-worker/migrations/*.sql и import.sql — через
-#   npx wrangler d1 execute fareeditor-content-test --env test --remote --yes --file <файл>
+node test/fixture.mjs > /tmp/seed.sql
+for f in ../content-worker/migrations/*.sql /tmp/seed.sql; do
+  npx wrangler d1 execute fareeditor-content-test --env test --remote --yes --file "$f"
+done
 npm run test:remote                                  # wrangler dev --remote --env test
 npx wrangler d1 delete fareeditor-content-test
 npx wrangler r2 bucket delete fareeditor-media-test

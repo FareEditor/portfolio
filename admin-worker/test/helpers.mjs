@@ -1,7 +1,6 @@
 // Общее для тестов: ключи и токены, подставные D1 / R2 / Cache API для Node.
 import { createHash, createHmac, webcrypto } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
@@ -106,18 +105,11 @@ export function installRuntime() {
   globalThis.caches = { default: { store, async match(req) { return store.get(req.url)?.clone(); }, async put(req, res) { store.set(req.url, res); } } };
 }
 
-const MANIFEST = process.env.MANIFEST ?? join(homedir(), 'Documents/git/portfolio-audit/r2-manifest.json');
-
-// SQL: миграции и те же данные, что import.mjs кладёт в production.
-export async function seedSql() {
-  const { build, toSql, DEFAULT_DATA_DIR } = await import('../../content-worker/scripts/import.mjs');
-  const migrations = ['0001_init.sql', '0002_publishes.sql'].map((f) => readFileSync(join(REPO, 'content-worker/migrations', f), 'utf8'));
-  return { migrations, data: toSql(build(DEFAULT_DATA_DIR, MANIFEST)) };
-}
+const MIGRATIONS = ['0001_init.sql', '0002_publishes.sql'].map((f) => readFileSync(join(REPO, 'content-worker/migrations', f), 'utf8'));
 
 export async function localEnv(key) {
-  const { migrations, data } = await seedSql();
+  const { seedSql } = await import('./fixture.mjs');
   const DB = fakeD1();
-  for (const sql of [...migrations, data]) DB.raw.exec(sql);
+  for (const sql of [...MIGRATIONS, seedSql()]) DB.raw.exec(sql);
   return { ...CFG, DB, MEDIA: fakeR2(), TEST_JWKS_B64: Buffer.from(JSON.stringify(key.jwks)).toString('base64') };
 }

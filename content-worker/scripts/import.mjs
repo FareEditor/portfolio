@@ -1,17 +1,26 @@
 #!/usr/bin/env node
-// Генерирует SQL полной замены контента в D1 из site/src/data/** и манифеста R2.
-// Сам в базу не ходит: печатает файл, применяется он через `wrangler d1 execute --file`.
+// ИСТОРИЧЕСКИЙ СКРИПТ первичной миграции: JSON-файлы прежней CMS → SQL полной замены контента в D1.
+// Источник данных (site/src/data) из репозитория удалён; с тех пор единственный источник —
+// сама D1, её правят из админки. Применение результата СТИРАЕТ все эти правки.
+// Нужен только чтобы воспроизвести миграцию из старого среза репозитория:
 //
-//   node scripts/import.mjs --manifest <r2-manifest.json> --out <import.sql> [--data <site/src/data>]
+//   git worktree add ../portfolio-5976ed5 5976ed5        # срез, где JSON ещё есть
+//   node scripts/import.mjs --data ../portfolio-5976ed5/site/src/data \
+//     --manifest <r2-manifest.json> --out <import.sql>
 //
-// Любое поле JSON либо описано ниже, либо перечислено в DROPPED. Неизвестное поле — ошибка.
+// Без --apply скрипт только пишет файл. С --apply файл применяется к базе --db через wrangler;
+// production-базу он трогает лишь с флагом --wipe-production-i-know-what-i-am-doing.
+//
+// Любое поле JSON либо описано в схеме, либо перечислено в DROPPED. Неизвестное поле — ошибка.
+import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { COLLECTIONS, CONTENT_SHAPE, checkShape } from '../src/schema.js';
 
-export const DEFAULT_DATA_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../site/src/data');
+const PRODUCTION_DB = 'fareeditor-content';
+const WIPE_FLAG = 'wipe-production-i-know-what-i-am-doing';
 
 // Отброшенные поля документа content (путь через точку).
 export const DROPPED = ['work.motionTitle'];
@@ -60,9 +69,9 @@ export function diff(actual, expected, path = '') {
     return [...new Set([...Object.keys(expected), ...Object.keys(actual)])].flatMap((key) =>
       key in expected && key in actual
         ? diff(actual[key], expected[key], `${path}.${key}`)
-        : [`${path}.${key}: есть только в ${key in expected ? 'JSON' : 'D1'}`]);
+        : [`${path}.${key}: есть только в ${key in expected ? 'образце' : 'проверяемом'}`]);
   }
-  return Object.is(actual, expected) ? [] : [`${path}: D1 ${JSON.stringify(actual)} (${typeof actual}) ≠ JSON ${JSON.stringify(expected)} (${typeof expected})`];
+  return Object.is(actual, expected) ? [] : [`${path}: получено ${JSON.stringify(actual)} (${typeof actual}) ≠ ожидалось ${JSON.stringify(expected)} (${typeof expected})`];
 }
 
 export function dropPaths(doc, paths = DROPPED) {
@@ -204,19 +213,36 @@ export function toSql(tables) {
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { values: args } = parseArgs({
-    options: { data: { type: 'string', default: DEFAULT_DATA_DIR }, manifest: { type: 'string' }, out: { type: 'string' } },
+    options: {
+      data: { type: 'string' }, manifest: { type: 'string' }, out: { type: 'string' },
+      apply: { type: 'boolean', default: false }, db: { type: 'string' }, [WIPE_FLAG]: { type: 'boolean', default: false },
+    },
   });
-  if (!args.manifest || !args.out) {
-    console.error('usage: import.mjs --manifest <r2-manifest.json> --out <import.sql> [--data <site/src/data>]');
+  if (!args.data || !args.manifest || !args.out || (args.apply && !args.db)) {
+    console.error(`usage: import.mjs --data <каталог JSON> --manifest <r2-manifest.json> --out <import.sql> [--apply --db <база> [--${WIPE_FLAG}]]`);
     process.exit(2);
   }
+  // Проверка — до генерации и до любого обращения к Cloudflare.
+  if (args.apply && args.db === PRODUCTION_DB && !args[WIPE_FLAG]) {
+    console.error([
+      `import: отказ. База ${PRODUCTION_DB} — production, единственный источник данных сайта.`,
+      'Импорт полностью заменяет содержимое всех таблиц и сотрёт всё, что отредактировано из админки.',
+      `Если это действительно нужно: сначала бэкап (wrangler d1 export), затем повторить с --${WIPE_FLAG}.`,
+    ].join('\n'));
+    process.exit(1);
+  }
   try {
-    const tables = build(args.data, args.manifest);
+    const tables = build(resolve(args.data), args.manifest);
     writeFileSync(args.out, toSql(tables));
     for (const [table, rows] of Object.entries(tables)) console.log(`${table.padEnd(20)} ${rows.length}`);
     console.log(`→ ${args.out}`);
+    if (args.apply) {
+      const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+      execFileSync('npx', ['wrangler', 'd1', 'execute', args.db, '--remote', '--yes', '--file', resolve(args.out)], { cwd: root, stdio: ['ignore', 'ignore', 'inherit'] });
+      console.log(`применено к ${args.db}`);
+    }
   } catch (error) {
-    console.error(`import: ${error.message}`);
+    console.error(`import: ${String(error.message).replace(/[0-9a-f]{32}/g, '<redacted>')}`);
     process.exit(1);
   }
 }

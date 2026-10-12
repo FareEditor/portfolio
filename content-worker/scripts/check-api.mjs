@@ -1,17 +1,18 @@
 #!/usr/bin/env node
-// Сверка API ↔ то, что фронтенд получает сейчас из site/src/data, плюс HTTP-контракт.
+// Сверка публичного API с бэкапом D1 (файл `wrangler d1 export`) плюс HTTP-контракт.
+// Ожидаемые ответы собираются из строк бэкапа заново, независимо от SQL Worker'а:
+// фильтр по published, порядок, вложение работ в категории. Если базу правили после бэкапа,
+// проверка «содержимое» покажет именно эти правки.
 //
-//   node scripts/check-api.mjs --base <http://localhost:8787 | https://fareeditor.com> \
-//     --manifest <r2-manifest.json> [--data <site/src/data>]
-import { join } from 'node:path';
+//   node scripts/check-api.mjs --base <http://localhost:8787 | https://fareeditor.com> --backup <d1-….sql>
 import { parseArgs } from 'node:util';
-import { DEFAULT_DATA_DIR, diff, dropPaths, readFolder, readJson } from './import.mjs';
+import * as map from '../src/mapping.js';
+import { loadBackup } from './backup.mjs';
+import { diff } from './import.mjs';
 
-const { values: args } = parseArgs({
-  options: { base: { type: 'string' }, manifest: { type: 'string' }, data: { type: 'string', default: DEFAULT_DATA_DIR } },
-});
-if (!args.base || !args.manifest) {
-  console.error('usage: check-api.mjs --base <url> --manifest <r2-manifest.json> [--data <dir>]');
+const { values: args } = parseArgs({ options: { base: { type: 'string' }, backup: { type: 'string' } } });
+if (!args.base || !args.backup) {
+  console.error('usage: check-api.mjs --base <url> --backup <d1-….sql>');
   process.exit(2);
 }
 
@@ -27,38 +28,32 @@ function report(name, problems, detail = '') {
 }
 const expect = (label, actual, expected) => (actual === expected ? [] : [`${label}: ${JSON.stringify(actual)} ≠ ${JSON.stringify(expected)}`]);
 
-const manifest = readJson(args.manifest);
-const src = (...parts) => join(args.data, ...parts);
-const records = (dir) => readFolder(src(dir)).map(([, record]) => record);
-// Путь из данных (/media/…) → абсолютный URL в R2.
-const mediaUrl = (path) => manifest.find((m) => m.source === `site/public${path}`)?.url ?? `<нет в манифесте: ${path}>`;
-const optional = (record, keys) => ({ ...Object.fromEntries(keys.map((k) => [k, ''])), ...record });
+const db = loadBackup(args.backup);
+const media = new Map(db.media.map((m) => [m.id, m]));
+const url = (id) => media.get(id)?.url ?? `<нет media ${id}>`;
+const byOrder = (rows) => [...rows].sort((a, b) => a.sort_order - b.sort_order || (a.slug < b.slug ? -1 : 1));
+const published = (rows) => byOrder(rows.filter((r) => r.published === 1));
 
-// Логика site/src/data/works.js, воспроизведена без импорта (там import.meta.glob от Vite).
-const byOrder = (items) => [...items].sort((a, b) => a.order - b.order);
-const works = records('works').map((w) => ({ ...w, thumbnail: mediaUrl(w.thumbnail) }));
 const expectedHot = {
-  stats: readJson(src('stats.json')),
-  categories: byOrder(records('categories').filter((c) => c.published))
+  stats: { items: db.stats.map(map.stat) },
+  categories: published(db.categories)
     .map((category) => ({
-      ...optional(category, ['blurb_ru', 'blurb_en']),
-      works: byOrder(works.filter((w) => w.published && w.category === category.slug)),
+      ...map.category(category),
+      works: published(db.works).filter((w) => w.category_slug === category.slug).map((w) => map.work(w, url(w.thumbnail_media_id))),
     }))
     .filter((category) => category.works.length > 0),
-  testimonials: byOrder(records('testimonials').filter((t) => t.published)).map(({ logo, ...rest }) =>
-    (logo ? { ...rest, logo: mediaUrl(logo) } : rest)),
-  metricTypes: byOrder(records('metric-types')),
+  testimonials: published(db.testimonials).map((t) => map.testimonial(t,
+    db.testimonial_metrics.filter((m) => m.testimonial_slug === t.slug), t.logo_media_id === null ? null : url(t.logo_media_id))),
+  metricTypes: byOrder(db.metric_types).map(map.metricType),
 };
 
-const mediaInfo = (name) => {
-  const m = manifest.find((entry) => entry.key.startsWith(`before-after/${name}.`));
-  return m && { url: m.url, width: m.width, height: m.height, duration_ms: Math.round(m.duration * 1000) };
-};
-const beforeAfter = mediaInfo('before') && mediaInfo('after') ? { before: mediaInfo('before'), after: mediaInfo('after') } : null;
+const s = db.settings[0];
+const mediaInfo = (id) => { const { url: href, width, height, duration_ms } = media.get(id); return { url: href, width, height, duration_ms }; };
+const enabled = s.before_after_enabled === 1;
 const expectedStatic = {
-  content: Object.fromEntries(['ru', 'en'].map((locale) => [locale, dropPaths(readJson(src('content', `${locale}.json`)))])),
-  settings: { ...readJson(src('settings.json')), before_after_enabled: beforeAfter !== null, beforeAfter },
-  contacts: { items: readJson(src('contacts.json')).items.map((item) => optional(item, ['subject_ru', 'subject_en'])) },
+  content: Object.fromEntries(db.content.map((row) => [row.locale, JSON.parse(row.doc)])),
+  settings: { ...map.settings(s), before_after_enabled: enabled, beforeAfter: enabled ? { before: mediaInfo(s.before_media_id), after: mediaInfo(s.after_media_id) } : null },
+  contacts: { items: db.contacts.map(map.contact) },
 };
 
 const request = (path, init) => fetch(args.base + path, { redirect: 'manual', ...init });
