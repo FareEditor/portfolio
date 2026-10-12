@@ -183,6 +183,6 @@
     ]
   },
   "noscript": {
-    "banner": "[SLOT: короткое сообщение, что сайт полноценно работает только с JavaScript, RU|EN, ≤ 90 знаков]"
+    "banner": "JavaScript is disabled in your browser. Please enable it in your settings to use the full site."
   }
 }
