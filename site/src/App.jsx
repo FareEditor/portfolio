@@ -319,6 +319,10 @@ export default function App({ lang, data, shape = DEFAULT_SHAPE }) {
   // служебная подпись группы табов: имя роли для скринридера, не текст страницы —
   // поэтому живёт в коде рядом с подписями плеера, а не в content/*.json
   const workTabsLabel = lang === "en" ? "Work categories" : "Категории работ";
+  // Секция «до/после» есть, только если она включена в settings и оба ролика на месте.
+  const beforeAfter = settings.before_after_enabled === true && settings.beforeAfter?.before && settings.beforeAfter?.after
+    ? settings.beforeAfter
+    : null;
   // Служебные подписи слайдера: имена ролей для скринридера, не текст страницы.
   const baLabels = {
     before: c.beforeAfter.before,
@@ -479,9 +483,7 @@ export default function App({ lang, data, shape = DEFAULT_SHAPE }) {
           openPlayer={openPlayer}
         />
         {hot.status !== 'error' && <Stats items={statItems} industries={c.stats.industries} loading={hotLoading} />}
-        {/* Секции нет, пока оба ролика не лежат в public/media/before-after —
-            флаг считает vite.config при чтении конфига. */}
-        {__HAS_BEFORE_AFTER__ && <BeforeAfter c={c.beforeAfter} labels={baLabels} />}
+        {beforeAfter && <BeforeAfter c={c.beforeAfter} labels={baLabels} media={beforeAfter} />}
         {hot.status !== 'error' && <Work c={c.work} categories={categories} tabsLabel={workTabsLabel} loading={hotLoading} shape={shape} />}
         {/* Форма сборки сказала «отзывов нет» — секции нет и места под неё не держим;
             сказала «есть», а пришло ноль — Testimonials сам вернёт null. */}

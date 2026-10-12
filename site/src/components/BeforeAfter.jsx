@@ -1,8 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 
-// Оба ролика лежат в public и не проходят через бандлер; флаг существования
-// файлов приходит из vite.config через define.
-const SRC = { before: '/media/before-after/before.mp4', after: '/media/before-after/after.mp4' };
 // Порог расхождения дорожек. 150мс — меньше четырёх кадров при 25fps, на глаз
 // в сравнении «слева/справа» неразличимо, но заметно больше естественного
 // джиттера двух независимо декодируемых потоков, так что подводим редко.
@@ -12,7 +9,9 @@ const DRIFT_LIMIT = 0.15;
 const DRIFT_CHECK_MS = 1000;
 const KEY_STEP = 5;
 
-export default function BeforeAfter({ c, labels }) {
+// media — settings.beforeAfter из снимка /data/static.json: { before, after }, у каждого
+// абсолютный url ролика в R2 (media.fareeditor.com) и его width/height.
+export default function BeforeAfter({ c, labels, media: clips }) {
   const rootRef = useRef(null);
   const beforeRef = useRef(null);
   const afterRef = useRef(null);
@@ -163,10 +162,12 @@ export default function BeforeAfter({ c, labels }) {
             ЛЕВУЮ полосу до позиции шторки — значит обрезанный слой это «до»,
             а нижний слой проступает справа и это «после». Менять местами
             нельзя, не поменяв заодно направление clip-path. */}
-        <video className="ba-video" ref={afterRef} src={armed ? SRC.after : undefined} preload="none"
+        <video className="ba-video" ref={afterRef} src={armed ? clips.after.url : undefined} preload="none"
+               width={clips.after.width} height={clips.after.height}
                muted loop playsInline onCanPlay={ready} tabIndex={-1} aria-hidden="true" />
         <div className="ba-clip">
-          <video className="ba-video" ref={beforeRef} src={armed ? SRC.before : undefined} preload="none"
+          <video className="ba-video" ref={beforeRef} src={armed ? clips.before.url : undefined} preload="none"
+                 width={clips.before.width} height={clips.before.height}
                  muted loop playsInline onCanPlay={ready} onTimeUpdate={onTimeUpdate} tabIndex={-1} aria-hidden="true" />
         </div>
 
