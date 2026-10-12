@@ -20,7 +20,7 @@ async function select(db, queries) {
   return Object.fromEntries(names.map((name, i) => [name, results[i].results]));
 }
 
-// Повторяет site/src/data/works.js: только опубликованное, по order, категории без работ отброшены.
+// Только опубликованное, по order; категории без опубликованных работ отброшены.
 async function hot(db) {
   const rows = await select(db, {
     stats: 'SELECT * FROM stats ORDER BY position',
