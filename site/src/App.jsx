@@ -1,10 +1,4 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-// INTEGRATION: site copy is managed in Decap CMS via data/content/*.json.
-import ru from './data/content/ru.json';
-import en from './data/content/en.json';
-// INTEGRATION: карточки каналов связи — файл contacts.json в Decap CMS
-import contacts from './data/contacts.json';
-import settings from './data/settings.json';
 import Header from './components/Header.jsx';
 import Hero from './components/Hero.jsx';
 import Stats from './components/Stats.jsx';
@@ -25,8 +19,6 @@ import { useScrollSpy } from './hooks/scrollSpy.js';
 import { DEFAULT_SHAPE, useHot } from './hot.js';
 import './styles/tokens.css';
 import './styles/app.css';
-
-const CONTENT = { ru, en };
 
 // Якоря навигации — единственный источник и для ссылок, и для scroll-spy.
 const NAV_HREFS = ["#work", "#process", "#about", "#contact"];
@@ -63,8 +55,10 @@ const FIELD_ORDER = [
   { name: "message", kind: "textarea", cap: 5000 }
 ];
 
-export default function App({ lang, shape = DEFAULT_SHAPE }) {
-  const c = CONTENT[lang];
+// INTEGRATION: data — тексты локали, settings, contacts: снимок /data/static.json,
+// который сборка вшивает в entry своей локали (virtual:static/*, см. vite.config.js)
+export default function App({ lang, data, shape = DEFAULT_SHAPE }) {
+  const { content: c, settings, contacts } = data;
 
   const [openFaq, setOpenFaq] = useState(-1);
   const [form, setForm] = useState("idle");
