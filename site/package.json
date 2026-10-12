@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && vite build --ssr src/entry-server.jsx && node prerender.js && cp node_modules/decap-cms/dist/*decap-cms.js dist/admin/",
+    "build": "node scripts/static-snapshot.mjs && vite build && vite build --ssr src/entry-server.jsx && node prerender.js && cp node_modules/decap-cms/dist/*decap-cms.js dist/admin/",
     "preview": "vite preview"
   },
   "dependencies": {
