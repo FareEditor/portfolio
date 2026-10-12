@@ -3,6 +3,7 @@
 import { AuthError, JWKS_URL, jwksLoader, verifyAccess } from './auth.js';
 import { HttpError } from './http.js';
 import { MAX_UPLOAD_BODY, listMedia, removeMedia, upload } from './media.js';
+import { publish } from './publish.js';
 
 const MUTATING = ['POST', 'PUT', 'PATCH', 'DELETE'];
 const MAX_JSON_BYTES = 256 * 1024;
@@ -58,6 +59,12 @@ async function route(request, env, url, user, deps) {
     methods(['DELETE']);
     await removeMedia(env, key);
     return json(200, { ok: true });
+  }
+
+  if (resource === 'publish' && key === undefined) {
+    methods(['POST']);
+    await body();
+    return json(200, await publish(env, deps.fetch));
   }
 
   throw new HttpError(404, 'not_found');
