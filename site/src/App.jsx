@@ -17,6 +17,7 @@ import Ambient from './components/Ambient.jsx';
 import { useScrollSpy } from './hooks/scrollSpy.js';
 // INTEGRATION: stats, categories+works, testimonials, metricTypes — /data/hot.json (Content Worker, D1)
 import { DEFAULT_SHAPE, useHot } from './hot.js';
+import { FORM_OPTIONS } from './formOptions.js';
 import './styles/tokens.css';
 import './styles/app.css';
 
@@ -447,7 +448,11 @@ export default function App({ lang, data, shape = DEFAULT_SHAPE }) {
     isTextarea: f.kind === "textarea",
     maxLength: f.cap,
     autoComplete: f.autoComplete,
-    options: f.kind === "select" ? c.contact[f.name] : [],
+    // Ключи — константы кода, из контента берётся только подпись; наличие подписей
+    // проверено на сборке (scripts/static-snapshot.mjs).
+    options: f.kind === "select"
+      ? FORM_OPTIONS[f.name].map((value) => ({ value, label: c.contact[f.name].find((op) => op.value === value).label }))
+      : [],
     showHint: !!f.hint,
     showError: !!invalid[f.name],
     invalid: invalid[f.name] ? "true" : "false",

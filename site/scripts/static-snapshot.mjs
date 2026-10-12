@@ -5,6 +5,7 @@
 // Недоступный или битый API роняет сборку. Адрес переопределяется STATIC_DATA_URL.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { FORM_OPTIONS } from '../src/formOptions.js';
 
 export const SNAPSHOT_FILE = fileURLToPath(new URL('../.snapshot/static.json', import.meta.url));
 const STATIC_DATA_URL = process.env.STATIC_DATA_URL || 'https://fareeditor.com/data/static.json';
@@ -26,6 +27,14 @@ export async function fetchSnapshot() {
   }
   for (const locale of ['ru', 'en']) {
     if (!isObject(data?.content?.[locale])) throw fail(`content.${locale} — не объект`);
+    // Ключи опций формы живут в коде, подписи — в контенте: опция без подписи дала бы пустую строку в селекте.
+    for (const [field, values] of Object.entries(FORM_OPTIONS)) {
+      const options = data.content[locale].contact?.[field];
+      for (const value of values) {
+        const label = Array.isArray(options) ? options.find((op) => op?.value === value)?.label : undefined;
+        if (typeof label !== 'string' || !label.trim()) throw fail(`content.${locale}.contact.${field}: нет подписи для "${value}"`);
+      }
+    }
   }
   if (!isObject(data.settings)) throw fail('settings — не объект');
   if (!Array.isArray(data.contacts?.items)) throw fail('contacts.items — не список');
