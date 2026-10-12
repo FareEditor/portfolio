@@ -11,7 +11,7 @@ const CAP_FROM = 7;
 const tabId = (slug) => 'work-tab-' + slug;
 const panelId = (slug) => 'work-panel-' + slug;
 
-function CategoryPanel({ category, active, phase, watch, showAllLabel }) {
+function CategoryPanel({ category, active, phase, watch, showAllLabel, eager }) {
   const [showAll, setShowAll] = useState(false);
   const capped = category.works.length >= CAP_FROM && !showAll;
   const visible = capped ? category.works.slice(0, VISIBLE_CAP) : category.works;
@@ -39,7 +39,7 @@ function CategoryPanel({ category, active, phase, watch, showAllLabel }) {
 
       <div className="work-grid">
         {visible.map((w) => (
-          <WorkCard key={w.key} w={w} watch={watch} aspect={category.aspect} />
+          <WorkCard key={w.key} w={w} watch={watch} aspect={category.aspect} eager={eager} />
         ))}
       </div>
 
@@ -234,6 +234,7 @@ function WorkTabs({ c, categories, tabsLabel }) {
             phase={i === shownIndex && phase !== 'idle' ? phase : undefined}
             watch={c.watch}
             showAllLabel={c.showAll}
+            eager={i === 0}
           />
         ))}
       </div>

@@ -19,7 +19,10 @@ const ASPECT_BOX = {
   '4:5': [1000, 1250],
 };
 
-export default function WorkCard({ w, watch, aspect }) {
+// eager — карточка первой показанной категории: её превью грузится сразу, без
+// loading="lazy". Остальные категории скрыты (display:none) и остаются ленивыми;
+// их картинки заранее кладёт в кэш фоновая загрузка в App.jsx.
+export default function WorkCard({ w, watch, aspect, eager }) {
   // Битая картинка → полосатая заглушка. Начальное состояние «картинка есть»,
   // чтобы SSR-разметка и первый клиентский рендер совпадали; onError бывает
   // только в браузере.
@@ -50,7 +53,7 @@ export default function WorkCard({ w, watch, aspect }) {
               src={w.thumbnail}
               alt=""
               aria-hidden="true"
-              loading="lazy"
+              loading={eager ? undefined : 'lazy'}
               decoding="async"
               width={boxW}
               height={boxH}

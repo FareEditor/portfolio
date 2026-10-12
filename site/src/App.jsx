@@ -233,6 +233,24 @@ export default function App({ lang, data, shape = DEFAULT_SHAPE }) {
     return () => cancelAnimationFrame(raf);
   }, [hot.status]);
 
+  // Фоновая загрузка после события load: превью категорий, которые сейчас не показаны,
+  // и логотипы отзывов. Их <img> остаются ленивыми, а к переключению вкладки или
+  // прокрутке ленты картинка уже лежит в HTTP-кэше. new Image(), а не
+  // <link rel="preload">: у preload приоритет выше, и браузер пишет в консоль
+  // предупреждение, если ресурс не понадобился за несколько секунд. До load ничего
+  // не уходит — бандл, шрифты и hot.json с этими запросами не делят канал.
+  useEffect(() => {
+    if (hot.status !== 'ready') return undefined;
+    const urls = [
+      ...hot.data.categories.slice(1).flatMap((category) => category.works.map((w) => w.thumbnail)),
+      ...hot.data.testimonials.map((t) => t.logo)
+    ].filter(Boolean);
+    const warm = () => urls.forEach((src) => { const img = new Image(); img.fetchPriority = 'low'; img.src = src; });
+    if (document.readyState === 'complete') { warm(); return undefined; }
+    window.addEventListener('load', warm, { once: true });
+    return () => window.removeEventListener('load', warm);
+  }, [hot.status]);
+
   // Плеер-фасад: до клика — статичное превью. Работы играют инлайн в своих
   // карточках (WorkCard); в модалке PlayerModal остаётся только шоурил.
   const openPlayer = (id) => setPlayingId(id);
