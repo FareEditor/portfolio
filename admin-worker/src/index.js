@@ -2,6 +2,7 @@
 // каждый запрос к /api/* дополнительно проверяется здесь — до любого обращения к D1 и R2.
 import { AuthError, JWKS_URL, jwksLoader, verifyAccess } from './auth.js';
 import { HttpError } from './http.js';
+import { FIXED, RESOURCES, brokenBatch, get, list, remove, restore, revisions, save } from './resources.js';
 import { MAX_UPLOAD_BODY, listMedia, removeMedia, upload } from './media.js';
 import { publish } from './publish.js';
 
@@ -61,13 +62,43 @@ async function route(request, env, url, user, deps) {
     return json(200, { ok: true });
   }
 
+  if (resource === 'revisions') {
+    if (key === undefined) {
+      methods(['GET']);
+      return json(200, await revisions(env.DB, url.searchParams.get('resource'), url.searchParams.get('key') ?? '1'));
+    }
+    if (action !== 'restore') throw new HttpError(404, 'not_found');
+    methods(['POST']);
+    await body();
+    return json(200, await restore(env.DB, key));
+  }
+
   if (resource === 'publish' && key === undefined) {
     methods(['POST']);
     await body();
     return json(200, await publish(env, deps.fetch));
   }
 
-  throw new HttpError(404, 'not_found');
+  if (__TEST_AUTH__ && resource === '__test' && key === 'broken-batch') {
+    methods(['POST']);
+    try { await brokenBatch(env.DB); } catch (error) { return json(200, { failed: true, message: String(error?.message ?? error) }); }
+    return json(200, { failed: false });
+  }
+
+  if (!RESOURCES.includes(resource) || action !== undefined) throw new HttpError(404, 'not_found');
+  const single = resource === 'settings';
+  if (key === undefined) {
+    methods(single ? ['GET', 'PUT'] : FIXED.includes(resource) ? ['GET'] : ['GET', 'POST']);
+    if (method === 'GET') return json(200, await list(env.DB, resource));
+    if (method === 'PUT') return json(200, await save(env.DB, resource, '1', await body()));
+    return json(201, await save(env.DB, resource, undefined, await body()));
+  }
+  if (single) throw new HttpError(404, 'not_found');
+  methods(FIXED.includes(resource) ? ['GET', 'PUT'] : ['GET', 'PUT', 'DELETE']);
+  if (method === 'GET') return json(200, await get(env.DB, resource, key));
+  if (method === 'PUT') return json(200, await save(env.DB, resource, key, await body()));
+  await remove(env.DB, resource, key);
+  return json(200, { ok: true });
 }
 
 // deps — подмена сети и JWKS в юнит-тестах; в Worker'е не передаётся.
