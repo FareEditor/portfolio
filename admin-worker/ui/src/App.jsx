@@ -1,5 +1,6 @@
 // Каркас: проверка доступа, шапка, навигация по разделам.
 import { api, describeError } from './api.js';
+import MediaPage from './Media.jsx';
 import { Loading, useLoad, useRoute } from './ui.jsx';
 
 const NAV = [
@@ -12,6 +13,7 @@ const sectionOf = (first) => (first === 'categories' ? 'works' : NAV.some(([key]
 function Page({ parts, query }) {
   const [first = 'works', second] = parts;
   switch (first) {
+    case 'media': return <MediaPage />;
     default: return <p className="state">Раздел ещё не подключён.</p>;
   }
 }
