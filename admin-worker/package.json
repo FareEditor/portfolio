@@ -1,0 +1,13 @@
+{
+  "name": "fareeditor-admin-worker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "test:remote": "ADMIN_REMOTE=1 node --test test/api.test.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

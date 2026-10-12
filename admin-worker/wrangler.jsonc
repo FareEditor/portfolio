@@ -1,0 +1,87 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "fareeditor-admin",
+	"main": "src/index.js",
+	"compatibility_date": "2026-08-01",
+	"workers_dev": false,
+	// Весь хост закрыт Access-приложением владельца; Worker проверяет токен Access сам.
+	"routes": [
+		{
+			"pattern": "admin.fareeditor.com",
+			"custom_domain": true
+		}
+	],
+	// Корень — статика из public/ (UI). Всё под /api/ сначала идёт в Worker.
+	"assets": {
+		"directory": "./public",
+		"run_worker_first": ["/api/*"]
+	},
+	// false вырезает из сборки весь тестовый код, включая чтение TEST_JWKS_B64.
+	// Недостижимые ветки удаляет minify: без него `if (false) …` остаётся в файле текстом.
+	"minify": true,
+	"define": {
+		"__TEST_AUTH__": "false"
+	},
+	"vars": {
+		"ACCESS_ISSUER": "https://fareeditor.cloudflareaccess.com",
+		"ACCESS_AUD": "51c976afc450d6211c9d16b0ac665217e0f25233e2e064410c4fc4e810acd1f7",
+		"ALLOWED_EMAIL": "mouseclk7731@gmail.com",
+		"ADMIN_ORIGIN": "https://admin.fareeditor.com",
+		"MEDIA_BASE_URL": "https://media.fareeditor.com/",
+		"GITLAB_PROJECT_ID": "85233384",
+		"GITLAB_REF": "main"
+	},
+	// Секрет GITLAB_TRIGGER_TOKEN задаётся командой `wrangler secret put`.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "fareeditor-content",
+			"database_id": "f8a1d6a2-c190-49db-8df5-72d4801abe8b"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "MEDIA",
+			"bucket_name": "fareeditor-media"
+		}
+	],
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1
+	},
+	// Временное окружение для интеграционных тестов: свои D1 и R2, без routes.
+	// Ресурсы создаются на время прогона и удаляются; database_id подставляется перед запуском.
+	"env": {
+		"test": {
+			"name": "fareeditor-admin-test",
+			// routes наследуются: без пустого списка окружение забрало бы custom domain.
+			"routes": [],
+			"workers_dev": false,
+			"define": {
+				"__TEST_AUTH__": "true"
+			},
+			"vars": {
+				"ACCESS_ISSUER": "https://fareeditor.cloudflareaccess.com",
+				"ACCESS_AUD": "51c976afc450d6211c9d16b0ac665217e0f25233e2e064410c4fc4e810acd1f7",
+				"ALLOWED_EMAIL": "mouseclk7731@gmail.com",
+				"ADMIN_ORIGIN": "https://admin.fareeditor.com",
+				"MEDIA_BASE_URL": "https://media.fareeditor.com/",
+				"GITLAB_PROJECT_ID": "85233384",
+				"GITLAB_REF": "main"
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "fareeditor-content-test",
+					"database_id": "00000000-0000-0000-0000-000000000000"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "MEDIA",
+					"bucket_name": "fareeditor-media-test"
+				}
+			]
+		}
+	}
+}
