@@ -5,11 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/check-form-options.mjs && node scripts/static-snapshot.mjs && vite build && vite build --ssr src/entry-server.jsx && node prerender.js && cp node_modules/decap-cms/dist/*decap-cms.js dist/admin/ && rm -rf dist/media/before-after",
+    "build": "node scripts/check-form-options.mjs && node scripts/static-snapshot.mjs && vite build && vite build --ssr src/entry-server.jsx && node prerender.js && rm -rf dist/media/before-after",
     "preview": "vite preview"
   },
   "dependencies": {
-    "decap-cms": "3.15.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

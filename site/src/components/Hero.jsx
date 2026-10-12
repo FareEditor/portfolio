@@ -16,7 +16,7 @@ export default function Hero({ c, showreelId, showreelEnabled, openPlayer }) {
         <p className="hero-sub" data-reveal="true">{c.sub}</p>
         <div className="hero-actions" data-reveal="true">
           <a className="btn-primary" href="#work">{c.primary}</a>
-          {/* INTEGRATION: кнопка шоурила открывает PlayerModal; включается флагом showreel_enabled в Decap CMS */}
+          {/* INTEGRATION: кнопка шоурила открывает PlayerModal; включается флагом showreel_enabled в настройках админки */}
           {showreelEnabled && showreelId && (
             <button className="btn-secondary" type="button" data-youtube-id={showreelId} onClick={() => openPlayer(showreelId)}>
               <span className="btn-glyph" aria-hidden="true"><PlayIcon /></span>{c.secondary}

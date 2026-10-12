@@ -10,8 +10,7 @@ export const ASPECTS = ['16:9', '9:12', '1:1', '4:5'];
 export const CONTACT_KINDS = ['email', 'location', 'telegram', 'twitter'];
 export { CONTENT_SHAPE, FORM_OPTIONS };
 
-// Правила сверх типа поля: шаблон или список допустимых значений (из config.yml Decap и
-// раздела 6 отчёта этапа 2). Ключ — имя поля в JSON.
+// Правила сверх типа поля: шаблон или список допустимых значений. Ключ — имя поля в JSON.
 const RULES = {
   categories: { slug: SLUG, aspect: ASPECTS },
   works: { slug: SLUG, youtube_id: YOUTUBE_ID },

@@ -336,7 +336,7 @@ export default function App({ lang, data, shape = DEFAULT_SHAPE }) {
     ? { label: "Video player", close: "Close" }
     : { label: "Видеоплеер", close: "Закрыть" };
   // служебная подпись группы табов: имя роли для скринридера, не текст страницы —
-  // поэтому живёт в коде рядом с подписями плеера, а не в content/*.json
+  // поэтому живёт в коде рядом с подписями плеера, а не в документе content
   const workTabsLabel = lang === "en" ? "Work categories" : "Категории работ";
   // Секция «до/после» есть, только если она включена в settings и оба ролика на месте.
   const beforeAfter = settings.before_after_enabled === true && settings.beforeAfter?.before && settings.beforeAfter?.after
@@ -382,7 +382,7 @@ export default function App({ lang, data, shape = DEFAULT_SHAPE }) {
       .filter((m) => m.label)
   }));
 
-  // Поведение карточки задаётся kind из CMS через белый список: неизвестное
+  // Поведение карточки задаётся kind из данных через белый список: неизвестное
   // значение не даёт ни ссылки, ни обработчика, а не ломает разметку.
   // Ссылки Telegram и X берутся из settings.contact_url / contact_url_en —
   // это те же самые адреса, второго места хранения для них не заводится.

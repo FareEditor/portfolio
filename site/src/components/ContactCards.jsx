@@ -51,7 +51,7 @@ export default function ContactCards({ cards }) {
             </a>
           )}
           {!card.href && card.noAction && <NoActionCard card={card} />}
-          {/* Неизвестный kind из CMS не получает ни ссылки, ни обработчика */}
+          {/* Неизвестный kind из данных не получает ни ссылки, ни обработчика */}
           {!card.href && !card.noAction && (
             <div className="contact-card card--interactive"><CardBody card={card} /></div>
           )}
