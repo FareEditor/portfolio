@@ -4,6 +4,7 @@ import ContentPage from './Content.jsx';
 import RecordEditor from './Editor.jsx';
 import { MetricTypesPage, PositionsPage, TestimonialsPage, WorksPage } from './Lists.jsx';
 import MediaPage from './Media.jsx';
+import PublishPage from './Publish.jsx';
 import { Loading, useLoad, useRoute } from './ui.jsx';
 
 const NAV = [
@@ -24,6 +25,7 @@ function Page({ parts, query }) {
     case 'settings': return <RecordEditor resource="settings" id="1" query={query} />;
     case 'content': return <ContentPage section={second ?? 'common'} />;
     case 'media': return <MediaPage />;
+    case 'publish': return <PublishPage />;
     default: return <WorksPage />;
   }
 }
