@@ -506,7 +506,7 @@ export default function App({ lang, data, shape = DEFAULT_SHAPE }) {
           openPlayer={openPlayer}
         />
         {hot.status !== 'error' && <Stats items={statItems} industries={c.stats.industries} loading={hotLoading} />}
-        {beforeAfter && <BeforeAfter c={c.beforeAfter} labels={baLabels} media={beforeAfter} />}
+        {beforeAfter && <BeforeAfter c={c.beforeAfter} labels={baLabels} media={beforeAfter} idle={!hotLoading} />}
         {hot.status !== 'error' && <Work c={c.work} categories={categories} tabsLabel={workTabsLabel} loading={hotLoading} shape={shape} />}
         {/* Форма сборки сказала «отзывов нет» — секции нет и места под неё не держим;
             сказала «есть», а пришло ноль — Testimonials сам вернёт null. */}

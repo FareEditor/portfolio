@@ -8,20 +8,31 @@ const DRIFT_LIMIT = 0.15;
 // currentTime на каждом — дёргать декодер без повода.
 const DRIFT_CHECK_MS = 1000;
 const KEY_STEP = 5;
+// Десктоп — мышь и широкий экран: там ролики грузятся фоном, пока читают первый экран.
+// Ширина одна не годится (планшет в альбомной ориентации), одного указателя мало
+// (узкое окно на ноутбуке) — поэтому оба условия вместе.
+const DESKTOP = '(hover: hover) and (pointer: fine) and (min-width: 900px)';
+// На остальных устройствах загрузка стартует, когда до секции остаётся два с половиной
+// экрана: проценты rootMargin считаются от высоты вьюпорта.
+const EARLY_MARGIN = '250% 0px';
+// Safari не знает requestIdleCallback — там короткий таймер после load.
+const IDLE_FALLBACK_MS = 200;
 
 // media — settings.beforeAfter из снимка /data/static.json: { before, after }, у каждого
 // абсолютный url ролика в R2 (media.fareeditor.com) и его width/height.
-export default function BeforeAfter({ c, labels, media: clips }) {
+// idle — горячие данные уже пришли (или не придут): раньше ролики заранее не грузятся.
+export default function BeforeAfter({ c, labels, media: clips, idle }) {
   const rootRef = useRef(null);
   const beforeRef = useRef(null);
   const afterRef = useRef(null);
   const lastCheckRef = useRef(0);
   const armedRef = useRef(false);
+  const inViewRef = useRef(false);
   // Пауза по кнопке переживает уход секции из вьюпорта: возврат не должен
   // перезапускать то, что пользователь остановил руками.
   const userPausedRef = useRef(false);
   const [pos, setPos] = useState(50);
-  const [armed, setArmed] = useState(false);   // секция попала в вьюпорт — грузим
+  const [armed, setArmed] = useState(false);   // src проставлен — ролики грузятся
   const [loading, setLoading] = useState(false);
   const [playing, setPlaying] = useState(false);
 
@@ -47,22 +58,58 @@ export default function BeforeAfter({ c, labels, media: clips }) {
   };
   const stopPlayback = () => { media().forEach((v) => v.pause()); setPlaying(false); };
 
-  // Исключение из правила «не грузить плеер на загрузке страницы»: до пересечения
-  // у обоих video стоит preload="none", ни одного запроса не уходит. Порог 0.08 —
-  // тот же, что у reveal-наблюдателя в App.jsx, отдельного числа не вводится.
+  const arm = () => { if (!armedRef.current) { armedRef.current = true; setArmed(true); } };
+
+  // Ранняя загрузка: ролики начинают грузиться до того, как секция дошла до вьюпорта,
+  // но не раньше события load и ответа hot.json (idle): load его не ждёт, а бандл,
+  // шрифты и горячие данные канал с роликами делить не должны.
+  // Десктоп — в простое после load; остальные — когда секция ближе EARLY_MARGIN.
+  // При Save-Data ничего заранее: загрузка по входу в вьюпорт, наблюдателем ниже.
+  // Там, где navigator.connection нет (Safari, Firefox), правило не действует.
+  useEffect(() => {
+    if (!idle || navigator.connection?.saveData === true) return undefined;
+    let cancel = () => {};
+    const early = () => {
+      if (window.matchMedia(DESKTOP).matches) {
+        if ('requestIdleCallback' in window) {
+          const id = requestIdleCallback(arm);
+          cancel = () => cancelIdleCallback(id);
+        } else {
+          const id = setTimeout(arm, IDLE_FALLBACK_MS);
+          cancel = () => clearTimeout(id);
+        }
+      } else if (rootRef.current && 'IntersectionObserver' in window) {
+        const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { io.disconnect(); arm(); } }, { rootMargin: EARLY_MARGIN });
+        io.observe(rootRef.current);
+        cancel = () => io.disconnect();
+      }
+    };
+    if (document.readyState === 'complete') early();
+    else {
+      window.addEventListener('load', early, { once: true });
+      cancel = () => window.removeEventListener('load', early);
+    }
+    return () => cancel();
+  }, [idle]);
+
+  // До загрузки у обоих video стоит preload="none" и нет src — ни одного запроса не
+  // уходит. Этот наблюдатель отвечает за воспроизведение, а при Save-Data и за саму
+  // загрузку. Порог 0.08 — тот же, что у reveal-наблюдателя в App.jsx.
   useEffect(() => {
     const root = rootRef.current;
-    // Без API наблюдателя ролики не грузятся сами — только по кнопке (toggle).
+    // Без API наблюдателя ролики не играют сами — только по кнопке (toggle).
     if (!root || !('IntersectionObserver' in window)) return;
     const io = new IntersectionObserver(([e]) => {
+      inViewRef.current = e.isIntersecting;
       if (!e.isIntersecting) {
         // Зацикленное видео вне экрана жжёт декодер и трафик впустую
         stopPlayback();
         return;
       }
-      // Первое пересечение только проставляет src — играть нечего, пока
-      // атрибут не приехал следующим рендером; дальше работает эффект ниже.
-      if (!armedRef.current) { armedRef.current = true; setArmed(true); return; }
+      // Ранняя загрузка не успела или выключена: пересечение только проставляет
+      // src — играть нечего, пока атрибут не приехал следующим рендером; дальше
+      // работает эффект ниже.
+      if (!armedRef.current) { arm(); return; }
       if (reduceMotion() || userPausedRef.current) return;
       startPlayback();
     }, { threshold: 0.08 });
@@ -80,15 +127,18 @@ export default function BeforeAfter({ c, labels, media: clips }) {
       media().forEach((v) => { v.preload = 'metadata'; v.load(); });
       return;
     }
-    startPlayback();
+    if (inViewRef.current) { startPlayback(); return; }
+    // Секция ещё не на экране: только грузим, запуск — по входу в вьюпорт.
+    media().forEach((v) => { v.preload = 'auto'; });
   }, [armed]);
 
   const toggle = () => {
     if (playing) { userPausedRef.current = true; stopPlayback(); return; }
     userPausedRef.current = false;
     // src ещё не проставлен (нет IntersectionObserver) — клик и есть сигнал
-    // к загрузке; дальше запуск идёт через эффект armed, как обычно.
-    if (!armedRef.current) { armedRef.current = true; setArmed(true); return; }
+    // к загрузке; дальше запуск идёт через эффект armed, как обычно. Кнопку
+    // нажали — значит, секция на экране.
+    if (!armedRef.current) { inViewRef.current = true; arm(); return; }
     startPlayback();
   };
 
@@ -129,7 +179,7 @@ export default function BeforeAfter({ c, labels, media: clips }) {
   return (
     <section className="section section--ba" aria-labelledby="ba-title">
       {/* Без JS секция нерабочая по устройству: src у обоих video появляется
-          только после IntersectionObserver, шторка двигается состоянием, кнопка
+          только из эффектов, шторка двигается состоянием, кнопка
           зовёт обработчик. Пустой кадр с застывшей границей читается как
           поломка, а статичной замены у сравнения двух роликов нет — поэтому
           секция убирается целиком. Механизм тот же, что в Contact.jsx:
