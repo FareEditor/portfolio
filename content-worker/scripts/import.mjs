@@ -9,120 +9,14 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
+import { COLLECTIONS, CONTENT_SHAPE, checkShape } from '../src/schema.js';
 
 export const DEFAULT_DATA_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../site/src/data');
 
 // Отброшенные поля документа content (путь через точку).
 export const DROPPED = ['work.motionTitle'];
 
-// Типы: text — обязательная строка; text? — необязательная ('' и отсутствие → NULL);
-// int, bool; media / media? — путь /media/… → media.id через поле source манифеста.
-const COLLECTIONS = {
-  categories: {
-    slug: ['slug', 'text'],
-    published: ['published', 'bool'],
-    order: ['sort_order', 'int'],
-    title_ru: ['title_ru', 'text'],
-    title_en: ['title_en', 'text'],
-    blurb_ru: ['blurb_ru', 'text?'],
-    blurb_en: ['blurb_en', 'text?'],
-    aspect: ['aspect', 'text'],
-  },
-  works: {
-    slug: ['slug', 'text'],
-    published: ['published', 'bool'],
-    category: ['category_slug', 'text'],
-    featured: ['featured', 'bool'],
-    order: ['sort_order', 'int'],
-    client: ['client_ru', 'text'],
-    client_en: ['client_en', 'text'],
-    format: ['format_ru', 'text'],
-    format_en: ['format_en', 'text'],
-    duration: ['duration_ru', 'text'],
-    duration_en: ['duration_en', 'text'],
-    title_ru: ['title_ru', 'text'],
-    title_en: ['title_en', 'text'],
-    body_ru: ['body_ru', 'text'],
-    body_en: ['body_en', 'text'],
-    youtube_id: ['youtube_id', 'text'],
-    thumbnail: ['thumbnail_media_id', 'media'],
-  },
-  metric_types: {
-    slug: ['slug', 'text'],
-    order: ['sort_order', 'int'],
-    label_ru: ['label_ru', 'text'],
-    label_en: ['label_en', 'text'],
-  },
-  testimonials: {
-    slug: ['slug', 'text'],
-    published: ['published', 'bool'],
-    order: ['sort_order', 'int'],
-    channel_name: ['channel_name', 'text'],
-    quote_ru: ['quote_ru', 'text'],
-    quote_en: ['quote_en', 'text'],
-    channel_topic_ru: ['channel_topic_ru', 'text'],
-    channel_topic_en: ['channel_topic_en', 'text'],
-    logo: ['logo_media_id', 'media?'],
-    top_metric_value: ['top_metric_value', 'text'],
-    top_metric_label_ru: ['top_metric_label_ru', 'text'],
-    top_metric_label_en: ['top_metric_label_en', 'text'],
-  },
-  testimonial_metrics: {
-    type: ['metric_type_slug', 'text'],
-    value_ru: ['value_ru', 'text'],
-    value_en: ['value_en', 'text'],
-  },
-  stats: {
-    value: ['value_ru', 'text'],
-    value_en: ['value_en', 'text'],
-    label_ru: ['label_ru', 'text'],
-    label_en: ['label_en', 'text'],
-  },
-  contacts: {
-    kind: ['kind', 'text'],
-    label_ru: ['label_ru', 'text'],
-    label_en: ['label_en', 'text'],
-    value: ['value_ru', 'text'],
-    value_en: ['value_en', 'text'],
-    subject_ru: ['subject_ru', 'text?'],
-    subject_en: ['subject_en', 'text?'],
-  },
-  settings: {
-    status: ['status_ru', 'text'],
-    status_en: ['status_en', 'text'],
-    showreel_enabled: ['showreel_enabled', 'bool'],
-    showreel_id: ['showreel_id', 'text'],
-    contact_url: ['contact_url_ru', 'text'],
-    contact_url_en: ['contact_url_en', 'text'],
-  },
-};
-
 const MANIFEST_KEYS = ['source', 'key', 'url', 'sha256', 'bytes', 'content_type', 'width', 'height', 'duration'];
-
-// Форма документа content после удаления DROPPED: 's' — строка, [n, форма] — список ровно из n элементов.
-const pair = (a, b) => ({ [a]: 's', [b]: 's' });
-const CONTENT_SHAPE = {
-  cta: 's',
-  menu: 's',
-  nav: [4, 's'],
-  hero: { title: 's', sub: 's', primary: 's', secondary: 's' },
-  stats: { industries: 's' },
-  testimonials: pair('eyebrow', 'title'),
-  beforeAfter: { eyebrow: 's', title: 's', before: 's', after: 's' },
-  work: { eyebrow: 's', title: 's', watch: 's', showAll: 's', play: 's', thumb: 's' },
-  process: { eyebrow: 's', title: 's', steps: [3, { tc: 's', title: 's', body: 's' }] },
-  why: { eyebrow: 's', title: 's', items: [4, pair('title', 'body')] },
-  faq: { eyebrow: 's', title: 's', items: [6, pair('q', 'a')] },
-  contact: {
-    eyebrow: 's', title: 's', hint: 's', choose: 's', required: 's', button: 's', sending: 's',
-    text: 's', success: 's', error: 's', micro: 's', noscript: 's',
-    labels: { name: 's', contact: 's', project_type: 's', budget: 's', message: 's' },
-    project_type: [4, pair('value', 'label')],
-    budget: [4, pair('value', 'label')],
-  },
-  footer: { copy: 's', links: [3, pair('label', 'href')] },
-  noscript: { banner: 's' },
-};
 
 const TOP_LEVEL = ['categories', 'works', 'metric-types', 'testimonials', 'content',
   'stats.json', 'contacts.json', 'settings.json', 'works.js', '.DS_Store'];
@@ -179,22 +73,6 @@ export function dropPaths(doc, paths = DROPPED) {
     if (parent) delete parent[keys.at(-1)];
   }
   return copy;
-}
-
-function checkShape(value, shape, where) {
-  if (shape === 's') {
-    if (typeof value !== 'string') throw new Error(`${where}: ожидалась строка`);
-  } else if (Array.isArray(shape)) {
-    if (!Array.isArray(value) || value.length !== shape[0]) throw new Error(`${where}: ожидался список из ${shape[0]}`);
-    value.forEach((item, i) => checkShape(item, shape[1], `${where}[${i}]`));
-  } else {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${where}: ожидался объект`);
-    for (const key of Object.keys(value)) if (!(key in shape)) throw new Error(`${where}.${key}: неизвестное поле`);
-    for (const key of Object.keys(shape)) {
-      if (!(key in value)) throw new Error(`${where}.${key}: поле отсутствует`);
-      checkShape(value[key], shape[key], `${where}.${key}`);
-    }
-  }
 }
 
 export function build(dataDir, manifestPath) {
