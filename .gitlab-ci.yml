@@ -16,13 +16,21 @@ stages:
 # автоматически получает noindex + Disallow — см. robotsGuard в
 # site/vite.config.js. Ошибка конфигурации закрывает сайт от индекса,
 # а не открывает.
+#
+# Сборка читает контент из https://fareeditor.com/data/* (Content Worker), поэтому
+# сайт пересобирается не только при правке кода: trigger, schedule и запуск из
+# интерфейса (web) собирают его заново с тем же кодом и свежим контентом —
+# без условия changes, файлы при этом не менялись.
+# resource_group: два деплоя не идут одновременно и не обгоняют друг друга.
 
 pages:
   stage: deploy
   rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       changes:
         - site/**/*
+    - if: '$CI_PIPELINE_SOURCE =~ /^(trigger|schedule|web)$/ && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  resource_group: production
   variables:
     DEPLOY_ENV: "production"
   cache:
@@ -47,10 +55,12 @@ pages:
 
 # Стейджинг: любая другая ветка. DEPLOY_ENV не задан, поэтому сборка
 # закрыта от индексации. В Pages не публикуется — результат лежит
-# артефактом джоба.
+# артефактом джоба. Контентные пайплайны (trigger, schedule) стейджинг не собирают.
 site:staging:
   stage: build
   rules:
+    - if: '$CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule"'
+      when: never
     - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
       changes:
         - site/**/*
@@ -76,12 +86,13 @@ site:staging:
 # ---- worker → Cloudflare -------------------------------------------------
 # Только вручную, только из default-ветки: случайный деплой кладёт
 # контактную форму, а деплоим слишком редко, чтобы автоматизация
-# окупала этот риск.
+# окупала этот риск. Только на push: контентные пайплайны (trigger, schedule, web)
+# ручной джоб воркера не показывают.
 
 worker:deploy:
   stage: deploy
   rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       changes:
         - worker/**/*
       when: manual
