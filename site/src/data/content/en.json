@@ -181,5 +181,8 @@
         "href": "https://x.com/FareEditor"
       }
     ]
+  },
+  "noscript": {
+    "banner": "[SLOT: короткое сообщение, что сайт полноценно работает только с JavaScript, RU|EN, ≤ 90 знаков]"
   }
 }

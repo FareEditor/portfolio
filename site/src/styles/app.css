@@ -867,3 +867,7 @@ a.wordmark::before{inset-inline:calc(var(--sp-2) * -1)}
 .testimonial-topic.skel{min-width:8ch;background:var(--hairline)}
 .testimonial-top-value.skel{max-width:3ch}
 .testimonial-top-label.skel{max-width:16ch}
+
+/* Баннер для браузера без JS: prerender.js кладёт его в <noscript> перед корнем.
+   В потоке над шапкой — страница под ним читается целиком. */
+.noscript-banner{margin:0;padding:12px var(--gutter);border-bottom:1px solid var(--line);background:var(--surface);color:var(--text-dim);font-size:var(--fs-sm);text-align:center}

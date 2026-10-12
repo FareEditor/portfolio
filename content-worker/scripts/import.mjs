@@ -121,6 +121,7 @@ const CONTENT_SHAPE = {
     budget: [4, pair('value', 'label')],
   },
   footer: { copy: 's', links: [3, pair('label', 'href')] },
+  noscript: { banner: 's' },
 };
 
 const TOP_LEVEL = ['categories', 'works', 'metric-types', 'testimonials', 'content',

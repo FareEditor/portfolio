@@ -27,6 +27,7 @@ export async function fetchSnapshot() {
   }
   for (const locale of ['ru', 'en']) {
     if (!isObject(data?.content?.[locale])) throw fail(`content.${locale} — не объект`);
+    if (typeof data.content[locale].noscript?.banner !== 'string') throw fail(`content.${locale}.noscript.banner — не строка`);
     // Ключи опций формы живут в коде, подписи — в контенте: опция без подписи дала бы пустую строку в селекте.
     for (const [field, values] of Object.entries(FORM_OPTIONS)) {
       const options = data.content[locale].contact?.[field];

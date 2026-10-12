@@ -3,6 +3,7 @@
 // и SSR-сборок; временная директория dist-ssr в конце удаляется.
 import { readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { render } from './dist-ssr/entry-server.js';
+import { SNAPSHOT_FILE } from './scripts/static-snapshot.mjs';
 
 const EMPTY_ROOT = '<div id="root"></div>';
 
@@ -42,8 +43,15 @@ async function hotShape() {
   };
 }
 
+// Баннер для браузера без JS стоит в документе до корня, вне React: в бандл и в гидрацию
+// он не попадает. В потоке, а не поверх страницы — контент под ним не закрыт.
+// Текст — content.<locale>.noscript.banner из того же снимка, что и вся сборка.
+const escapeHtml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const noscriptBanner = (content) => `<noscript><p class="noscript-banner">${escapeHtml(content.noscript.banner)}</p></noscript>`;
+
 // dist-ssr убирается и при сбое: каталог не под .gitignore и иначе остался бы в рабочем дереве.
 try {
+  const { content } = JSON.parse(readFileSync(SNAPSHOT_FILE, 'utf8'));
   const shape = await hotShape();
   console.log(`hot shape: ${JSON.stringify(shape)}`);
   // Клиент читает ту же форму до гидрации: первый рендер обязан совпасть с пререндером.
@@ -61,7 +69,7 @@ try {
     if (!markup) {
       throw new Error(`${file}: render("${lang}") вернул пустую строку`);
     }
-    writeFileSync(file, html.replace(EMPTY_ROOT, shapeScript + '<div id="root">' + markup + '</div>'));
+    writeFileSync(file, html.replace(EMPTY_ROOT, noscriptBanner(content[lang]) + shapeScript + '<div id="root">' + markup + '</div>'));
     console.log(`prerendered ${file} (${markup.length} chars of markup)`);
   }
 } finally {
