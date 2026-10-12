@@ -6,6 +6,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { FORM_OPTIONS } from '../src/formOptions.js';
+import { noscriptScreen } from './noscript-screen.mjs';
 
 export const SNAPSHOT_FILE = fileURLToPath(new URL('../.snapshot/static.json', import.meta.url));
 const STATIC_DATA_URL = process.env.STATIC_DATA_URL || 'https://fareeditor.com/data/static.json';
@@ -27,7 +28,6 @@ export async function fetchSnapshot() {
   }
   for (const locale of ['ru', 'en']) {
     if (!isObject(data?.content?.[locale])) throw fail(`content.${locale} — не объект`);
-    if (typeof data.content[locale].noscript?.banner !== 'string') throw fail(`content.${locale}.noscript.banner — не строка`);
     // Ключи опций формы живут в коде, подписи — в контенте: опция без подписи дала бы пустую строку в селекте.
     for (const [field, values] of Object.entries(FORM_OPTIONS)) {
       const options = data.content[locale].contact?.[field];
@@ -39,6 +39,11 @@ export async function fetchSnapshot() {
   }
   if (!isObject(data.settings)) throw fail('settings — не объект');
   if (!Array.isArray(data.contacts?.items)) throw fail('contacts.items — не список');
+  // Экран для браузера без JS собирается из этого же снимка: без текста или без контактов
+  // посетитель с выключенным JS увидел бы пустую страницу.
+  for (const locale of ['ru', 'en']) {
+    try { noscriptScreen(data, locale); } catch (error) { throw fail(`экран без JS: ${error.message}`); }
+  }
   return data;
 }
 
