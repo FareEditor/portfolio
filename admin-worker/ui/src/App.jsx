@@ -1,5 +1,6 @@
 // Каркас: проверка доступа, шапка, навигация по разделам.
 import { api, describeError } from './api.js';
+import ContentPage from './Content.jsx';
 import RecordEditor from './Editor.jsx';
 import { MetricTypesPage, PositionsPage, TestimonialsPage, WorksPage } from './Lists.jsx';
 import MediaPage from './Media.jsx';
@@ -21,6 +22,7 @@ function Page({ parts, query }) {
     case 'metric-types': return second ? <RecordEditor resource="metric-types" id={second} query={query} /> : <MetricTypesPage />;
     case 'stats': case 'contacts': return second ? <RecordEditor resource={first} id={second} query={query} /> : <PositionsPage resource={first} />;
     case 'settings': return <RecordEditor resource="settings" id="1" query={query} />;
+    case 'content': return <ContentPage section={second ?? 'common'} />;
     case 'media': return <MediaPage />;
     default: return <WorksPage />;
   }
