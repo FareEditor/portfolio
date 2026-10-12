@@ -2,6 +2,7 @@
 // каждый запрос к /api/* дополнительно проверяется здесь — до любого обращения к D1 и R2.
 import { AuthError, JWKS_URL, jwksLoader, verifyAccess } from './auth.js';
 import { HttpError } from './http.js';
+import { MAX_UPLOAD_BODY, listMedia, removeMedia, upload } from './media.js';
 
 const MUTATING = ['POST', 'PUT', 'PATCH', 'DELETE'];
 const MAX_JSON_BYTES = 256 * 1024;
@@ -42,6 +43,22 @@ async function route(request, env, url, user, deps) {
   };
 
   if (resource === 'me' && key === undefined) { methods(['GET']); return json(200, user); }
+
+  if (resource === 'media' && action === undefined) {
+    if (key === undefined) {
+      methods(['GET', 'POST']);
+      if (method === 'GET') return json(200, await listMedia(env.DB));
+      if (!isType(request, 'multipart/form-data')) throw new HttpError(415, 'unsupported_media_type');
+      if (Number(request.headers.get('Content-Length')) > MAX_UPLOAD_BODY) throw new HttpError(413, 'too_large');
+      let form;
+      try { form = await request.formData(); } catch { throw new HttpError(400, 'bad_form'); }
+      const result = await upload(env, form);
+      return json(result.created ? 201 : 200, result.media);
+    }
+    methods(['DELETE']);
+    await removeMedia(env, key);
+    return json(200, { ok: true });
+  }
 
   throw new HttpError(404, 'not_found');
 }
