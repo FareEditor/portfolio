@@ -1,5 +1,7 @@
 // Каркас: проверка доступа, шапка, навигация по разделам.
 import { api, describeError } from './api.js';
+import RecordEditor from './Editor.jsx';
+import { MetricTypesPage, PositionsPage, TestimonialsPage, WorksPage } from './Lists.jsx';
 import MediaPage from './Media.jsx';
 import { Loading, useLoad, useRoute } from './ui.jsx';
 
@@ -13,8 +15,14 @@ const sectionOf = (first) => (first === 'categories' ? 'works' : NAV.some(([key]
 function Page({ parts, query }) {
   const [first = 'works', second] = parts;
   switch (first) {
+    case 'categories': return second ? <RecordEditor resource="categories" id={second} query={query} /> : <WorksPage />;
+    case 'works': return second ? <RecordEditor resource="works" id={second} query={query} /> : <WorksPage />;
+    case 'testimonials': return second ? <RecordEditor resource="testimonials" id={second} query={query} /> : <TestimonialsPage />;
+    case 'metric-types': return second ? <RecordEditor resource="metric-types" id={second} query={query} /> : <MetricTypesPage />;
+    case 'stats': case 'contacts': return second ? <RecordEditor resource={first} id={second} query={query} /> : <PositionsPage resource={first} />;
+    case 'settings': return <RecordEditor resource="settings" id="1" query={query} />;
     case 'media': return <MediaPage />;
-    default: return <p className="state">Раздел ещё не подключён.</p>;
+    default: return <WorksPage />;
   }
 }
 
