@@ -29,6 +29,10 @@ npm run dev                      # wrangler dev на http://localhost:8787
 Vite-дев-сервер сайта проксирует `/api` на порт 8787 (см. `site/vite.config.js`),
 так что форма работает и локально.
 
+`project_type` и `budget` — стабильные ключи, а не подписи: `PROJECT_TYPES` и `BUDGETS` в
+`src/index.js`. Те же ключи продублированы в `site/src/formOptions.js`; сборка сайта
+сверяет два списка (`site/scripts/check-form-options.mjs`).
+
 ## Проверка эндпоинта
 
 ```bash
@@ -37,8 +41,8 @@ curl -i http://localhost:8787/api/contact \
   -d '{
     "name": "Тест",
     "contact": "@test",
-    "project_type": "Моушн-графика",
-    "budget": "200–500 $",
+    "project_type": "motion_graphics",
+    "budget": "200_500",
     "message": "Проверка формы с локального wrangler dev",
     "website": "",
     "cf-turnstile-response": "dummy-token"

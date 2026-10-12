@@ -12,8 +12,8 @@
 		}
 	],
 	"workers_dev": false,
-	// Архив заявок + счётчики rate-limit.
-	// TODO: создать неймспейс (`npx wrangler kv namespace create LEADS`) и вписать id.
+	// Архив заявок + счётчики rate-limit. Неймспейс создаётся командой
+	// `npx wrangler kv namespace create LEADS`; ниже — id уже созданного.
 	"kv_namespaces": [
 		{
 			"binding": "LEADS",

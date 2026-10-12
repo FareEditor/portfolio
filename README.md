@@ -7,97 +7,103 @@ social proof and different contact channels.
 
 Live: https://fareeditor.com — Russian at https://fareeditor.com/ru/
 
-## Stack
+## Architecture
 
-- **Vite 7 + React 19**, with build-time prerendering. Both documents ship
-  complete markup and hydrate on top of it, so the page reads with JS
-  disabled.
-- **Static output on GitLab Pages.** `/` and `/ru/` are real, physically
-  built HTML documents, not client-side routes.
-- **Decap CMS 3** on a GitLab backend with PKCE auth — no OAuth server of
-  our own.
-- **Cloudflare Worker** on `fareeditor.com/api/*`, handling the contact form
-  only. Everything else goes straight to GitLab Pages; the Worker is not a
-  proxy.
-- **Cloudflare KV** as the lead archive, 90-day TTL, plus the rate-limit
-  counters.
+```
+visitor ──► fareeditor.com            GitLab Pages: prerendered HTML, JS, CSS, fonts
+        ├─► fareeditor.com/data/*     Worker fareeditor-content: read-only JSON from D1
+        ├─► fareeditor.com/api/*      Worker fareeditor-contact: the contact form
+        └─► media.fareeditor.com      R2 bucket fareeditor-media: thumbnails, logos, clips
 
-The repository is a monorepo of two independent packages, `site/` and
-`worker/`. They have separate lockfiles, separate CI jobs and separate
-deploy targets. Neither one's pipeline touches the other.
+owner   ──► admin.fareeditor.com      Worker fareeditor-admin behind Cloudflare Access:
+                                      admin UI + write API to D1 and R2
+```
 
-No animation libraries, no UI component libraries, no CSS framework. CSS
-transitions and hand-written observers only.
+- **Site** — Vite 7 + React 19 with build-time prerendering. `/` and `/ru/`
+  are real HTML documents, not client-side routes; both hydrate on top of
+  complete markup.
+- **Content** — one Cloudflare **D1** database, `fareeditor-content`. It is
+  the only source of content. There are no content files in this repository.
+- **Media** — Cloudflare **R2**, served from `media.fareeditor.com` under
+  content-hashed, immutable keys. The database stores links only.
+- **Admin** — `admin.fareeditor.com`, a Worker that serves the admin UI and
+  the write API. The whole host sits behind Cloudflare Access, and the Worker
+  verifies the Access token itself on every API request.
+- **Contact form** — a separate Worker on `/api/*` with a KV lead archive
+  (90-day TTL) and rate-limit counters. It is not a proxy.
+
+No animation libraries, no UI component libraries, no CSS framework.
+
+### What is in the page and what is fetched
+
+The site reads content in two ways, and that decides how an edit goes live.
+
+| Content | How the site gets it | Goes live |
+| --- | --- | --- |
+| Works, categories, testimonials, metric types, stats | Fetched in the browser from `/data/hot.json` | Within a minute of saving (edge cache is 60 s) |
+| Texts, settings, contact cards | Baked into the HTML at build time from `/data/static.json` | After the site is rebuilt |
+
+So the page text reads with JavaScript disabled; the "hot" sections need it.
 
 ## Repository layout
 
 ```
-.gitlab-ci.yml                two pipelines: site → GitLab Pages, worker → Cloudflare
-AGENTS.md                     working notes for coding agents (identical to CLAUDE.md)
-CLAUDE.md                     working notes for Claude Code (identical to AGENTS.md)
-COPYRIGHT                     which paths are GPL-3.0 and which are all rights reserved
-LICENSE                       GPL-3.0 text; applies to the code only
-design/
-  FARE_Landing_dc.html        the original design, produced in Claude Design. Historical
-                              artefact, not the source of truth: the site has since moved
-                              to its own visual direction and no longer matches this file.
-                              It uses a proprietary template runtime (<x-dc>, <sc-for>,
-                              <sc-if>, {{ }}) that does not execute here.
-site/
-  index.html                  English document (/): canonical, hreflang, first-visit redirect
-  ru/index.html               Russian document (/ru/)
-  vite.config.js              build config, robots guard, /api dev proxy
-  prerender.js                post-build step that inlines SSR markup into both documents
-  public/admin/               Decap CMS: index.html + config.yml
-  public/media/works/         work thumbnails (webp)
-  src/
-    App.jsx                   state, form submission, language switch
-    entry-en.jsx              client hydration, English
-    entry-ru.jsx              client hydration, Russian
-    entry-server.jsx          renderToString, used only by prerender.js
-    components/               presentational components, one per section
-    data/content/en.json      all English copy, written by the CMS
-    data/content/ru.json      all Russian copy, written by the CMS
-    data/works/*.json         one file per work, written by the CMS
-    data/works.js             glob, filter on `published`, sort on `order`
-    data/settings.json        site settings, written by the CMS
-    fonts/                    subset woff2: Onest (variable), JetBrains Mono
-    styles/tokens.css         design tokens, the source of truth for the visual system
-    styles/app.css            component styles
-worker/
-  wrangler.jsonc              Worker name, route, KV binding
-  src/index.js                POST /api/contact — the whole Worker
-  README.md                   Worker-specific notes (in Russian)
+.gitlab-ci.yml          site → GitLab Pages; contact Worker → Cloudflare (manual job)
+COPYRIGHT               which paths are GPL-3.0 and which are all rights reserved
+LICENSE                 GPL-3.0 text; applies to the code only
+site/                   the public site
+  index.html            English document (/)
+  ru/index.html         Russian document (/ru/)
+  vite.config.js        build config, robots guard, dev proxies for /api and /data
+  prerender.js          inlines SSR markup into both documents
+  scripts/              build-time checks: content snapshot, form option keys
+  public/media/         og image only; all other media lives in R2
+  src/                  components, styles, fonts, hot-data loader
+content-worker/         fareeditor-content: D1 schema, migrations, /data/* API,
+                        backup verification scripts
+admin-worker/           fareeditor-admin: Access check, write API, admin UI (ui/)
+worker/                 fareeditor-contact: POST /api/contact
 ```
+
+Each package has its own lockfile and its own README (the Worker READMEs are
+in Russian). `admin-worker` imports the schema and field mapping from
+`content-worker/src` and the form option keys from `site/src/formOptions.js`.
+
+## Editing content
+
+Open https://admin.fareeditor.com/ and sign in through Cloudflare Access.
+
+- **Works, testimonials, metric types, stats** — saved changes appear on the
+  site within a minute.
+- **Texts, settings, contacts** — saved changes appear after a rebuild. Press
+  **«Опубликовать тексты»** in the admin: it triggers a GitLab pipeline on
+  `main` that rebuilds the site with the current content. It takes a few
+  minutes and can be started at most once a minute.
+- **Media** — upload in the admin. Files go to R2; a file that is still
+  referenced cannot be deleted.
+- **History** — every save keeps the previous version of the record. The
+  «История» button on a record shows the differences and restores a version.
+
+Two people editing the same record do not overwrite each other silently: the
+second save is refused and the form shows what changed.
+
+### Scheduled rebuild
+
+The `pages` job also runs for `schedule` pipelines on the default branch, so
+a nightly pipeline schedule (GitLab → Build → Pipeline schedules, target
+`main`) rebuilds the site with fresh content even if nobody pressed publish.
+The schedule itself lives in the GitLab project settings, not in this
+repository.
 
 ## Local development
 
 ### Prerequisites
 
-- **Node.js 22.12 or newer.** Vite 7 requires `^20.19.0 || >=22.12.0`;
-  Wrangler 4 requires `>=22.0.0`. The intersection is 22.12+. CI builds on
-  the `node:24` image.
-- **npm 10 or newer** (ships with those Node versions).
+- **Node.js 22.12 or newer.** CI builds on the `node:24` image.
+- **npm 10 or newer.**
 - A **Cloudflare account** and a **GitLab account** if you intend to deploy.
 
-### Two terminals
-
-The site and the Worker run as separate processes. The Vite dev server proxies
-`/api` to `http://localhost:8787`, so the contact form works end to end
-locally without CORS (`site/vite.config.js`, `server.proxy`).
-
-Terminal 1 — the Worker:
-
-```sh
-cd worker
-npm ci
-npm run dev            # wrangler dev on http://localhost:8787
-```
-
-`wrangler dev` reads `worker/.dev.vars`; create it first, see the next
-section.
-
-Terminal 2 — the site:
+### The site
 
 ```sh
 cd site
@@ -105,269 +111,177 @@ npm ci
 npm run dev            # vite on http://localhost:5173
 ```
 
-To reach the dev server from a phone on the same network:
+The dev server proxies `/data` to `https://fareeditor.com` (the live content
+API) and `/api` to `http://localhost:8787` (a local contact Worker, optional).
+`npm run dev -- --host` exposes it on the LAN.
 
 ```sh
-npm run dev -- --host
-```
-
-Vite then prints a LAN address. The `/api` proxy still points at
-`localhost:8787` from the dev server's own perspective, so the Worker does
-not need `--host` of its own.
-
-### Building
-
-```sh
-cd site
 npm run build          # → site/dist
+npm run preview        # serves dist, with the same /data proxy
 ```
 
-`npm run build` is four steps in one: the client build, an SSR build into
-`dist-ssr`, `node prerender.js` (which inlines the rendered markup into both
-documents and deletes `dist-ssr`), and a copy of the vendored Decap bundle
-from `node_modules/decap-cms/dist` into `dist/admin/`. Decap is vendored
-rather than loaded from a CDN because it receives an OAuth token with `api`
-scope; its version is pinned by the lockfile.
+`npm run build` checks the form option keys against the contact Worker,
+downloads a snapshot of `/data/static.json`, builds the client and SSR
+bundles, and runs `prerender.js`. **The build needs network access to the
+content API** and fails if the snapshot is missing or malformed, so a build
+with empty content cannot ship. `STATIC_DATA_URL` and `HOT_DATA_URL` override
+the source.
 
-`prerender.js` throws if either document lacks an empty `<div id="root">` or
-if `render()` returns an empty string, so a silently unprerendered build
-cannot ship.
-
-### One caveat about local KV
-
-The `LEADS` binding in `worker/wrangler.jsonc` is declared with
-`"remote": true`, which means `wrangler dev` connects to the **real, deployed
-KV namespace** rather than to local Miniflare storage. Consequences: you need
-to be logged in (`npx wrangler login`), and submissions you make while
-testing land in the production lead archive and consume the production
-rate-limit budget. If you want a purely local run, set that flag to `false`
-in your working copy.
-
-## Environment variables and secrets
-
-Nothing in this table is optional if you want a working production deploy.
-
-| Variable | What it is | Local | Production | Where to get it |
-| --- | --- | --- | --- | --- |
-| `VITE_TURNSTILE_SITE_KEY` | Public Turnstile site key, baked into the bundle at build time | `site/.env.local` | GitLab CI/CD variable (project settings) | Cloudflare dashboard → Turnstile → your widget → Site Key |
-| `DEPLOY_ENV` | Build-mode switch. Only the literal value `production` lifts `noindex` | not set | set to `production` inside the `pages` job in `.gitlab-ci.yml` | n/a — it is a flag, not a credential |
-| `TELEGRAM_BOT_TOKEN` | Bot token used to post the lead notification | `worker/.dev.vars` | `wrangler secret put` | Telegram, talk to `@BotFather` |
-| `TELEGRAM_CHAT_ID` | Numeric chat the notification is sent to | `worker/.dev.vars` | `wrangler secret put` | Message your bot once, then read `result[].message.chat.id` from `https://api.telegram.org/bot<TOKEN>/getUpdates` |
-| `TURNSTILE_SECRET` | Server-side Turnstile key, used for siteverify | `worker/.dev.vars` | `wrangler secret put` | Cloudflare dashboard → Turnstile → your widget → Secret Key |
-| `LEADS` (KV binding) | Lead archive and rate-limit counters | same namespace as production, see the caveat above | `kv_namespaces` in `worker/wrangler.jsonc` | `npx wrangler kv namespace create LEADS`, then paste the returned id |
-| `CLOUDFLARE_API_TOKEN` | Authenticates `wrangler deploy` in CI | not needed (`wrangler login` instead) | GitLab CI/CD variable, masked and protected | Cloudflare dashboard → My Profile → API Tokens → Create Token |
-| `CLOUDFLARE_ACCOUNT_ID` | Selects the account for `wrangler deploy` | not needed | GitLab CI/CD variable | Cloudflare dashboard → Workers & Pages → Account details |
-
-### What is secret and what is not
-
-Public by design, and fine to commit:
-
-- The **Turnstile site key**. It is rendered into the widget in every
-  visitor's HTML; there is nothing to protect. In this repo it happens to be
-  injected at build time from an environment variable rather than committed,
-  but that is a build convenience, not a secrecy measure.
-- The **KV namespace id** in `worker/wrangler.jsonc`. It identifies a
-  namespace; it does not grant access to it.
-- The **GitLab OAuth Application ID** (`app_id`) in
-  `site/public/admin/config.yml`. PKCE clients are public clients — the id is
-  meant to be visible.
-
-Never in the repository, never in a build log:
-
-- `TELEGRAM_BOT_TOKEN`
-- `TURNSTILE_SECRET`
-- `CLOUDFLARE_API_TOKEN`
-
-`worker/.dev.vars` and `site/.env.*` are gitignored. Keep it that way.
-
-### Creating the local files
-
-Both packages carry `.example` files locally, but the `.gitignore` patterns
-`site/.env.*` and `worker/.dev.vars.*` swallow them, so **they are not in a
-fresh clone**. Create them by hand.
-
-`worker/.dev.vars`:
-
-```
-TELEGRAM_BOT_TOKEN=
-TELEGRAM_CHAT_ID=
-TURNSTILE_SECRET=
-```
-
-`site/.env.local`:
-
-```
-VITE_TURNSTILE_SITE_KEY=
-```
-
-For local runs, use Cloudflare's published always-passes test pair rather
-than your real keys: site key `1x00000000000000000000AA`, secret
-`1x0000000000000000000000000000000AA`. With them, any token verifies. If
-`VITE_TURNSTILE_SITE_KEY` is empty the form still renders, but the widget
-slot shows a placeholder and the Worker will reject every submission with
-`turnstile_failed`.
-
-### Setting production secrets
+### The contact Worker
 
 ```sh
 cd worker
-npx wrangler secret put TELEGRAM_BOT_TOKEN
-npx wrangler secret put TELEGRAM_CHAT_ID
-npx wrangler secret put TURNSTILE_SECRET
+npm ci
+npm run dev            # wrangler dev on http://localhost:8787
 ```
 
-Each command prompts for the value and does not echo it. Secrets are stored
-against the Worker, not against a deployment: `wrangler deploy` does **not**
-clear them. You set them once and redeploy freely.
+The `LEADS` KV binding is declared with `"remote": true`: `wrangler dev`
+talks to the **real** namespace, so test submissions land in the production
+lead archive and consume the production rate-limit budget. Set the flag to
+`false` in your working copy for a purely local run.
 
-### Minimal Cloudflare API token
+### The content and admin Workers
 
-The CI job only deploys a Worker to an existing zone route. Create a custom
-token with exactly:
+See `content-worker/README.md` and `admin-worker/README.md`. Both run against
+the remote database with `wrangler dev --remote`; `admin-worker` has unit
+tests (`npm test`) that need no Cloudflare access.
 
-- **Zone → Workers Routes → Edit**, zone resources scoped to the single zone
-  (`fareeditor.com`, or yours).
-- **Account → Workers Scripts → Edit**, account resources scoped to the one
-  account.
+## Environment variables and secrets
 
-Nothing else. Do not use a global API key.
+| Variable | What it is | Where it lives |
+| --- | --- | --- |
+| `VITE_TURNSTILE_SITE_KEY` | Public Turnstile site key, baked into the bundle | `site/.env.local`; GitLab CI/CD variable |
+| `DEPLOY_ENV` | Only the literal `production` lifts `noindex` | set inside the `pages` job |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TURNSTILE_SECRET` | Contact Worker secrets | `worker/.dev.vars`; `wrangler secret put` in `worker/` |
+| `GITLAB_TRIGGER_TOKEN` | Pipeline trigger token used by «Опубликовать тексты» | `wrangler secret put` in `admin-worker/` |
+| `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | Authenticate `wrangler` | shell environment; GitLab CI/CD variables for `worker:deploy` |
+
+Not secret, and committed: the D1 database id, the KV namespace id, the
+Access audience tag and the allowed email in `admin-worker/wrangler.jsonc`.
+They identify resources; they do not grant access.
+
+Never in the repository or a build log: the three contact Worker secrets,
+`GITLAB_TRIGGER_TOKEN`, `CLOUDFLARE_API_TOKEN`. `worker/.dev.vars` and
+`site/.env.*` are gitignored.
+
+For local runs use Cloudflare's always-passes Turnstile pair: site key
+`1x00000000000000000000AA`, secret `1x0000000000000000000000000000000AA`.
+
+The API token must be able to deploy Workers and their routes and custom
+domains, and to manage D1 and R2 in the account. Use a scoped token, not the
+global API key.
 
 ## Deployment
 
-Both pipelines are defined in `.gitlab-ci.yml` and are gated on path
-changes, so a commit that only touches `worker/` will not rebuild the site
-and vice versa.
-
 **Site → GitLab Pages.** The `pages` job runs on the default branch when
-something under `site/**/*` changed. It sets `DEPLOY_ENV: "production"` in
-the job itself — deliberately, rather than in the project's CI/CD settings.
-It builds `site/`, moves `dist` to `public/`, and publishes it as an artifact
-with `expire_in: never`, because Pages serves the most recent artifact and an
-expiry during a long quiet period would take the site offline.
+`site/**/*` changed, and for `trigger`, `schedule` and `web` pipelines
+without a path condition — that is how a content publish rebuilds the same
+code. It sets `DEPLOY_ENV: "production"` in the job itself and keeps its
+artifact forever, because Pages serves the most recent artifact.
+`resource_group: production` keeps two deploys from overtaking each other.
 
 **`DEPLOY_ENV` controls indexability, and its absence is the safe state.**
-`site/vite.config.js` treats only the exact value `production` as production.
-Any other build — a staging branch, a typo, a variable someone forgot to
-carry over — gets `<meta name="robots" content="noindex, nofollow">` injected
-into the head and a `robots.txt` of `Disallow: /`. A misconfigured build
-hides the site; it never leaks it. The same guard hard-fails the build if
-`DEPLOY_ENV=production` is set while `VITE_TURNSTILE_SITE_KEY` is empty,
-because that combination produces a green build with a dead form: the Worker
-would reject every enquiry as `turnstile_failed`.
+Any build without the exact value `production` gets
+`<meta name="robots" content="noindex, nofollow">` and a `Disallow: /`
+robots.txt. The same guard fails the build if `DEPLOY_ENV=production` is set
+while `VITE_TURNSTILE_SITE_KEY` is empty.
 
-**Staging.** The `site:staging` job runs on any non-default branch with
-`site/**/*` changes. It does not set `DEPLOY_ENV`, so the output is
-noindexed, and it does not publish to Pages — the build is left as a job
-artifact for a week.
+**Staging.** `site:staging` builds any non-default branch with `site/**/*`
+changes, noindexed, as a one-week job artifact. It is not published.
 
-**Worker → Cloudflare.** The `worker:deploy` job runs `npx wrangler deploy`.
-It is restricted to the default branch, restricted to `worker/**/*` changes,
-and marked `when: manual`: an accidental deploy takes the contact form down,
-and the Worker changes far too rarely for automation to be worth that risk.
-It carries `allow_failure: true` so that leaving it unclicked does not park
-the pipeline in a blocked state. Deploying by hand from a workstation
-(`cd worker && npm run deploy`) is equally valid.
+**Workers.** Each is deployed from its own directory:
 
-## Content management
+```sh
+cd content-worker && npx wrangler deploy            # /data/*
+cd admin-worker   && npx wrangler deploy --env=""   # admin.fareeditor.com; builds ui/ first
+cd worker         && npx wrangler deploy            # /api/* — or the manual worker:deploy job
+```
 
-The CMS lives at https://fareeditor.com/admin/. It does not work against the
-Vite dev server: `site/public/admin/` contains only `index.html` and
-`config.yml`, and the Decap bundle is copied into `dist/admin/` by the build
-script. `npm run build && npm run preview` will at least load the admin page
-locally, though logging in will not work unless the origin you preview from
-is one of the registered OAuth redirect URIs.
+`worker:deploy` is the only Worker job in CI: manual, default branch only,
+`worker/**/*` changes only. The content and admin Workers are deployed by
+hand. Database migrations live in `content-worker/migrations` and are applied
+with `npx wrangler d1 migrations apply fareeditor-content --remote`.
 
-Authentication is GitLab's own, over PKCE — there is no separate user list
-and no OAuth server to run. Whoever has write access to the repository has
-access to the CMS; nothing is layered on top of that. The editorial preview
-pane is switched off on purpose: it would require a second copy of the site's
-components and would inevitably drift from the real render.
+`admin-worker/wrangler.jsonc` has a `test` environment for integration tests
+on temporary resources. Always pass `--env=""` when deploying production.
 
-Two collections, both defined in `site/public/admin/config.yml`:
+## Backup and restore
 
-- **Работы (`works`)** — a folder collection over `site/src/data/works`, one
-  JSON file per work, `slug` as the identifier. Fields cover both locales
-  (`client`/`client_en`, `title_ru`/`title_en`, `body_ru`/`body_en`,
-  `duration`/`duration_en`, `format`/`format_en`), plus `published`, `order`,
-  `type` (`case` or `motion`), `featured`, `youtube_id` and a `thumbnail`
-  image. Uploads land in `site/public/media/works` and are referenced as
-  `/media/works/...`.
-- **Настройки (`settings`)** — a single file, `site/src/data/settings.json`:
-  the hero status pill in both locales, the showreel YouTube id, and the
-  direct-contact URL per locale (Telegram for Russian, X for English — those
-  differ on purpose).
+The database is the content. Back it up before anything risky:
 
-A CMS edit commits **straight to `main`** — there is no editorial workflow —
-and that commit touches `site/**/*`, which triggers the `pages` job and
-rebuilds the live site. So content can move under you between sessions. Make
-`git pull --rebase` a reflex before you start local work.
+```sh
+cd content-worker
+npx wrangler d1 export fareeditor-content --remote --output <dir>/d1-$(date +%Y%m%d-%H%M).sql
+```
+
+Keep the file outside the repository. `content-worker/README.md` describes
+how to verify a backup against a temporary database, how to restore, and what
+D1 Time Travel offers (point-in-time restore: 7 days on Workers Free, 30 days
+on Workers Paid).
+
+A single record is easier to bring back from its history in the admin.
+
+`content-worker/scripts/import.mjs` is the one-off migration script that
+moved the content from JSON files into D1. Its output replaces every table.
+It refuses to write to the production database without an explicit flag, and
+there is normally no reason to run it again.
+
+## Rolling back a release
+
+The pieces roll back independently.
+
+- **Site.** Revert the offending commit on `main`; the `pages` job redeploys.
+- **A Worker.** `npx wrangler rollback` in its directory (add `--env=""` for
+  `admin-worker`) returns to the previous deployed version.
+- **Content.** A record — from its history in the admin. The whole database —
+  Time Travel or a backup file.
+
+To take the content API off the site entirely, remove `routes` from
+`content-worker/wrangler.jsonc` and deploy: `/data/*` falls through to GitLab
+Pages and returns 404, the hot sections hide themselves, and the next site
+build fails rather than shipping empty pages.
 
 ## Forking this for your own site
 
-Everything below must change. Most of it fails loudly if you miss it; the
-last two items fail silently.
+Everything below must change.
 
-1. **Domain.** `SITE_ORIGIN` in `worker/src/index.js` (it is the CORS
-   allow-origin — a stale value blocks every submission from your site), the
-   `routes[].pattern` and `zone_name` in `worker/wrangler.jsonc`,
-   `site_url` in `site/public/admin/config.yml`, and every `canonical`,
-   `hreflang` and `og:` URL in `site/index.html` and `site/ru/index.html`.
-2. **GitLab repo path and OAuth app.** `backend.repo` and `backend.app_id`
-   in `site/public/admin/config.yml`. Create the application under GitLab →
-   User Settings → Applications with scope `api`.
-3. **Worker name and route.** `name` in `worker/wrangler.jsonc`, plus the
-   route above. Two people cannot both deploy `fareeditor-contact`.
-4. **KV namespace.** `npx wrangler kv namespace create LEADS` and paste the
-   new id into `worker/wrangler.jsonc`. (The committed `TODO` comment there
-   is stale — an id is already filled in, and it is mine, not yours.) Note
-   that this subcommand was spelled `kv:namespace create` before Wrangler
-   3.60; on Wrangler 4, which this repo pins, it is `kv namespace create`.
-   If in doubt, run `npx wrangler kv --help`.
-5. **Secrets.** All three, via `wrangler secret put`. New Telegram bot, new
-   chat, new Turnstile widget.
-6. **Content.** `site/src/data/content/en.json` and
-   `site/src/data/content/ru.json` in full, either directly or through the
-   Decap CMS **Тексты сайта** collection. Do not translate one into the other
-   — the whole point of the split is that the locales say different things.
-7. **Works and media.** Delete `site/src/data/works/*.json` and everything
-   in `site/public/media/works`, then add your own. Update
-   `site/src/data/settings.json` (status text, showreel id, contact URLs).
-8. **Form option keys.** If you change the choices in the project-type or
-   budget selects, change them in **three** places: the `value` fields in
-   both `site/src/data/content/*.json`, and the `PROJECT_TYPES` / `BUDGETS`
-   arrays in `worker/src/index.js`. The Worker validates against those keys and
-   returns `invalid_fields` for anything else. The visible labels are free to
-   differ per locale — that is exactly why the selects submit stable keys
-   rather than display text — but the keys must match on both sides. If you
-   also want readable text in the Telegram notification and the KV archive,
-   update `PROJECT_TYPE_LABELS` and `BUDGET_LABELS` alongside them.
-
-### The two things that break a fork silently
-
-- **The OAuth redirect URI must end in a slash:**
-  `https://your-domain/admin/`, not `https://your-domain/admin`. GitLab
-  matches it exactly, and the mismatch surfaces as a generic authorisation
-  failure with nothing useful in the console.
-- **The GitLab OAuth application must NOT be marked Confidential.** Untick
-  it. PKCE is the flow for public clients; a confidential application expects
-  a client secret that a browser-only CMS has no way to supply, and the token
-  exchange will fail after the login appears to succeed.
+1. **Domain.** `SITE_ORIGIN` in `worker/src/index.js` (the CORS allow-origin),
+   every `routes` block and `zone_name` in the three `wrangler.jsonc` files,
+   `ADMIN_ORIGIN` and `MEDIA_BASE_URL` in `admin-worker/wrangler.jsonc`, and
+   every `canonical`, `hreflang` and `og:` URL in `site/index.html` and
+   `site/ru/index.html`.
+2. **Cloudflare resources.** A D1 database (apply the migrations), an R2
+   bucket with a public custom domain, a KV namespace for leads. Put their
+   ids and names into the `wrangler.jsonc` files.
+3. **Cloudflare Access.** An Access application for the admin host. Put its
+   team domain, audience tag and your email into
+   `admin-worker/wrangler.jsonc` and `admin-worker/src/auth.js` (`JWKS_URL`).
+4. **Worker names.** Two people cannot both deploy `fareeditor-contact`,
+   `fareeditor-content` and `fareeditor-admin`.
+5. **Secrets.** All of them, via `wrangler secret put`. New Telegram bot, new
+   Turnstile widget, a GitLab pipeline trigger token for your project, and
+   `GITLAB_PROJECT_ID` in `admin-worker/wrangler.jsonc`.
+6. **Content and media.** Start from an empty database and enter your own
+   through the admin. The two locales are meant to say different things — do
+   not translate one into the other.
+7. **Form option keys.** The project-type and budget selects submit stable
+   keys. They are defined in `PROJECT_TYPES` / `BUDGETS` in
+   `worker/src/index.js` and duplicated in `site/src/formOptions.js`; the
+   site build fails if the two differ. The admin lets you edit the labels,
+   not the keys. To change the keys, change both files, the stored content,
+   and — if you want readable Telegram notifications — `PROJECT_TYPE_LABELS`
+   and `BUDGET_LABELS` in the Worker.
 
 A fork must replace all content and media with its own. See the licence
-section — the copy, the works and the media in this repository are not
-licensed for reuse.
+section.
 
 ## Contributing
 
-This is one person's live site, not a library. Keep expectations calibrated
-accordingly.
+This is one person's live site, not a library.
 
 Bug reports and fixes to the **code** are welcome — open an issue or a merge
-request. Changes to copy, works data or branding are not: that content is the
-substance of the site, and it is final.
-
-If you want your own version of this, fork it and follow the checklist above.
-That is the right move, and no permission is needed for the code.
+request. Changes to copy, works or branding are not: that content is the
+substance of the site.
 
 ## Licence
 
@@ -375,31 +289,22 @@ Two regimes. `COPYRIGHT` is the authoritative statement; this is the summary.
 
 ### Code — GPL-3.0-or-later
 
-Everything under `site/src` (except the content and data carve-outs below),
-`worker/src`, and the build and CI configuration: `site/vite.config.js`,
-`site/prerender.js`, both `index.html` documents,
-`site/public/admin/config.yml`, `worker/wrangler.jsonc`, `.gitlab-ci.yml`.
-Full text in `LICENSE`.
+The source under `site/`, `worker/`, `content-worker/` and `admin-worker/`,
+and the build and CI configuration. Full text in `LICENSE`. A derivative work
+built from this code must itself be released under GPL-3.0-or-later, with
+source available.
 
-The practical consequence for a fork: a derivative work built from this code
-must itself be released under GPL-3.0-or-later, with source available.
-
-Third-party dependencies keep their own licences. The MIT-licensed
-dependencies this project uses are compatible with GPL-3.0. The bundled fonts
-(Inter, Manrope, JetBrains Mono) are under the SIL Open Font License 1.1.
+Third-party dependencies keep their own licences. The bundled fonts (Onest,
+JetBrains Mono) are under the SIL Open Font License 1.1.
 
 ### Content — all rights reserved
 
-Every string in `site/src/data/content`, the works data in `site/src/data`,
-everything under `site/public/media`, the showreel, and the FARE name and
-wordmark. No licence is granted: not reusable, not adaptable, not
+Everything the site shows that is not code: the copy, works, testimonials and
+settings stored in the database, every media file served from
+`media.fareeditor.com`, `site/public/media`, the showreel, and the FARE name
+and wordmark. No licence is granted: not reusable, not adaptable, not
 redistributable.
 
-The reason is simple — part of this material was produced for clients and its
-rights are theirs, so it is not mine to license.
-
-`design/FARE_Landing_dc.html` is all rights reserved for the same reason: the
-file embeds the complete `CONTENT` object for both locales and the full
-`WORKS` array, which is the same copy covered above, so it cannot be
-GPL-3.0. The markup and styles it demonstrates live under `site/src`, and
-there they are GPL-3.0.
+Part of this material was produced for clients and its rights are theirs, so
+it is not mine to license. Earlier revisions of this repository contain that
+content as files; the same terms apply to them.

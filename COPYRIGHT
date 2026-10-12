@@ -10,19 +10,11 @@ reusing anything.
 The following are licensed under the GNU General Public License, version 3
 or (at your option) any later version. The full text is in LICENSE.
 
-    site/src/**            except site/src/content, site/src/data
-                           and site/src/fonts (see sections 2 and 3)
-    site/index.html
-    site/ru/index.html
-    site/vite.config.js
-    site/prerender.js
-    site/package.json
-    site/public/admin/index.html
-    site/public/admin/config.yml
-    worker/src/**
-    worker/wrangler.jsonc
-    worker/package.json
-    worker/README.md
+    site/**                except site/src/fonts and site/public/media
+                           (see sections 2 and 3)
+    worker/**
+    content-worker/**
+    admin-worker/**
     .gitlab-ci.yml
     .gitignore
 
@@ -36,28 +28,28 @@ itself be released under GPL-3.0-or-later, with source available.
 No licence is granted for the following. They are not reusable, not
 adaptable and not redistributable, in whole or in part.
 
-    site/src/content/**       all user-facing copy, both locales
-    site/src/data/**          works data and site settings
-    site/public/media/**      thumbnails and every other media asset
-    design/**                 the approved design reference
-    the showreel referenced by showreel_id in site/src/data/settings.json
+    the site content stored in the database and served from
+    fareeditor.com/data/*: all user-facing copy in both locales, works,
+    testimonials, statistics, contact details and site settings
+    every media file served from media.fareeditor.com
+    site/public/media/**
+    the showreel referenced by the site settings
     the name "FARE" and the FARE wordmark
 
 Reason: part of this material was produced for clients and its rights are
 theirs. It is not mine to license.
 
-design/FARE_Landing_dc.html embeds the complete CONTENT object for both
-locales and the full WORKS array — the same copy covered above — so the file
-cannot be GPL-3.0. The markup and styles it demonstrates exist under
-site/src, and there they are GPL-3.0.
+Earlier revisions of this repository contain the same content as files
+(site/src/data/**, site/public/media/**, design/**). The terms of this
+section apply to those revisions as well.
 
 
 3. THIRD-PARTY
 --------------
 
-Dependencies declared in site/package.json and worker/package.json keep their
-own licences. MIT dependencies are compatible with GPL-3.0.
+Dependencies declared in the package.json files keep their own licences. MIT
+dependencies are compatible with GPL-3.0.
 
-The font files in site/src/fonts (Inter, Manrope, JetBrains Mono, subset to
-woff2) are third-party works under the SIL Open Font License 1.1, not covered
-by either regime above.
+The font files in site/src/fonts (Onest, JetBrains Mono, subset to woff2) are
+third-party works under the SIL Open Font License 1.1, not covered by either
+regime above.
