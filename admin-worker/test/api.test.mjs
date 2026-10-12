@@ -5,6 +5,7 @@
 // Тесты идут по порядку и опираются на состояние, оставленное предыдущими.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { after, before, test } from 'node:test';
@@ -58,6 +59,9 @@ const api = async (method, path, body) => {
   return { status: response.status, body: text ? JSON.parse(text) : null };
 };
 const fields = (r) => r.body.fields.map((f) => f.field).sort();
+// Запись без служебного updated_at — для сравнения с тем, что отправляли.
+const bare = (record) => { const { updated_at, ...rest } = record; return rest; };
+const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const revs = async (resource, k) => (await api('GET', `/api/revisions?resource=${resource}&key=${encodeURIComponent(k)}`)).body.items;
 
 test('GET /api/me и отказ без токена', async () => {
@@ -72,9 +76,10 @@ test('categories: CRUD, валидация, ревизии, restore', async () =
   const record = { slug: 'shorts', published: true, order: 30, title_ru: 'Шортсы', title_en: 'Shorts', blurb_ru: '', blurb_en: 'Vertical', aspect: '9:12' };
   const created = await api('POST', '/api/categories', record);
   assert.equal(created.status, 201);
-  assert.deepEqual(created.body, record);
+  assert.deepEqual(bare(created.body), record);
+  assert.match(created.body.updated_at, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/);
   assert.equal((await api('POST', '/api/categories', record)).status, 409);
-  assert.deepEqual((await api('GET', '/api/categories/shorts')).body, record);
+  assert.deepEqual(bare((await api('GET', '/api/categories/shorts')).body), record);
 
   const updated = await api('PUT', '/api/categories/shorts', { ...record, title_en: 'Shorts!', order: 31 });
   assert.equal(updated.status, 200);
@@ -91,17 +96,18 @@ test('categories: CRUD, валидация, ревизии, restore', async () =
   // ревизии: создание — снимок null, правка — предыдущая версия
   let history = await revs('categories', 'shorts');
   assert.equal(history.length, 2);
-  assert.equal(history[1].snapshot, null);
-  assert.equal(history[0].snapshot.title_en, 'Shorts');
-  assert.equal(history[0].snapshot.sort_order, 30);
+  assert.equal(history[1].record, null);
+  // снимок — в формате API: те же имена полей, что у самой записи
+  assert.deepEqual(history[0].record, record);
 
   // restore возвращает предыдущую версию и сам создаёт ревизию
   const restored = await api('POST', `/api/revisions/${history[0].id}/restore`, {});
   assert.equal(restored.status, 200);
-  assert.deepEqual((await api('GET', '/api/categories/shorts')).body, record);
+  assert.deepEqual(bare((await api('GET', '/api/categories/shorts')).body), record);
   history = await revs('categories', 'shorts');
   assert.equal(history.length, 3);
-  assert.equal(history[0].snapshot.title_en, 'Shorts!');
+  assert.equal(history[0].record.title_en, 'Shorts!');
+  assert.equal(history[0].record.order, 31);
 
   // удаление и восстановление удалённой записи
   assert.equal((await api('DELETE', '/api/categories/shorts')).status, 200);
@@ -109,7 +115,7 @@ test('categories: CRUD, валидация, ревизии, restore', async () =
   assert.equal((await api('DELETE', '/api/categories/shorts')).status, 404);
   history = await revs('categories', 'shorts');
   assert.equal((await api('POST', `/api/revisions/${history[0].id}/restore`, {})).status, 200);
-  assert.deepEqual((await api('GET', '/api/categories/shorts')).body, record);
+  assert.deepEqual(bare((await api('GET', '/api/categories/shorts')).body), record);
   // restore ревизии создания (снимок null) — удаление
   assert.deepEqual((await api('POST', `/api/revisions/${history.at(-1).id}/restore`, {})).body.deleted, true);
   assert.equal((await api('GET', '/api/categories/shorts')).status, 404);
@@ -128,12 +134,12 @@ test('works: CRUD, валидация, ссылка на медиа нужног
   const media = (await api('GET', '/api/media')).body.items;
   const thumb = media.find((m) => m.kind === 'work').url;
   const logo = media.find((m) => m.kind === 'client').url;
-  const sample = (await api('GET', '/api/works')).body.items[0];
+  const sample = bare((await api('GET', '/api/works')).body.items[0]);
   assert.match(sample.thumbnail, /^https:\/\/media\.fareeditor\.com\/works\//);
   const record = { ...sample, slug: 'test-work', order: 99, title_en: 'Test work', featured: false, thumbnail: thumb };
   const created = await api('POST', '/api/works', record);
   assert.equal(created.status, 201);
-  assert.deepEqual(created.body, record);
+  assert.deepEqual(bare(created.body), record);
   const updated = await api('PUT', '/api/works/test-work', { ...record, published: false, body_ru: 'Новый текст' });
   assert.equal(updated.body.published, false);
   assert.equal(updated.body.body_ru, 'Новый текст');
@@ -142,7 +148,9 @@ test('works: CRUD, валидация, ссылка на медиа нужног
   assert.deepEqual(fields(await api('PUT', '/api/works/test-work', { ...record, thumbnail: logo })), ['thumbnail']);
   assert.deepEqual(fields(await api('PUT', '/api/works/test-work', { ...record, thumbnail: 'https://example.com/x.webp', client: '' })), ['client', 'thumbnail']);
 
-  assert.equal((await revs('works', 'test-work')).length, 2);
+  const workHistory = await revs('works', 'test-work');
+  assert.equal(workHistory.length, 2);
+  assert.deepEqual(workHistory[0].record, record, 'снимок работы — с URL превью, а не id медиа');
   assert.equal((await api('DELETE', '/api/works/test-work')).status, 200);
   assert.equal((await api('GET', '/api/works/test-work')).status, 404);
 });
@@ -160,16 +168,16 @@ test('metric-types: CRUD, валидация, запрет удаления пр
 });
 
 test('testimonials: CRUD с тремя метриками, валидация, restore с метриками', async () => {
-  const sample = (await api('GET', '/api/testimonials')).body.items[0];
+  const sample = bare((await api('GET', '/api/testimonials')).body.items[0]);
   const record = { ...sample, slug: 'test-client', order: 77, channel_name: 'Test channel' };
   delete record.logo;
   const created = await api('POST', '/api/testimonials', record);
   assert.equal(created.status, 201);
-  assert.deepEqual(created.body, record);
+  assert.deepEqual(bare(created.body), record);
 
   const withLogo = { ...record, logo: sample.logo, metric_2_value_en: '+99%' };
   const updated = await api('PUT', '/api/testimonials/test-client', withLogo);
-  assert.deepEqual(updated.body, withLogo);
+  assert.deepEqual(bare(updated.body), withLogo);
 
   // ровно три метрики, типы существуют и не повторяются
   const two = { ...record }; delete two.metric_3_type; delete two.metric_3_value_ru; delete two.metric_3_value_en;
@@ -182,9 +190,9 @@ test('testimonials: CRUD с тремя метриками, валидация, r
   // снимок хранит метрики; restore возвращает и их
   const history = await revs('testimonials', 'test-client');
   assert.equal(history.length, 2);
-  assert.equal(history[0].snapshot.metrics.length, 3);
+  assert.deepEqual(history[0].record, record, 'снимок отзыва — с метриками в формате API');
   assert.equal((await api('POST', `/api/revisions/${history[0].id}/restore`, {})).status, 200);
-  assert.deepEqual((await api('GET', '/api/testimonials/test-client')).body, record);
+  assert.deepEqual(bare((await api('GET', '/api/testimonials/test-client')).body), record);
 
   assert.equal((await api('DELETE', '/api/testimonials/test-client')).status, 200);
   assert.equal((await api('GET', '/api/testimonials/test-client')).status, 404);
@@ -194,11 +202,12 @@ for (const name of ['stats', 'contacts']) {
   test(`${name}: list, update по position, без create и delete`, async () => {
     const list = (await api('GET', `/api/${name}`)).body.items;
     assert.equal(list.length, 4);
-    const original = (await api('GET', `/api/${name}/2`)).body;
-    assert.deepEqual(original, list[1]);
+    const fetched = (await api('GET', `/api/${name}/2`)).body;
+    assert.deepEqual(fetched, list[1]);
+    const original = bare(fetched);
     const changed = { ...original, label_en: 'Changed label' };
-    assert.deepEqual((await api('PUT', `/api/${name}/2`, changed)).body, changed);
-    assert.deepEqual((await api('GET', `/api/${name}`)).body.items[1], changed);
+    assert.deepEqual(bare((await api('PUT', `/api/${name}/2`, changed)).body), changed);
+    assert.deepEqual(bare((await api('GET', `/api/${name}`)).body.items[1]), changed);
 
     assert.deepEqual(fields(await api('PUT', `/api/${name}/2`, { ...original, label_ru: '', position: 3 })), ['label_ru', 'position']);
     if (name === 'contacts') assert.deepEqual(fields(await api('PUT', '/api/contacts/2', { ...original, kind: 'phone' })), ['kind']);
@@ -210,18 +219,19 @@ for (const name of ['stats', 'contacts']) {
 
     const history = await revs(name, '2');
     assert.equal(history.length, 1);
+    assert.deepEqual(history[0].record, original);
     assert.equal((await api('POST', `/api/revisions/${history[0].id}/restore`, {})).status, 200);
-    assert.deepEqual((await api('GET', `/api/${name}/2`)).body, original);
+    assert.deepEqual(bare((await api('GET', `/api/${name}/2`)).body), original);
     assert.equal((await api('GET', `/api/${name}`)).body.items.length, 4);
   });
 }
 
 test('settings: get, update, валидация', async () => {
-  const original = (await api('GET', '/api/settings')).body;
+  const original = bare((await api('GET', '/api/settings')).body);
   assert.equal(original.before_after_enabled, true);
   assert.match(original.beforeAfter.before.url, /before-after\/before\./);
   const changed = { ...original, status_en: 'Booked until spring', showreel_enabled: true };
-  assert.deepEqual((await api('PUT', '/api/settings', changed)).body, changed);
+  assert.deepEqual(bare((await api('PUT', '/api/settings', changed)).body), changed);
 
   assert.deepEqual(fields(await api('PUT', '/api/settings', { ...original, showreel_id: 'too-short' })), ['showreel_id']);
   assert.deepEqual(fields(await api('PUT', '/api/settings', { ...original, beforeAfter: null })), ['beforeAfter']);
@@ -232,47 +242,103 @@ test('settings: get, update, валидация', async () => {
 
   // выключить сравнение и снять ролики, затем вернуть
   const off = { ...original, before_after_enabled: false, beforeAfter: null };
-  assert.deepEqual((await api('PUT', '/api/settings', off)).body, off);
-  assert.deepEqual((await api('PUT', '/api/settings', original)).body, original);
-  assert.equal((await revs('settings', '1')).length, 3);
+  assert.deepEqual(bare((await api('PUT', '/api/settings', off)).body), off);
+  assert.deepEqual(bare((await api('PUT', '/api/settings', original)).body), original);
+  const settingsHistory = await revs('settings', '1');
+  assert.equal(settingsHistory.length, 3);
+  assert.deepEqual(settingsHistory[0].record, off);
+  assert.deepEqual(settingsHistory[2].record, original);
 });
 
 test('content: get, update по локали, форма документа, ключи опций', async () => {
   const both = (await api('GET', '/api/content')).body;
   assert.deepEqual(Object.keys(both).sort(), ['en', 'ru']);
-  const original = (await api('GET', '/api/content/en')).body;
-  assert.deepEqual(original, both.en);
+  const fetched = (await api('GET', '/api/content/en')).body;
+  assert.deepEqual(fetched, both.en);
+  assert.deepEqual(Object.keys(fetched).sort(), ['doc', 'updated_at']);
+  const original = fetched.doc;
   const copy = () => structuredClone(original);
+  const put = (doc) => api('PUT', '/api/content/en', { doc });
 
   const changed = copy();
   changed.hero.title = 'New hero title';
   changed.contact.budget[0].label = 'Under $500';
-  assert.deepEqual((await api('PUT', '/api/content/en', changed)).body, changed);
+  assert.deepEqual((await put(changed)).body.doc, changed);
   assert.deepEqual((await api('GET', '/api/content/ru')).body, both.ru, 'вторая локаль не затронута');
 
   const badKey = copy(); badKey.contact.project_type[1].value = 'renamed_key';
-  assert.deepEqual(fields(await api('PUT', '/api/content/en', badKey)), ['contact.project_type[1].value']);
+  assert.deepEqual(fields(await put(badKey)), ['contact.project_type[1].value']);
   const shortList = copy(); shortList.faq.items.pop(); shortList.nav.push('Extra');
-  assert.deepEqual(fields(await api('PUT', '/api/content/en', shortList)), ['faq.items', 'nav']);
+  assert.deepEqual(fields(await put(shortList)), ['faq.items', 'nav']);
   const wrongShape = copy(); delete wrongShape.footer.copy; wrongShape.hero.unknown = 'x'; wrongShape.cta = 5;
-  assert.deepEqual(fields(await api('PUT', '/api/content/en', wrongShape)), ['cta', 'footer.copy', 'hero.unknown']);
+  assert.deepEqual(fields(await put(wrongShape)), ['cta', 'footer.copy', 'hero.unknown']);
   const empty = copy(); empty.why.items[2].body = ' ';
-  assert.deepEqual(fields(await api('PUT', '/api/content/en', empty)), ['why.items[2].body']);
-  assert.equal((await api('PUT', '/api/content/de', original)).status, 404);
+  assert.deepEqual(fields(await put(empty)), ['why.items[2].body']);
+  assert.ok(fields(await api('PUT', '/api/content/en', original)).includes('body'), 'документ без обёртки { doc } не принимается');
+  assert.deepEqual(fields(await api('PUT', '/api/content/en', { doc: original, note: 1 })), ['note']);
+  assert.equal((await api('PUT', '/api/content/de', { doc: original })).status, 404);
   assert.equal((await api('DELETE', '/api/content/en')).status, 405);
 
   const history = await revs('content', 'en');
   assert.equal(history.length, 1);
-  assert.deepEqual(history[0].snapshot.doc, original);
+  assert.deepEqual(history[0].record, original, 'снимок content — сам документ');
   assert.equal((await api('POST', `/api/revisions/${history[0].id}/restore`, {})).status, 200);
-  assert.deepEqual((await api('GET', '/api/content/en')).body, original);
+  assert.deepEqual((await api('GET', '/api/content/en')).body.doc, original);
 });
 
-const form = (bytes, name, kind, type = 'application/octet-stream') => {
-  const data = new FormData();
-  data.set('file', new File([bytes], name, { type }));
-  if (kind !== undefined) data.set('kind', kind);
-  return data;
+test('оптимистичная блокировка: expected_updated_at', async () => {
+  // запись
+  const first = (await api('GET', '/api/stats/3')).body;
+  const mine = { ...bare(first), label_en: 'Mine', expected_updated_at: first.updated_at };
+  const other = await api('PUT', '/api/stats/3', { ...bare(first), label_en: 'Someone else', expected_updated_at: first.updated_at });
+  assert.equal(other.status, 200);
+  assert.notEqual(other.body.updated_at, first.updated_at);
+  const before = (await revs('stats', '3')).length;
+  const stale = await api('PUT', '/api/stats/3', mine);
+  assert.deepEqual([stale.status, stale.body], [409, { error: 'conflict' }]);
+  assert.equal((await api('GET', '/api/stats/3')).body.label_en, 'Someone else', 'устаревшая запись не применилась');
+  assert.equal((await revs('stats', '3')).length, before, 'и ревизии не оставила');
+  const fresh = await api('PUT', '/api/stats/3', { ...mine, expected_updated_at: other.body.updated_at });
+  assert.equal(fresh.body.label_en, 'Mine');
+  assert.deepEqual(fields(await api('PUT', '/api/stats/3', { ...bare(first), expected_updated_at: 5 })), ['expected_updated_at']);
+  assert.deepEqual(fields(await api('PUT', '/api/stats/3', { ...bare(first), updated_at: first.updated_at })), ['updated_at'], 'updated_at — только для чтения');
+  assert.deepEqual(fields(await api('POST', '/api/metric-types', { slug: 'x1', order: 1, label_ru: 'x', label_en: 'x', expected_updated_at: 'x' })), ['expected_updated_at']);
+
+  // отзыв: при конфликте метрики тоже остаются прежними
+  const t0 = (await api('GET', '/api/testimonials')).body.items[0];
+  const bumped = await api('PUT', `/api/testimonials/${t0.slug}`, { ...bare(t0), expected_updated_at: t0.updated_at });
+  assert.equal(bumped.status, 200);
+  const lost = await api('PUT', `/api/testimonials/${t0.slug}`, { ...bare(t0), metric_1_value_en: 'LOST', expected_updated_at: t0.updated_at });
+  assert.equal(lost.status, 409);
+  assert.equal((await api('GET', `/api/testimonials/${t0.slug}`)).body.metric_1_value_en, t0.metric_1_value_en);
+
+  // content
+  const c0 = (await api('GET', '/api/content/ru')).body;
+  const doc = structuredClone(c0.doc); doc.cta = 'Новая кнопка';
+  const c1 = await api('PUT', '/api/content/ru', { doc, expected_updated_at: c0.updated_at });
+  assert.equal(c1.status, 200);
+  assert.equal((await api('PUT', '/api/content/ru', { doc: c0.doc, expected_updated_at: c0.updated_at })).status, 409);
+  assert.equal((await api('GET', '/api/content/ru')).body.doc.cta, 'Новая кнопка');
+
+  // restore
+  const history = await revs('content', 'ru');
+  assert.equal((await api('POST', `/api/revisions/${history[0].id}/restore`, { expected_updated_at: c0.updated_at })).status, 409);
+  assert.equal((await api('POST', `/api/revisions/${history[0].id}/restore`, { expected_updated_at: c1.body.updated_at })).status, 200);
+  assert.deepEqual((await api('GET', '/api/content/ru')).body.doc, c0.doc);
+  assert.deepEqual(fields(await api('POST', `/api/revisions/${history[0].id}/restore`, { nope: 1 })), ['nope']);
+  // вернуть показатель, чтобы следующие тесты видели исходные данные
+  const now = (await api('GET', '/api/stats/3')).body;
+  assert.equal((await api('PUT', '/api/stats/3', { ...bare(first), expected_updated_at: now.updated_at })).status, 200);
+});
+
+// Загрузка: тело — сам файл, sha256 и размеры в query — как их посчитал бы браузер.
+const send = async (bytes, name, kind, meta = {}, headers = {}) => {
+  const query = new URLSearchParams({ name, ...(kind === undefined ? {} : { kind }), sha256: sha256(bytes), width: 1280, height: 720, ...meta });
+  for (const [k, v] of [...query]) if (v === 'null' || v === 'undefined') query.delete(k);
+  const response = await call(`/api/media?${query}`, { method: 'POST', body: bytes, duplex: 'half',
+    headers: { 'Cf-Access-Jwt-Assertion': token, Origin: ORIGIN, 'Content-Type': 'application/octet-stream', 'Content-Length': String(bytes.length), ...headers } });
+  const text = await response.text();
+  return { status: response.status, body: text ? JSON.parse(text) : null };
 };
 const media = (name) => readFileSync(join(REPO, 'site/public/media', name));
 // Минимальные валидные заголовки PNG и JPEG с заданным размером кадра.
@@ -291,33 +357,39 @@ const jpeg = (w, h) => {
   return b;
 };
 
-test('media: загрузка каждого типа, размеры, повторная загрузка', async () => {
+test('media: загрузка каждого типа, повторная загрузка, used_by', async () => {
   const before = (await api('GET', '/api/media')).body.items;
+  const seeded = before.find((m) => m.key.startsWith('works/fl-1.'));
+  assert.equal(seeded.in_use, true);
+  assert.equal(seeded.used_by[0].resource, 'works');
+  assert.deepEqual(before.find((m) => m.kind === 'before').used_by, [{ resource: 'settings', key: '1' }]);
   // тот же файл, что уже лежит в базе под тем же ключом, — возвращается существующая запись
-  const same = await api('POST', '/api/media', form(media('works/fl-1.webp'), 'fl-1.webp', 'work'));
+  const same = await send(media('works/fl-1.webp'), 'fl-1.webp', 'work');
   assert.equal(same.status, 200);
-  assert.equal(same.body.id, before.find((m) => m.key.startsWith('works/fl-1.')).id);
+  assert.equal(same.body.id, seeded.id);
 
-  const webp = await api('POST', '/api/media', form(media('works/fl-2.webp'), 'New Thumb №1.WEBP', 'work', 'text/plain'));
+  const bytes = media('works/fl-2.webp');
+  const webp = await send(bytes, 'New Thumb №1.WEBP', 'work');
   assert.equal(webp.status, 201);
   assert.match(webp.body.key, /^works\/new-thumb-1\.[0-9a-f]{12}\.webp$/);
   assert.equal(webp.body.url, `https://media.fareeditor.com/${webp.body.key}`);
-  assert.deepEqual([webp.body.content_type, webp.body.width, webp.body.height, webp.body.duration_ms, webp.body.in_use], ['image/webp', 1280, 720, null, false]);
+  assert.deepEqual([webp.body.content_type, webp.body.width, webp.body.height, webp.body.duration_ms, webp.body.in_use, webp.body.bytes], ['image/webp', 1280, 720, null, false, bytes.length]);
+  assert.equal(webp.body.sha256, sha256(bytes));
   assert.equal(webp.body.sha256.slice(0, 12), webp.body.key.split('.')[1]);
-  const again = await api('POST', '/api/media', form(media('works/fl-2.webp'), 'new-thumb-1.webp', 'work'));
+  const again = await send(bytes, 'new-thumb-1.webp', 'work');
   assert.equal(again.status, 200);
   assert.equal(again.body.id, webp.body.id);
 
-  const p = await api('POST', '/api/media', form(png(640, 480), 'logo.png', 'client'));
+  const p = await send(png(640, 480), 'logo.png', 'client', { width: 640, height: 480 });
   assert.deepEqual([p.status, p.body.content_type, p.body.width, p.body.height], [201, 'image/png', 640, 480]);
   assert.match(p.body.key, /^clients\/logo\.[0-9a-f]{12}\.png$/);
-  const j = await api('POST', '/api/media', form(jpeg(800, 600), 'photo.jpeg', 'work'));
-  assert.deepEqual([j.status, j.body.content_type, j.body.width, j.body.height], [201, 'image/jpeg', 800, 600]);
+  const j = await send(jpeg(800, 600), 'photo.jpeg', 'work', { width: 800, height: 600 });
+  assert.deepEqual([j.status, j.body.content_type], [201, 'image/jpeg']);
   assert.match(j.body.key, /^works\/photo\.[0-9a-f]{12}\.jpg$/);
 
-  // mp4: байт в байт отличается от загруженного импортом (другой хвост), иначе вернулась бы старая запись
+  // mp4 18 МБ: байт в байт отличается от загруженного импортом (другой хвост), иначе вернулась бы старая запись
   const clip = Buffer.concat([media('before-after/after.mp4'), Buffer.from('tail')]);
-  const mp4 = await api('POST', '/api/media', form(clip, 'whatever.mp4', 'after'));
+  const mp4 = await send(clip, 'whatever.mp4', 'after', { duration_ms: 48120 });
   assert.equal(mp4.status, 201);
   assert.match(mp4.body.key, /^before-after\/after\.[0-9a-f]{12}\.mp4$/);
   assert.deepEqual([mp4.body.content_type, mp4.body.width, mp4.body.height, mp4.body.duration_ms, mp4.body.bytes], ['video/mp4', 1280, 720, 48120, clip.length]);
@@ -328,28 +400,50 @@ test('media: загрузка каждого типа, размеры, повт�
   // удаление: без ссылок — можно, со ссылкой — нельзя
   for (const item of [webp.body, p.body, j.body, mp4.body]) assert.equal((await api('DELETE', `/api/media/${item.id}`)).status, 200);
   assert.equal((await api('DELETE', `/api/media/${webp.body.id}`)).status, 404);
-  const used = list.find((m) => m.in_use);
-  assert.deepEqual((await api('DELETE', `/api/media/${used.id}`)).body, { error: 'in_use' });
+  assert.deepEqual((await api('DELETE', `/api/media/${seeded.id}`)).body, { error: 'in_use' });
   assert.equal((await api('GET', '/api/media')).body.items.length, before.length);
 }, { timeout: 300_000 });
 
-test('media: отказ по сигнатуре, виду и размеру', async () => {
-  const text = await api('POST', '/api/media', form(Buffer.from('<html>not an image</html>'), 'fake.webp', 'work', 'image/webp'));
-  assert.deepEqual([text.status, fields(text)], [422, ['file']]);
-  const svg = await api('POST', '/api/media', form(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'), 'x.svg', 'client', 'image/png'));
-  assert.equal(svg.status, 422);
-  // видео под видом превью и картинка под видом ролика
-  assert.equal((await api('POST', '/api/media', form(media('before-after/after.mp4').subarray(0, 4096), 'clip.webp', 'work', 'image/webp'))).status, 422);
-  assert.equal((await api('POST', '/api/media', form(png(10, 10), 'clip.mp4', 'before', 'video/mp4'))).status, 422);
-  assert.deepEqual(fields(await api('POST', '/api/media', form(png(10, 10), 'x.png', 'poster'))), ['kind']);
-  assert.deepEqual(fields(await api('POST', '/api/media', form(png(10, 10), 'x.png'))), ['kind']);
-  const noFile = new FormData(); noFile.set('kind', 'work');
-  assert.deepEqual(fields(await api('POST', '/api/media', noFile)), ['file']);
+test('media: подменённый sha256 отклоняет R2, объект и строка не появляются', async () => {
+  const before = (await api('GET', '/api/media')).body.items.length;
+  const bytes = png(320, 200, 2048);
+  const wrong = sha256(Buffer.from('другое содержимое'));
+  const forged = await send(bytes, 'forged.png', 'client', { sha256: wrong, width: 320, height: 200 });
+  assert.deepEqual([forged.status, fields(forged)], [422, ['sha256']]);
+  assert.equal((await api('GET', '/api/media')).body.items.length, before);
+  // тот же файл с верным хешем проходит — значит, отказ был именно из-за хеша
+  const honest = await send(bytes, 'forged.png', 'client', { width: 320, height: 200 });
+  assert.equal(honest.status, 201);
+  assert.equal((await api('DELETE', `/api/media/${honest.body.id}`)).status, 200);
+  // и для ролика: 18 МБ с чужим хешем
+  const clip = Buffer.concat([media('before-after/before.mp4'), Buffer.from('forged')]);
+  const video = await send(clip, 'x.mp4', 'before', { sha256: wrong, duration_ms: 48120 });
+  assert.deepEqual([video.status, fields(video)], [422, ['sha256']]);
+  assert.equal((await api('GET', '/api/media')).body.items.length, before);
+}, { timeout: 300_000 });
 
-  const bigImage = await api('POST', '/api/media', form(png(100, 100, 5 * MB), 'big.png', 'work'));
+test('media: отказ по сигнатуре, виду, размеру и метаданным', async () => {
+  const text = await send(Buffer.from('<html>not an image</html>'), 'fake.webp', 'work', {}, { 'Content-Type': 'application/octet-stream' });
+  assert.deepEqual([text.status, fields(text)], [422, ['file']]);
+  assert.equal((await send(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'), 'x.svg', 'client')).status, 422);
+  // видео под видом превью и картинка под видом ролика
+  assert.deepEqual(fields(await send(media('before-after/after.mp4').subarray(0, 4096), 'clip.webp', 'work')), ['file']);
+  assert.deepEqual(fields(await send(png(10, 10), 'clip.mp4', 'before', { duration_ms: 1000 })), ['file']);
+  assert.deepEqual(fields(await send(png(10, 10), 'x.png', 'poster')), ['kind']);
+  assert.deepEqual(fields(await send(png(10, 10), 'x.png')), ['kind']);
+  // метаданные из браузера проверяются на правдоподобие
+  assert.deepEqual(fields(await send(png(10, 10), 'x.png', 'work', { width: 0, height: 99999 })), ['height', 'width']);
+  assert.deepEqual(fields(await send(png(10, 10), 'x.png', 'work', { duration_ms: 500 })), ['duration_ms']);
+  assert.deepEqual(fields(await send(media('before-after/after.mp4').subarray(0, 4096), 'x.mp4', 'after')), ['duration_ms']);
+  assert.deepEqual(fields(await send(png(10, 10), 'x.png', 'work', { sha256: 'abc' })), ['sha256']);
+
+  const bigImage = await send(png(100, 100, 5 * MB), 'big.png', 'work');
   assert.equal(bigImage.status, 413);
   const bigVideo = Buffer.alloc(60 * MB + 1); bigVideo.writeUInt32BE(24, 0); bigVideo.write('ftypisom', 4);
-  assert.equal((await api('POST', '/api/media', form(bigVideo, 'big.mp4', 'before'))).status, 413);
+  assert.equal((await send(bigVideo, 'big.mp4', 'before', { duration_ms: 1000 })).status, 413);
+  // multipart больше не принимается
+  const data = new FormData(); data.set('file', new File([png(10, 10)], 'x.png')); data.set('kind', 'work');
+  assert.equal((await api('POST', '/api/media', data)).status, 415);
 }, { timeout: 300_000 });
 
 test('Content-Type эндпоинта: иначе 415', async () => {
@@ -377,7 +471,7 @@ test('restore с нарушением ограничения — 409, ревиз
   // затем возвращаем работу раньше категории: внешний ключ не даёт, batch откатывается целиком
   const media = (await api('GET', '/api/media')).body.items.find((m) => m.kind === 'work').url;
   const category = { slug: 'tmp-cat', published: true, order: 90, title_ru: 'Врем', title_en: 'Tmp', aspect: '1:1', blurb_ru: '', blurb_en: '' };
-  const sample = (await api('GET', '/api/works')).body.items[0];
+  const sample = bare((await api('GET', '/api/works')).body.items[0]);
   assert.equal((await api('POST', '/api/categories', category)).status, 201);
   assert.equal((await api('POST', '/api/works', { ...sample, slug: 'tmp-work', category: 'tmp-cat', thumbnail: media })).status, 201);
   assert.equal((await api('DELETE', '/api/works/tmp-work')).status, 200);

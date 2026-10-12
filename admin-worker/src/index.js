@@ -3,7 +3,7 @@
 import { AuthError, JWKS_URL, jwksLoader, verifyAccess } from './auth.js';
 import { HttpError } from './http.js';
 import { FIXED, RESOURCES, brokenBatch, get, list, remove, restore, revisions, save } from './resources.js';
-import { MAX_UPLOAD_BODY, listMedia, removeMedia, upload } from './media.js';
+import { listMedia, removeMedia, upload } from './media.js';
 import { publish } from './publish.js';
 
 const MUTATING = ['POST', 'PUT', 'PATCH', 'DELETE'];
@@ -50,11 +50,9 @@ async function route(request, env, url, user, deps) {
     if (key === undefined) {
       methods(['GET', 'POST']);
       if (method === 'GET') return json(200, await listMedia(env.DB));
-      if (!isType(request, 'multipart/form-data')) throw new HttpError(415, 'unsupported_media_type');
-      if (Number(request.headers.get('Content-Length')) > MAX_UPLOAD_BODY) throw new HttpError(413, 'too_large');
-      let form;
-      try { form = await request.formData(); } catch { throw new HttpError(400, 'bad_form'); }
-      const result = await upload(env, form);
+      // Тело — сам файл: он уходит в R2 потоком, в памяти Worker'а целиком не оказывается.
+      if (!isType(request, 'application/octet-stream')) throw new HttpError(415, 'unsupported_media_type');
+      const result = await upload(env, request, url.searchParams);
       return json(result.created ? 201 : 200, result.media);
     }
     methods(['DELETE']);
@@ -69,8 +67,7 @@ async function route(request, env, url, user, deps) {
     }
     if (action !== 'restore') throw new HttpError(404, 'not_found');
     methods(['POST']);
-    await body();
-    return json(200, await restore(env.DB, key));
+    return json(200, await restore(env.DB, key, await body()));
   }
 
   if (resource === 'publish' && key === undefined) {

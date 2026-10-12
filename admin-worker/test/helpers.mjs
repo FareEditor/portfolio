@@ -81,23 +81,27 @@ export function fakeR2() {
   return {
     objects,
     async head(key) { return objects.has(key) ? { key } : null; },
-    async put(key, value, options) { objects.set(key, { bytes: Buffer.from(await new Response(value).arrayBuffer()), options }); },
+    // Как настоящий R2: тело с другим sha256 отклоняется, объект не сохраняется.
+    async put(key, value, options) {
+      const bytes = Buffer.from(await new Response(value).arrayBuffer());
+      if (options?.sha256 && createHash('sha256').update(bytes).digest('hex') !== options.sha256) throw new Error('put: sha256 не совпал');
+      objects.set(key, { bytes, options });
+    },
     async delete(key) { objects.delete(key); },
   };
 }
 
-// crypto.DigestStream и caches.default есть в Workers и отсутствуют в Node.
+// FixedLengthStream и caches.default есть в Workers и отсутствуют в Node.
 export function installRuntime() {
-  if (!webcrypto.DigestStream) {
-    webcrypto.DigestStream = class extends WritableStream {
-      constructor() {
-        const hash = createHash('sha256');
-        let done;
-        super({ write(chunk) { hash.update(chunk); }, close() { done(hash.digest().buffer); } });
-        this.digest = new Promise((r) => { done = r; });
-      }
-    };
-  }
+  globalThis.FixedLengthStream ??= class extends TransformStream {
+    constructor(length) {
+      let seen = 0;
+      super({
+        transform(chunk, controller) { seen += chunk.byteLength; controller.enqueue(chunk); },
+        flush() { if (seen !== length) throw new Error(`длина потока ${seen} ≠ ${length}`); },
+      });
+    }
+  };
   const store = new Map();
   globalThis.caches = { default: { store, async match(req) { return store.get(req.url)?.clone(); }, async put(req, res) { store.set(req.url, res); } } };
 }

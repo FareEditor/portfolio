@@ -1,30 +1,12 @@
-// Ресурсы админки: чтение, валидация, запись с ревизией. Формат тел — как у публичного API
-// (имена полей исходного JSON); поля и типы — из общей схемы content-worker.
-import { COLLECTIONS, CONTENT_SHAPE, shapeErrors } from '../../content-worker/src/schema.js';
+// Ресурсы админки: чтение, запись с ревизией и оптимистичной блокировкой. Формат тел — как у
+// публичного API (имена полей исходного JSON); правила валидации — в rules.js.
+import { COLLECTIONS } from '../../content-worker/src/schema.js';
 import * as map from '../../content-worker/src/mapping.js';
-import { FORM_OPTIONS } from '../../site/src/formOptions.js';
 import { HttpError } from './http.js';
+import { validate } from './rules.js';
 
 const NOW = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
-const SLUG = /^[a-z0-9-]+$/;
-const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
-const MAX_TEXT = 20000;
-
 const invalid = (fields) => new HttpError(422, 'validation', { fields });
-
-// Правила сверх типа поля: шаблон или список допустимых значений (из config.yml Decap и
-// раздела 6 отчёта этапа 2). Ключ — имя поля в JSON.
-const RULES = {
-  categories: { slug: SLUG, aspect: ['16:9', '9:12', '1:1', '4:5'] },
-  works: { slug: SLUG, youtube_id: YOUTUBE_ID },
-  metric_types: { slug: SLUG },
-  testimonials: { slug: SLUG },
-  contacts: { kind: ['email', 'location', 'telegram', 'twitter'] },
-  settings: { showreel_id: YOUTUBE_ID },
-};
-// Вид медиа, на который обязана указывать ссылка.
-const MEDIA_KIND = { thumbnail: 'work', logo: 'client' };
-const METRIC_KEYS = [1, 2, 3].flatMap((n) => [`metric_${n}_type`, `metric_${n}_value_ru`, `metric_${n}_value_en`]);
 
 const columns = (table) => Object.values(COLLECTIONS[table]).map(([column]) => column);
 
@@ -43,133 +25,66 @@ for (const def of Object.values(DEFS)) def.cols ??= [...new Set([...def.extra, .
 export const RESOURCES = Object.keys(DEFS);
 // Набор строк задан раскладкой сайта: такие записи только правятся.
 export const FIXED = RESOURCES.filter((name) => DEFS[name].fixed);
-const defByTable = (table) => Object.values(DEFS).find((d) => d.table === table);
+const nameByTable = (table) => RESOURCES.find((name) => DEFS[name].table === table);
 
-// ---------- Валидация
-
-function scalar(type, value) {
-  if (type === 'text') {
-    if (typeof value !== 'string') return 'ожидалась строка';
-    if (value.trim() === '') return 'обязательное поле';
-    if (value.includes('\0')) return 'недопустимый символ';
-    if (value.length > MAX_TEXT) return `длиннее ${MAX_TEXT} символов`;
-  } else if (type === 'int') {
-    if (!Number.isSafeInteger(value)) return 'ожидалось целое число';
-  } else if (type === 'bool') {
-    if (typeof value !== 'boolean') return 'ожидался boolean';
-  }
-  return null;
-}
-
-// Тело запроса → строка таблицы. Собирает все ошибки; ссылки на медиа сверяет с таблицей media.
-async function toRow(db, table, body, { extra = [], prefix = '' } = {}) {
-  const spec = COLLECTIONS[table];
-  const errors = [];
-  const row = {};
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return { row, errors: [{ field: prefix || 'body', message: 'ожидался объект' }] };
-  for (const key of Object.keys(body)) {
-    if (!(key in spec) && !extra.includes(key)) errors.push({ field: prefix + key, message: 'неизвестное поле' });
-  }
-  for (const [key, [column, type]] of Object.entries(spec)) {
-    const field = prefix + key;
-    const value = body[key];
-    const optional = type.endsWith('?');
-    const base = optional ? type.slice(0, -1) : type;
-    if (optional && (value === undefined || value === '' || value === null)) { row[column] = null; continue; }
-    if (value === undefined) { errors.push({ field, message: 'поле отсутствует' }); continue; }
-    if (base === 'media') {
-      const found = typeof value === 'string' ? await db.prepare('SELECT id, kind FROM media WHERE url = ?').bind(value).first() : null;
-      if (!found) errors.push({ field, message: 'нет такого медиа' });
-      else if (found.kind !== MEDIA_KIND[key]) errors.push({ field, message: `медиа вида ${found.kind}, нужен ${MEDIA_KIND[key]}` });
-      else row[column] = found.id;
-      continue;
-    }
-    const problem = scalar(base, value);
-    if (problem) { errors.push({ field, message: problem }); continue; }
-    const rule = RULES[table]?.[key];
-    if (rule instanceof RegExp && !rule.test(value)) { errors.push({ field, message: `не соответствует ${rule.source}` }); continue; }
-    if (Array.isArray(rule) && !rule.includes(value)) { errors.push({ field, message: `допустимо: ${rule.join(', ')}` }); continue; }
-    row[column] = base === 'bool' ? (value ? 1 : 0) : value;
-  }
-  return { row, errors };
-}
-
-function contentErrors(doc) {
-  const fields = shapeErrors(doc, CONTENT_SHAPE, 'content').map((line) => {
-    const cut = line.indexOf(': ');
-    return { field: line.slice(0, cut).replace(/^content\.?/, '') || 'body', message: line.slice(cut + 2) };
-  });
-  if (fields.length) return fields;
-  // Форма сошлась: все листья — строки. Пустых и чрезмерно длинных быть не должно.
-  const walk = (value, path) => {
-    if (typeof value === 'string') {
-      const problem = scalar('text', value);
-      if (problem) fields.push({ field: path, message: problem });
-    } else if (Array.isArray(value)) value.forEach((item, i) => walk(item, `${path}[${i}]`));
-    else for (const [key, item] of Object.entries(value)) walk(item, path ? `${path}.${key}` : key);
-  };
-  walk(doc, '');
-  // Ключи опций формы — контракт с воркером контакт-формы: меняются только подписи.
-  for (const [name, keys] of Object.entries(FORM_OPTIONS)) {
-    doc.contact[name].forEach((option, i) => {
-      if (option.value !== keys[i]) fields.push({ field: `contact.${name}[${i}].value`, message: `ключ опции неизменяем: ${keys[i]}` });
-    });
-  }
-  return fields;
-}
-
-// ---------- Чтение
+// ---------- Строка базы → запись API
 
 const mediaInfo = ({ url, width, height, duration_ms }) => ({ url, width, height, duration_ms });
+const loadMedia = async (db) => new Map((await db.prepare('SELECT * FROM media').all()).results.map((m) => [m.id, m]));
 
-const READ = {
-  categories: (db, slug) => rows(db, 'SELECT * FROM categories', 'slug', slug, 'sort_order, slug', map.category),
-  'metric-types': (db, slug) => rows(db, 'SELECT * FROM metric_types', 'slug', slug, 'sort_order, slug', map.metricType),
-  works: (db, slug) => rows(db, 'SELECT w.*, m.url AS thumbnail_url FROM works w JOIN media m ON m.id = w.thumbnail_media_id',
-    'w.slug', slug, 'w.sort_order, w.slug', (w) => map.work(w, w.thumbnail_url)),
-  stats: (db, position) => rows(db, 'SELECT * FROM stats', 'position', position, 'position', map.stat),
-  contacts: (db, position) => rows(db, 'SELECT * FROM contacts', 'position', position, 'position', map.contact),
-  async testimonials(db, slug) {
-    const where = slug === undefined ? '' : ' WHERE t.slug = ?1';
-    const [list, metrics] = await db.batch([
-      db.prepare(`SELECT t.*, m.url AS logo_url FROM testimonials t LEFT JOIN media m ON m.id = t.logo_media_id${where} ORDER BY t.sort_order, t.slug`).bind(...(slug === undefined ? [] : [slug])),
-      db.prepare('SELECT * FROM testimonial_metrics ORDER BY testimonial_slug, position'),
-    ]);
-    return list.results.map((t) => map.testimonial(t, metrics.results.filter((m) => m.testimonial_slug === t.slug), t.logo_url));
-  },
-  async settings(db) {
-    const [settings, media] = await db.batch([
-      db.prepare('SELECT * FROM settings WHERE id = 1'),
-      db.prepare('SELECT * FROM media WHERE id IN (SELECT before_media_id FROM settings UNION SELECT after_media_id FROM settings)'),
-    ]);
-    const s = settings.results[0];
-    const pick = (id) => { const m = media.results.find((x) => x.id === id); return m ? mediaInfo(m) : null; };
-    const pair = { before: pick(s.before_media_id), after: pick(s.after_media_id) };
-    return [{ ...map.settings(s), before_after_enabled: map.bool(s.before_after_enabled), beforeAfter: pair.before && pair.after ? pair : null }];
-  },
-  async content(db, locale) {
-    const { results } = await db.prepare('SELECT locale, doc FROM content ORDER BY locale').all();
-    return results.filter((r) => locale === undefined || r.locale === locale).map((r) => ({ locale: r.locale, doc: JSON.parse(r.doc) }));
-  },
+// row — строка таблицы (для отзыва с полем metrics, для content — с разобранным doc).
+function toApi(name, row, media) {
+  const url = (id) => media.get(id)?.url ?? null;
+  switch (name) {
+    case 'categories': return map.category(row);
+    case 'metric-types': return map.metricType(row);
+    case 'works': return map.work(row, url(row.thumbnail_media_id));
+    case 'testimonials': return map.testimonial(row, row.metrics, url(row.logo_media_id));
+    case 'stats': return map.stat(row);
+    case 'contacts': return map.contact(row);
+    case 'content': return row.doc;
+    default: {
+      const pick = (id) => (media.has(id) ? mediaInfo(media.get(id)) : null);
+      const pair = { before: pick(row.before_media_id), after: pick(row.after_media_id) };
+      return { ...map.settings(row), before_after_enabled: map.bool(row.before_after_enabled), beforeAfter: pair.before && pair.after ? pair : null };
+    }
+  }
+}
+
+// ---------- Чтение. Каждая запись несёт updated_at — его возвращают в expected_updated_at.
+
+const ORDER = {
+  categories: 'sort_order, slug', 'metric-types': 'sort_order, slug', works: 'sort_order, slug',
+  testimonials: 'sort_order, slug', stats: 'position', contacts: 'position', settings: 'id', content: 'locale',
 };
 
-async function rows(db, select, keyColumn, key, order, mapper) {
-  const statement = key === undefined
-    ? db.prepare(`${select} ORDER BY ${order}`)
-    : db.prepare(`${select} WHERE ${keyColumn} = ?1`).bind(key);
-  return (await statement.all()).results.map(mapper);
+async function read(db, name, key) {
+  const def = DEFS[name];
+  const one = key !== undefined && name !== 'settings';
+  const [rows, metrics, media] = await Promise.all([
+    (one ? db.prepare(`SELECT * FROM ${def.table} WHERE ${def.pk} = ?1`).bind(key) : db.prepare(`SELECT * FROM ${def.table} ORDER BY ${ORDER[name]}`)).all(),
+    name === 'testimonials' ? db.prepare('SELECT * FROM testimonial_metrics ORDER BY testimonial_slug, position').all() : null,
+    ['works', 'testimonials', 'settings'].includes(name) ? loadMedia(db) : null,
+  ]);
+  return rows.results.map((row) => {
+    if (name === 'content') return { locale: row.locale, doc: JSON.parse(row.doc), updated_at: row.updated_at };
+    const full = metrics ? { ...row, metrics: metrics.results.filter((m) => m.testimonial_slug === row.slug) } : row;
+    return { ...toApi(name, full, media), updated_at: row.updated_at };
+  });
 }
 
 export const list = async (db, name) => {
-  if (name === 'settings') return (await READ.settings(db))[0];
-  if (name === 'content') return Object.fromEntries((await READ.content(db)).map((r) => [r.locale, r.doc]));
-  return { items: await READ[name](db) };
+  const records = await read(db, name);
+  if (name === 'settings') return records[0];
+  if (name === 'content') return Object.fromEntries(records.map(({ locale, ...rest }) => [locale, rest]));
+  return { items: records };
 };
 
 export async function get(db, name, key) {
-  const [record] = await READ[name](db, normalizeKey(name, key));
+  const [record] = await read(db, name, normalizeKey(name, key));
   if (record === undefined) throw new HttpError(404, 'not_found');
-  return name === 'content' ? record.doc : record;
+  if (name === 'content') return { doc: record.doc, updated_at: record.updated_at };
+  return record;
 }
 
 function normalizeKey(name, key) {
@@ -181,7 +96,7 @@ function normalizeKey(name, key) {
   return key;
 }
 
-// ---------- Запись: ревизия и изменение одним batch
+// ---------- Запись: блокировка, ревизия и изменение одним batch
 
 // Снимок строки как JSON-текст; для отзыва — вместе с метриками. Строки нет → 'null'.
 function snapshotSql(def) {
@@ -193,19 +108,25 @@ function snapshotSql(def) {
   return `COALESCE((SELECT json_object(${pairs.join(', ')}) FROM ${def.table} WHERE ${def.pk} = ?2), 'null')`;
 }
 
-const revisionStatement = (db, def, key) =>
-  db.prepare(`INSERT INTO revisions (table_name, row_key, snapshot) VALUES (?1, ?2, ${snapshotSql(def)})`).bind(def.table, String(key));
-
-// row === null — удаление. exists — есть ли строка сейчас. metrics — три метрики отзыва.
-function writeStatements(db, def, key, row, exists, metrics) {
-  const statements = [revisionStatement(db, def, key)];
+// row === null — удаление. present — есть ли строка сейчас. metrics — три метрики отзыва.
+// expected — updated_at, с которым клиент получил запись.
+function writeStatements(db, def, key, row, present, metrics, expected) {
+  const statements = [];
+  if (expected !== undefined) {
+    // Оптимистичная блокировка внутри той же транзакции. Если строка с таким updated_at не
+    // нашлась, выражение пытается вставить в revisions не-JSON: CHECK (json_valid) отклоняет
+    // вставку, и batch откатывается целиком. Если нашлась — не делает ничего.
+    statements.push(db.prepare(`INSERT INTO revisions (table_name, row_key, snapshot) SELECT 'conflict', ?1, 'stale'
+      WHERE NOT EXISTS (SELECT 1 FROM ${def.table} WHERE ${def.pk} = ?2 AND updated_at = ?3)`).bind(String(key), key, expected));
+  }
+  statements.push(db.prepare(`INSERT INTO revisions (table_name, row_key, snapshot) VALUES (?1, ?2, ${snapshotSql(def)})`).bind(def.table, String(key)));
   if (row === null) {
     statements.push(db.prepare(`DELETE FROM ${def.table} WHERE ${def.pk} = ?1`).bind(key));
     return statements;
   }
   const cols = Object.keys(row).filter((c) => c !== def.pk);
   const values = cols.map((c) => row[c]);
-  statements.push(exists
+  statements.push(present
     ? db.prepare(`UPDATE ${def.table} SET ${cols.map((c, i) => `${c} = ?${i + 2}`).join(', ')}, updated_at = ${NOW} WHERE ${def.pk} = ?1`).bind(key, ...values)
     : db.prepare(`INSERT INTO ${def.table} (${[def.pk, ...cols].join(', ')}) VALUES (${['?1', ...cols.map((_, i) => `?${i + 2}`)].join(', ')})`).bind(key, ...values));
   if (metrics) {
@@ -218,7 +139,7 @@ function writeStatements(db, def, key, row, exists, metrics) {
   return statements;
 }
 
-// Ошибка ограничения базы (FK, CHECK, UNIQUE) — конфликт данных, а не сбой сервера.
+// Ошибка ограничения базы (FK, CHECK, UNIQUE, устаревший updated_at) — конфликт, а не сбой сервера.
 async function commit(db, statements) {
   try {
     await db.batch(statements);
@@ -231,86 +152,57 @@ async function commit(db, statements) {
 const exists = async (db, def, key) =>
   (await db.prepare(`SELECT 1 AS x FROM ${def.table} WHERE ${def.pk} = ?1`).bind(key).first()) !== null;
 
-async function testimonialRow(db, body) {
-  const { row, errors } = await toRow(db, 'testimonials', body, { extra: METRIC_KEYS });
-  const metrics = [];
-  for (const n of [1, 2, 3]) {
-    const metric = { type: body?.[`metric_${n}_type`], value_ru: body?.[`metric_${n}_value_ru`], value_en: body?.[`metric_${n}_value_en`] };
-    const part = await toRow(db, 'testimonial_metrics', metric, { prefix: `metric_${n}_` });
-    errors.push(...part.errors);
-    metrics.push({ position: n, ...part.row });
-  }
-  const types = metrics.map((m) => m.metric_type_slug).filter((t) => typeof t === 'string');
-  if (types.length === 3) {
-    const known = (await db.prepare('SELECT slug FROM metric_types').all()).results.map((r) => r.slug);
-    metrics.forEach((m, i) => {
-      if (!known.includes(m.metric_type_slug)) errors.push({ field: `metric_${m.position}_type`, message: 'нет такого типа метрики' });
-      else if (types.indexOf(m.metric_type_slug) !== i) errors.push({ field: `metric_${m.position}_type`, message: 'тип метрики повторяется' });
-    });
-  }
-  return { row, errors, metrics };
+// То, с чем правила сверяют ссылки: медиа, категории, типы метрик.
+async function context(db) {
+  const [media, categories, metricTypes] = await db.batch([
+    db.prepare('SELECT id, url, kind FROM media'),
+    db.prepare('SELECT slug FROM categories'),
+    db.prepare('SELECT slug FROM metric_types'),
+  ]);
+  return { media: media.results, categories: categories.results.map((r) => r.slug), metricTypes: metricTypes.results.map((r) => r.slug) };
 }
 
-async function settingsRow(db, body) {
-  const { row, errors } = await toRow(db, 'settings', body, { extra: ['before_after_enabled', 'beforeAfter'] });
-  const enabled = body?.before_after_enabled;
-  if (typeof enabled !== 'boolean') errors.push({ field: 'before_after_enabled', message: 'ожидался boolean' });
-  const pair = body?.beforeAfter ?? null;
-  row.before_after_enabled = enabled ? 1 : 0;
-  row.before_media_id = null;
-  row.after_media_id = null;
-  if (pair !== null) {
-    for (const kind of ['before', 'after']) {
-      const url = pair?.[kind]?.url;
-      const found = typeof url === 'string' ? await db.prepare('SELECT id, kind FROM media WHERE url = ?').bind(url).first() : null;
-      if (!found) errors.push({ field: `beforeAfter.${kind}.url`, message: 'нет такого медиа' });
-      else if (found.kind !== kind) errors.push({ field: `beforeAfter.${kind}.url`, message: `медиа вида ${found.kind}, нужен ${kind}` });
-      else row[`${kind}_media_id`] = found.id;
-    }
-  } else if (enabled === true) {
-    errors.push({ field: 'beforeAfter', message: 'для включённого сравнения нужны оба ролика' });
-  }
-  return { row, errors };
+// Отделяет expected_updated_at от полей записи.
+function takeExpected(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body) || !('expected_updated_at' in body)) return { fields: body };
+  const { expected_updated_at: expected, ...fields } = body;
+  if (typeof expected !== 'string' || expected === '') throw invalid([{ field: 'expected_updated_at', message: 'ожидалась строка updated_at' }]);
+  return { expected, fields };
 }
 
 // create: key === undefined. Возвращает запись в формате API.
 export async function save(db, name, key, body) {
   const def = DEFS[name];
   const creating = key === undefined;
-  if (creating && def.fixed) throw new HttpError(405, 'method_not_allowed');
   if (!creating) key = normalizeKey(name, key);
-
-  let row;
-  let errors;
-  let metrics;
+  const { expected, fields } = takeExpected(body);
+  // Тело content — { doc, expected_updated_at }: у самого документа своих служебных полей нет.
+  const payload = name === 'content' ? fields?.doc : fields;
+  const { row, errors, metrics } = validate(name, payload, name === 'content' ? null : await context(db));
   if (name === 'content') {
-    errors = contentErrors(body);
-    row = { doc: JSON.stringify(body) };
-  } else if (name === 'testimonials') ({ row, errors, metrics } = await testimonialRow(db, body));
-  else if (name === 'settings') ({ row, errors } = await settingsRow(db, body));
-  else ({ row, errors } = await toRow(db, def.table, body));
+    if (fields && typeof fields === 'object') for (const extra of Object.keys(fields).filter((k) => k !== 'doc')) errors.push({ field: extra, message: 'неизвестное поле' });
+    row.doc = JSON.stringify(row.doc);
+  }
+  if (creating && expected !== undefined) errors.push({ field: 'expected_updated_at', message: 'при создании не передаётся' });
 
   if (def.pk === 'slug') {
     // slug задаётся при создании и больше не меняется.
-    if (!creating && body?.slug !== undefined && body.slug !== key) errors.push({ field: 'slug', message: 'slug неизменяем' });
+    if (!creating && payload?.slug !== undefined && payload.slug !== key) errors.push({ field: 'slug', message: 'slug неизменяем' });
     if (creating && typeof row.slug === 'string') key = row.slug;
     delete row.slug;
   }
-  if (name === 'works' && typeof row.category_slug === 'string'
-    && !await exists(db, DEFS.categories, row.category_slug)) errors.push({ field: 'category', message: 'нет такой категории' });
   if (errors.length) throw invalid(errors);
 
   if (name === 'settings') key = 1;
   const present = await exists(db, def, key);
   if (creating && present) throw new HttpError(409, 'exists');
   if (!creating && !present) throw new HttpError(404, 'not_found');
-  await commit(db, writeStatements(db, def, key, row, present, metrics));
+  await commit(db, writeStatements(db, def, key, row, present, metrics, expected));
   return get(db, name, String(key));
 }
 
 export async function remove(db, name, key) {
   const def = DEFS[name];
-  if (def.fixed) throw new HttpError(405, 'method_not_allowed');
   if (!await exists(db, def, key)) throw new HttpError(404, 'not_found');
   const uses = {
     categories: 'SELECT count(*) AS n FROM works WHERE category_slug = ?1',
@@ -322,39 +214,51 @@ export async function remove(db, name, key) {
 
 // ---------- Ревизии
 
+// Снимки отдаются в формате API (record), как записи самих ресурсов: интерфейс сравнивает их
+// с текущей версией поле в поле. Ссылка на удалённое с тех пор медиа — null.
 export async function revisions(db, name, key) {
   const def = DEFS[name];
   if (!def || typeof key !== 'string' || key === '') throw new HttpError(404, 'not_found');
-  const { results } = await db.prepare('SELECT id, created_at, snapshot FROM revisions WHERE table_name = ?1 AND row_key = ?2 ORDER BY id DESC')
-    .bind(def.table, name === 'settings' ? '1' : key).all();
-  return { items: results.map((r) => ({ id: r.id, created_at: r.created_at, snapshot: JSON.parse(r.snapshot) })) };
+  const [{ results }, media] = await Promise.all([
+    db.prepare('SELECT id, created_at, snapshot FROM revisions WHERE table_name = ?1 AND row_key = ?2 ORDER BY id DESC')
+      .bind(def.table, name === 'settings' ? '1' : key).all(),
+    loadMedia(db),
+  ]);
+  return { items: results.map((r) => {
+    const snapshot = JSON.parse(r.snapshot);
+    return { id: r.id, created_at: r.created_at, record: snapshot === null ? null : toApi(name, snapshot, media) };
+  }) };
 }
 
 // Возвращает строку к состоянию из снимка. Сама — запись через тот же механизм: текущее
 // состояние уходит в новую ревизию. Снимок null (строки не было) — удаление.
-export async function restore(db, id) {
+export async function restore(db, id, body) {
   if (!/^[1-9][0-9]*$/.test(id)) throw new HttpError(404, 'not_found');
+  const { expected, fields } = takeExpected(body);
+  if (fields && Object.keys(fields).length) throw invalid(Object.keys(fields).map((field) => ({ field, message: 'неизвестное поле' })));
   const revision = await db.prepare('SELECT table_name, row_key, snapshot FROM revisions WHERE id = ?1').bind(Number(id)).first();
-  const def = revision && defByTable(revision.table_name);
-  if (!def) throw new HttpError(404, 'not_found');
+  const name = revision && nameByTable(revision.table_name);
+  if (!name) throw new HttpError(404, 'not_found');
+  const def = DEFS[name];
   const snapshot = JSON.parse(revision.snapshot);
   const key = def.pk === 'slug' || def.pk === 'locale' ? revision.row_key : Number(revision.row_key);
   const present = await exists(db, def, key);
+  const result = { resource: name, key: revision.row_key, deleted: snapshot === null };
 
   if (snapshot === null) {
     if (def.fixed) throw new HttpError(409, 'conflict');
-    if (present) await commit(db, writeStatements(db, def, key, null, true));
-    return { restored: revision.table_name, key: revision.row_key, deleted: true };
+    if (present) await commit(db, writeStatements(db, def, key, null, true, undefined, expected));
+    return result;
   }
-  if (def.table === 'content') {
-    const errors = contentErrors(snapshot.doc);
+  if (name === 'content') {
+    const { errors } = validate('content', snapshot.doc);
     if (errors.length) throw invalid(errors);
   }
   const row = Object.fromEntries(def.cols.filter((c) => c !== def.pk && c in snapshot)
     .map((c) => [c, c === 'doc' ? JSON.stringify(snapshot.doc) : snapshot[c]]));
-  const metrics = def.table === 'testimonials' ? snapshot.metrics ?? [] : undefined;
-  await commit(db, writeStatements(db, def, key, row, present, metrics));
-  return { restored: revision.table_name, key: revision.row_key, deleted: false };
+  const metrics = name === 'testimonials' ? snapshot.metrics ?? [] : undefined;
+  await commit(db, writeStatements(db, def, key, row, present, metrics, expected));
+  return result;
 }
 
 // Только для окружения test: batch, во втором выражении которого заведомая ошибка.
